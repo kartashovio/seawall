@@ -1,0 +1,31 @@
+# --- Local project context — DO NOT publish ---
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+
+# --- Node / pnpm ---
+node_modules/
+dist/
+build/
+out/
+.pnpm-store/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.sample
+!.env.example
+*.key
+*.pem
+
+# --- Move ---
+**/build/
+
+# --- Editor / OS ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
