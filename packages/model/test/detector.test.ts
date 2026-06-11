@@ -11,7 +11,7 @@ function feedBaseline(d: Detector, n: number): void {
 
 describe("Detector", () => {
   it("stays silent during warm-up", () => {
-    const d = new Detector(4, 30);
+    const d = new Detector(undefined, { warmup: 30 });
     let last = -1;
     for (let i = 0; i < 30; i++) {
       const t = i * 0.3;
@@ -21,7 +21,7 @@ describe("Detector", () => {
   });
 
   it("scores a clear outlier high and a typical point low", () => {
-    const d = new Detector(4, 0);
+    const d = new Detector(undefined, { warmup: 0 });
     feedBaseline(d, 200);
     // a point far outside the learned distribution
     const outlier = d.update([8, 8, 8, 8]);
@@ -34,7 +34,7 @@ describe("Detector", () => {
   });
 
   it("keeps the score in range and contributions summing to d2", () => {
-    const d = new Detector(4, 0);
+    const d = new Detector(undefined, { warmup: 0 });
     feedBaseline(d, 150);
     const r = d.update([5, -4, 3, -2]);
     expect(r.score).toBeGreaterThanOrEqual(0);
@@ -44,7 +44,7 @@ describe("Detector", () => {
   });
 
   it("derives tighten-only params from the score", () => {
-    const d = new Detector(4, 0);
+    const d = new Detector(undefined, { warmup: 0 });
     const p = d.paramsFor(99);
     expect(p.maxLtv).toBeCloseTo(55, 6);
     expect(p.borrowCap).toBeCloseTo(40, 6);

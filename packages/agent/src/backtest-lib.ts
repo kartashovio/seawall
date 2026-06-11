@@ -19,6 +19,7 @@ export interface EventConfig {
   windowStartMs: number; // analysis grid start
   windowEndMs: number; // analysis grid end
   futuresSymbol?: string; // load mark/index/last 1m klines under these names
+  marketSymbol?: string; // optional market proxy (e.g. "BTCUSDT"): "last" loaded as series "market" -> mktvol
   cex?: Partial<Record<Venue, string>>; // venue -> symbol; loaded as spot series named by venue
   pegValue?: number; // add a constant "peg" series (e.g. 1.0 for a stablecoin)
   refKey: string; // price series for returns / realized vol
@@ -63,6 +64,12 @@ async function loadSeries(cfg: EventConfig, grid: number): Promise<Series[]> {
       out.push(candlesToSeries(kind, parts.flat().sort((a, b) => a.ts - b.ts)));
     }
   }
+  if (cfg.marketSymbol) {
+    const parts = await Promise.all(
+      cfg.dates.map((d) => fetchFuturesKlines("last", cfg.marketSymbol!, d)),
+    );
+    out.push(candlesToSeries("market", parts.flat().sort((a, b) => a.ts - b.ts)));
+  }
   if (cfg.cex) {
     for (const [venue, symbol] of Object.entries(cfg.cex)) {
       const c = await fetchOHLCV(venue as Venue, symbol!, cfg.windowStartMs, cfg.windowEndMs);
@@ -102,12 +109,16 @@ export async function runBacktest(cfg: EventConfig): Promise<BacktestResult> {
     divA: cfg.divA,
     divB: cfg.divB,
     dispKeys: cfg.dispKeys,
+    marketRefKey: cfg.marketSymbol ? "market" : undefined,
     velWindow: cfg.velWindow ?? 30,
     rvSpan: cfg.velWindow ?? 30,
   });
 
   const lambda = cfg.lambda ?? 0.99;
-  const det = new Detector(4, 120, { mean: lambda, cov: lambda });
+  const featureList = cfg.marketSymbol
+    ? ["disp", "div", "divvel", "volvel", "mktvol"]
+    : ["disp", "div", "divvel", "volvel"];
+  const det = new Detector(featureList, { warmup: 120, lambdas: { mean: lambda, cov: lambda } });
   const raw = feats.map(({ ts, fv }) => {
     const r = det.update(fv);
     return { ts, d2: r.d2, rawScore: r.score, groupD2: r.groupD2, contributions: r.contributions, fv };

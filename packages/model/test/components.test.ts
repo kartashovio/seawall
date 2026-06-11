@@ -27,7 +27,7 @@ describe("subDistance", () => {
 
 describe("component split", () => {
   it("reports per-group d2 and isolates the anomalous family", () => {
-    const d = new Detector(4, 0);
+    const d = new Detector(undefined, { warmup: 0 });
     for (let i = 0; i < 200; i++) {
       const t = i * 0.3;
       d.update([Math.sin(t), Math.cos(t * 1.1), Math.sin(t * 0.7), Math.cos(t * 1.9)]);

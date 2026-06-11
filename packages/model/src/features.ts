@@ -2,11 +2,12 @@ import type { FeatureVector } from "@seawall/shared";
 import type { AlignedRow } from "./align";
 
 export interface FeatureConfig {
-  refKey: string; // price series used for returns / realized vol
+  refKey: string; // price series used for returns / realized vol of the target
   divA: string; // divergence numerator price (e.g. "mark", or the oracle)
   divB: string; // divergence denominator price; "__median__" = median of dispKeys
   dispKeys: string[]; // venue prices for cross-venue dispersion
-  velWindow?: number; // lag for divvel / volvel (default 30)
+  marketRefKey?: string; // optional market price series -> mktvol (market vol velocity)
+  velWindow?: number; // lag for divvel / volvel / mktvol (default 30)
   rvSpan?: number; // EWMA span for realized variance (default 30)
 }
 
@@ -25,59 +26,94 @@ function stdevLn(prices: number[]): number {
   return Math.sqrt(varr);
 }
 
-// Turns aligned price rows into the 4 backtestable features, one per tick.
-// Stateful: it keeps the EWMA of realized variance and short histories of div
-// and rv so it can compute the velocity features. Returns null until it has
+// Turns aligned price rows into features, one per tick. Stateful: it keeps EWMAs
+// of realized variance (for the target, and optionally the market) plus short
+// histories so it can compute the velocity features. Returns null until it has
 // enough history (one return, then velWindow more ticks).
 export class FeatureBuilder {
-  private readonly cfg: Required<FeatureConfig>;
+  private readonly refKey: string;
+  private readonly divA: string;
+  private readonly divB: string;
+  private readonly dispKeys: string[];
+  private readonly marketRefKey?: string;
+  private readonly w: number;
   private readonly alpha: number;
+
   private lastRef: number | null = null;
   private rv = 0;
   private rvSeen = 0;
   private divHist: number[] = [];
   private rvHist: number[] = [];
 
+  // optional market realized-vol state
+  private lastMkt: number | null = null;
+  private mktRv = 0;
+  private mktSeen = 0;
+  private mktRvHist: number[] = [];
+
   constructor(cfg: FeatureConfig) {
-    this.cfg = { velWindow: 30, rvSpan: 30, ...cfg };
-    this.alpha = 2 / (this.cfg.rvSpan + 1);
+    this.refKey = cfg.refKey;
+    this.divA = cfg.divA;
+    this.divB = cfg.divB;
+    this.dispKeys = cfg.dispKeys;
+    this.marketRefKey = cfg.marketRefKey;
+    this.w = cfg.velWindow ?? 30;
+    this.alpha = 2 / ((cfg.rvSpan ?? 30) + 1);
   }
 
   push(row: AlignedRow): FeatureVector | null {
     const v = row.values;
-    const ref = v[this.cfg.refKey];
-    const a = v[this.cfg.divA];
-    const venues = this.cfg.dispKeys
+    const ref = v[this.refKey];
+    const a = v[this.divA];
+    const venues = this.dispKeys
       .map((k) => v[k])
       .filter((x): x is number => typeof x === "number" && x > 0);
-    const b = this.cfg.divB === "__median__" ? (venues.length ? median(venues) : undefined) : v[this.cfg.divB];
+    const b = this.divB === "__median__" ? (venues.length ? median(venues) : undefined) : v[this.divB];
 
     if (!ref || ref <= 0 || !a || a <= 0 || !b || b <= 0) return null;
 
     const disp = venues.length >= 2 ? 1e4 * stdevLn(venues) : 0;
     const div = 1e4 * Math.abs(Math.log(a) - Math.log(b));
 
-    const w = this.cfg.velWindow;
-    if (this.lastRef === null) {
-      this.lastRef = ref;
-      return null; // need one return before realized vol exists
+    // target realized vol (EWMA of squared log-returns)
+    if (this.lastRef !== null) {
+      const r = Math.log(ref) - Math.log(this.lastRef);
+      this.rv = this.rvSeen === 0 ? r * r : this.alpha * r * r + (1 - this.alpha) * this.rv;
+      this.rvSeen++;
     }
-    const r = Math.log(ref) - Math.log(this.lastRef);
     this.lastRef = ref;
-    this.rv = this.rvSeen === 0 ? r * r : this.alpha * r * r + (1 - this.alpha) * this.rv;
-    this.rvSeen++;
+
+    // market realized vol (optional; carry rv if the market price is missing)
+    if (this.marketRefKey) {
+      const m = v[this.marketRefKey];
+      if (typeof m === "number" && m > 0) {
+        if (this.lastMkt !== null) {
+          const rm = Math.log(m) - Math.log(this.lastMkt);
+          this.mktRv = this.mktSeen === 0 ? rm * rm : this.alpha * rm * rm + (1 - this.alpha) * this.mktRv;
+          this.mktSeen++;
+        }
+        this.lastMkt = m;
+      }
+    }
+
+    if (this.rvSeen === 0) return null; // need one return before realized vol exists
 
     this.divHist.push(div);
     this.rvHist.push(this.rv);
-    if (this.divHist.length <= w) return null; // not enough history for velocity
+    if (this.marketRefKey) this.mktRvHist.push(this.mktRv);
+    if (this.divHist.length <= this.w) return null; // not enough history for velocity
 
-    const divLag = this.divHist[this.divHist.length - 1 - w];
-    const rvLag = this.rvHist[this.rvHist.length - 1 - w];
+    const divLag = this.divHist[this.divHist.length - 1 - this.w];
+    const rvLag = this.rvHist[this.rvHist.length - 1 - this.w];
     const divvel = div - divLag;
-    // log growth rate of realized variance: stable, symmetric "vol velocity"
     const volvel = Math.log((this.rv + EPS) / (rvLag + EPS));
 
-    return { disp, div, divvel, volvel };
+    const fv: FeatureVector = { disp, div, divvel, volvel };
+    if (this.marketRefKey) {
+      const mktLag = this.mktRvHist[this.mktRvHist.length - 1 - this.w];
+      fv.mktvol = Math.log((this.mktRv + EPS) / (mktLag + EPS));
+    }
+    return fv;
   }
 }
 
