@@ -3,3 +3,7 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+
+# esbuild ships its platform binary via an optional dep, so its postinstall is
+# not actually needed; skip pnpm's pre-run deps check that trips on it.
+verifyDepsBeforeRun: false
