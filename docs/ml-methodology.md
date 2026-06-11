@@ -57,12 +57,14 @@ The agent emits a parameter target that the contract clamps. The score maps to a
 
 ### Component split
 
-The features divide into two groups, and each group drives one parameter. This is what lets the model separate idiosyncratic stress from systemic stress.
+The features divide into two groups, and each group drives one parameter. The split is along two distinct risk dimensions, not idiosyncratic-versus-systemic.
 
-- `max_ltv ← solvency {div, divvel}`. These measure the token's own oracle-vs-market gap and how fast it is widening. The token moving while the broader market is calm points at an oracle or manipulation problem specific to that asset, so the response is to tighten loan-to-value on that collateral.
-- `borrow_cap ← liquidity {disp, volvel, mktvol}` (plus the live depth features). Cross-venue dispersion, the token's own vol velocity, and the market proxy's vol velocity together describe how stressed and thin the broader environment is. When the token falls alongside the market, that is systemic risk-off rather than an asset-specific oracle fault, so the response is to cap new borrowing rather than mark one collateral down.
+- `max_ltv ← solvency {div, divvel}`. These measure whether the price we mark the collateral at is trustworthy: the oracle-vs-market gap and how fast it is widening. An oracle that disagrees with the market is a reason to allow less leverage per position.
+- `borrow_cap ← liquidity {disp, volvel, mktvol}` (plus the live depth features). These measure how violent and fragmented the environment is: cross-venue disagreement, the token's own realized-vol velocity, and the market proxy's. A collateral that is moving violently, or a market that is, is a reason to cap new borrowing against it.
 
-`mktvol` is what carries the systemic signal into the liquidity group. The cross-asset discrimination falls out of the covariance cross-terms between the token's features and the market proxy's, so no explicit beta feature is needed: when the token and the market move together, the joint configuration sits where the calm covariance expects it; when the token moves and the market does not, the cross-terms make that an outlier. Because `mktvol` is off-chain context, it only shifts the advisory score and the clamped parameter request, never the contract's own on-chain re-derivation.
+`mktvol` (BTC volatility velocity) is the market-context piece, and in the liquidity group it acts as an attribution signal: it says whether the volatility stress is the asset's own or broad-market contagion. When the token and BTC move together `mktvol` is elevated and the stress is systemic; when the token moves and BTC is calm `mktvol` stays low and the stress is asset-specific. That read falls out of the covariance cross-terms, so no explicit beta feature is needed, and because `mktvol` is off-chain context it only shifts the advisory score and the clamped request, never the contract's own on-chain re-derivation.
+
+Two cases make the split concrete. A low-volatility oracle anomaly, like a stablecoin peg break, moves `div`/`divvel` while the asset's own realized vol stays quiet, so only `max_ltv` tightens and `borrow_cap` holds at baseline. A violent price crash moves both the oracle gap and the asset's own vol and dispersion, so both parameters tighten, which is intended: a collateral crashing hard warrants both a lower LTV and a tighter borrow cap. `mktvol` then tells you whether that violence is the asset's own or the whole market's. It does not hold `borrow_cap` loose through a crash.
 
 ### Ratchet
 

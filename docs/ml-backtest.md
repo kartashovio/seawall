@@ -23,11 +23,15 @@ Lead is measured from the first sustained alert (score ≥ 99 on two consecutive
 | Feb 2–3 2025 tariff selloff | SUI, BTC market | yes | +320 min | solvency (divvel 57%, div 40%) | max_ltv 55% / borrow_cap 100% | modest, ~1.5×; borrow_cap tightens later as BTC falls | 1.00% / 0 |
 | Mar 11 2023 USDC de-peg | USDC, BTC market | yes | +379 min | solvency (div 55%, divvel 33%) | LOW (liquidity group 41 vs calm avg 50) | — | 1.01% / 10 |
 
-### The discrimination headline
+### What the split actually separates
 
-The component split routes the same anomaly type to the right parameter. Systemic events, where SUI falls alongside BTC, light up the liquidity group and push `borrow_cap` toward its 40% floor. The idiosyncratic USDC de-peg is different: BTC stays calm, so `mktvol` stays low, the liquidity group sits *below* its calm average (41 vs 50), and `borrow_cap` stays at its 100% baseline while `max_ltv` rides down to its 55% floor on the solvency signal alone.
+The two parameters track two different risk dimensions. `max_ltv` moves on oracle-vs-market divergence (is the price trustworthy); `borrow_cap` moves on volatility and fragmentation (how violent and thin things are), from the asset itself or the market.
 
-That is the design working. A broad market crash and a single-asset oracle break are both anomalies, both trip the score, but they tighten different knobs. The protocol caps new leverage when the whole market is unwinding, and holds borrow capacity when the only problem is one asset's price feed.
+The cleanest case is the USDC de-peg. A stablecoin leaving its peg is a price-correctness problem with low realized volatility, so `div`/`divvel` spike while the asset's own vol stays quiet, and `mktvol` (BTC) is low too. The liquidity group sits below its calm average (41 vs 50), so `borrow_cap` holds at its 100% baseline while `max_ltv` rides to its 55% floor. Only the leverage knob moves, which is right: the asset is mispriced, not volatile.
+
+A violent crash is different, and we tested it both ways. On a SUI-specific crash (the May 2025 Cetus exploit, SUI down ~6% in 20 minutes while BTC's range was 0.8%), the oracle divergence drives `max_ltv` to its floor and `mktvol` correctly stays low (about 0% of the liquidity pressure, confirming it is not BTC contagion) — but `borrow_cap` also goes to its floor, because a sharp move spikes SUI's own vol velocity and cross-venue dispersion, which are liquidity-group features. That is intended, not a miss: a collateral crashing 6% in 20 minutes warrants a tighter borrow cap regardless of cause. A synthetic control confirms the mechanism is clean when a shock is isolated: a pure divergence shock gives a solvency-to-liquidity distance ratio of about 55x (only `max_ltv` moves), and a pure market shock gives the mirror, about 568x the other way (only `borrow_cap` moves).
+
+So the honest statement: the split is real and works at the feature level, and `mktvol` correctly attributes volatility stress to the asset versus the market. A low-volatility oracle anomaly tightens only `max_ltv`; a violent move tightens both. The market feature tells you which; it does not hold `borrow_cap` loose through a crash.
 
 ### Per-event notes
 

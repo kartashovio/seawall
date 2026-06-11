@@ -20,6 +20,17 @@ describe("flexible feature set + market feature", () => {
     expect(r.groupD2.liquidity).toBeGreaterThan(r.groupD2.solvency);
   });
 
+  it("a solvency-only shock (div/divvel) drives solvency, leaves liquidity calm (mirror)", () => {
+    const d = new Detector(["disp", "div", "divvel", "volvel", "mktvol"], { warmup: 0 });
+    for (let i = 0; i < 200; i++) {
+      const t = i * 0.3;
+      d.update([Math.sin(t), Math.cos(t * 1.1), Math.sin(t * 0.7), Math.cos(t * 1.9), Math.sin(t * 0.5)]);
+    }
+    // spike ONLY div + divvel (indices 1,2 = solvency); keep disp/volvel/mktvol quiet
+    const r = d.update([Math.sin(60), 8, 8, Math.cos(60 * 1.9), Math.sin(60 * 0.5)]);
+    expect(r.groupD2.solvency).toBeGreaterThan(r.groupD2.liquidity);
+  });
+
   it("FeatureBuilder emits mktvol when a market series is configured", () => {
     const fb = new FeatureBuilder({
       refKey: "ref",
