@@ -35,6 +35,13 @@ importers:
       '@seawall/shared':
         specifier: workspace:*
         version: link:../shared
+      adm-zip:
+        specifier: ^0.5.17
+        version: 0.5.17
+    devDependencies:
+      '@types/adm-zip':
+        specifier: ^0.5.8
+        version: 0.5.8
 
   packages/model:
     dependencies:
@@ -564,6 +571,9 @@ packages:
   '@scure/bip39@1.6.0':
     resolution: {integrity: sha512-+lF0BbLiJNwVlev4eKelw1WWLaiKXw7sSl8T6FvBlWkdX+94aGJ4o8XjUdlyhTCjd8c+B3KT3JfS8P0bLRNU6A==}
 
+  '@types/adm-zip@0.5.8':
+    resolution: {integrity: sha512-RVVH7QvZYbN+ihqZ4kX/dMiowf6o+Jk1fNwiSdx0NahBJLU787zkULhGhJM8mf/obmLGmgdMM0bXsQTmyfbR7Q==}
+
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
@@ -604,6 +614,10 @@ packages:
     peerDependencies:
       axios: ^0.x || ^1.0.0
       zod: ^3.x
+
+  adm-zip@0.5.17:
+    resolution: {integrity: sha512-+Ut8d9LLqwEvHHJl1+PIHqoyDxFgVN847JTVM3Izi3xHDWPE4UtzzXysMZQs64DMcrJfBeS/uoEP4AD3HQHnQQ==}
+    engines: {node: '>=12.0'}
 
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -1278,6 +1292,10 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
+  '@types/adm-zip@0.5.8':
+    dependencies:
+      '@types/node': 22.19.20
+
   '@types/estree@1.0.9': {}
 
   '@types/node@22.19.20':
@@ -1328,6 +1346,8 @@ snapshots:
     dependencies:
       axios: 1.17.0
       zod: 3.25.76
+
+  adm-zip@0.5.17: {}
 
   agent-base@6.0.2:
     dependencies:

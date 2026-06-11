@@ -8,6 +8,10 @@
     "@mysten/sui": "^1.45.2",
     "@pythnetwork/pyth-sui-js": "3.0.0",
     "@seawall/model": "workspace:*",
-    "@seawall/shared": "workspace:*"
+    "@seawall/shared": "workspace:*",
+    "adm-zip": "^0.5.17"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.8"
   }
 }

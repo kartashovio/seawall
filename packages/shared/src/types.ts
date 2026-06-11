@@ -29,3 +29,23 @@ export interface RiskEvent {
   request: ParamRequest;
   contributions: Record<string, number>;
 }
+
+// --- raw market data, normalized at ingest ---
+
+// One OHLCV bar. ts is epoch MILLISECONDS (every adapter normalizes to this).
+export interface Candle {
+  ts: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+// One Pyth price observation. ts is epoch milliseconds; price already has expo
+// applied (i.e. a real number), conf is the confidence interval in the same unit.
+export interface PythTick {
+  ts: number;
+  price: number;
+  conf: number;
+}

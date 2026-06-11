@@ -8,6 +8,8 @@ export * from "./linalg";
 export * from "./mahalanobis";
 export * from "./chisq";
 export * from "./score";
+export * from "./align";
+export * from "./features";
 
 const ORDER_4 = ["disp", "div", "divvel", "volvel"] as const;
 const ORDER_6 = [...ORDER_4, "imb", "spread"] as const;
