@@ -1,99 +1,75 @@
-# How the risk model works
+# ML methodology
 
-Seawall is an autonomous risk guardian for Sui lending. An off-chain agent watches several price and liquidity sources, scores how anomalous the market looks, and turns that score into a tighten-only request for a protocol's risk parameters. The agent never decides anything on-chain: it hands the contract a fresh signed price and a clamped request, and a Move policy object re-derives the breach from its own on-chain reading and is the only thing that acts.
+The off-chain agent scores risk with an unsupervised anomaly detector. This document covers the detector itself: the feature vector, the EWMA-adaptive Mahalanobis core, the 0-100 score, and how that score maps to a parameter request the contract clamps. The contract-side math, the on-chain re-derivation, and the freeze logic are out of scope here and live with the Move package. Backtest numbers live in [ml-backtest.md](./ml-backtest.md).
 
-## Inputs and outputs
+## Scope
 
-Each tick the agent emits a 0-100 risk score and two lending parameters, `max_ltv` (%) and `borrow_cap` (%). The score rides along as an advisory event field for the dashboard, never on the logic path. The two parameters are the request to the contract, both tighten-only: the agent can only move them lower, never loosen.
+The model covers the oracle and price-anomaly class only. It detects when an oracle price, the market it claims to track, and the venues quoting that market stop agreeing in a way the calm-market history says is improbable. It does not cover key or governance compromise, contract logic bugs, or credit quality. Human override and DAO-unfreeze are contract-side, behind a `&GovernanceCap`-gated function, and out of this document.
 
-A third parameter, `liq_buffer`, the agent deliberately does not touch. Tightening a liquidation buffer is retroactive: raising it can push existing positions underwater and force liquidations on users who did nothing wrong. "Safer for the protocol" is not "safer for users" there. So `liq_buffer` stays DAO-only, no agent path.
+## Feature vector
 
-## Data sources
+The detector is flexible. It takes a configurable list of features rather than a fixed set, instantiates a covariance of the matching size, and the rest of the math is unchanged. Two configurations matter in practice.
 
-Everything the model reads is free and keyless: no paid feeds, no API keys.
+The default is four features computed from the token under watch. A market-aware run adds one more, a market-proxy feature, for five. Everything downstream (EWMA, Mahalanobis, contributions, score, parameter map) is identical at either size.
 
-| Source | What it gives | History |
-|---|---|---|
-| Binance public archive (`data.binance.vision`) | USD-M futures mark/index/last 1-minute klines; spot 1-second klines. Static files, no geo-block. | Futures klines from ~Jan 2023; spot 1s back to ~May 2022 |
-| Coinbase, OKX, Bybit public REST | 1-minute spot candles, keyless, paged | exchange-dependent |
-| Pyth | hermes-beta for the live testnet feed; Benchmarks for mainnet history (price + confidence) | history from ~Oct 2023 |
-| DeepBook (live) | order-book mid and L2 depth, read on-chain | live only |
+Every feature is engineered unit-free and roughly stationary so the EWMA covariance stays well-conditioned.
 
-Order-book depth is not freely archived anywhere, so the two depth-derived features are live-only and the reproducible backtest runs on the four features with free history.
+- `div`, oracle-vs-market divergence: `1e4 · |ln(p_pyth) − ln(p_cex_median)|`, in bps. Live this is Pyth versus the DeepBook mid; in backtest it substitutes a real oracle-vs-execution proxy, stated openly in the backtest doc.
+- `divvel`, divergence velocity: `div_t − div_{t−w}`. A widening gap matters more than a wide-but-stable one, and tracking the change kills decimals-offset false positives.
+- `disp`, cross-venue dispersion: `1e4 · stdev_i(ln p_i)` over 1m mid/close across the quoting venues, in bps.
+- `volvel`, realized-vol velocity: `rv_t = EWMA_30(r²)` with `r = Δln p`, then `volvel_t = (rv_t − rv_{t−w})/(rv_{t−w}+ε)`, `w ≈ 30`. This one fires first in a flash crash.
 
-## The features
+Optional market-context feature (the fifth, added in a market-aware run):
 
-A six-element vector. Four are computable from free historical data and are what the backtest uses; the other two need a live order book (tagged below).
+- `mktvol`, market volatility velocity: `volvel` computed on a market proxy (BTC) instead of the token. Same formula, same window, applied to the proxy's price series. It is off-chain context only. The contract cannot re-derive a BTC volatility on-chain, so `mktvol` shifts only the advisory score and the parameter request; it never enters the contract's own on-chain check.
 
-- `disp`: cross-venue price dispersion, in bps. `1e4 * stdev` of `ln(price)` across venues at that minute.
-- `div`: oracle/market divergence, in bps. `1e4 * |ln(a) - ln(b)|`. In the backtest, `a`/`b` are the Binance perp last vs the composite index, or a price vs a $1 peg for a stablecoin. Live, Pyth vs the DeepBook mid.
-- `divvel`: divergence velocity. `div` now minus `div` one window ago (about 30 ticks). Catches a divergence opening, not just one already wide.
-- `volvel`: volatility velocity. Log growth of an EWMA of squared log-returns (span ~30). Symmetric, reacting to acceleration in either direction.
-- `imb` (live only): order-book depth imbalance, `(bidDepth - askDepth) / (bidDepth + askDepth)`, in `[-1, 1]`.
-- `spread` (live only): effective spread, `1e4 * (ask - bid) / mid`.
+Live, two more on-chain liquidity features (`imb` depth imbalance, `spread` effective spread) can extend the vector further. Those are live-only because free historical L2 depth is not available, and they are documented with the backtest material rather than here.
 
-## The model
+## Model
 
-A streaming estimator, not a learned model: no training, no labels, no GPU. The agent keeps a running EWMA mean and EWMA covariance of the feature vector. The covariance update uses the pre-update mean, so a new observation never defines the "normal" it is compared against (no look-ahead). Default EWMA decay is 0.97/0.94; the 1-minute backtests use 0.99, since RiskMetrics' 0.94 was tuned for daily data and is too reactive at one-minute resolution.
+Pure TypeScript, no heavy dependencies beyond a small Cholesky solve and a regularized incomplete gamma. O(k²) per tick. Let `x_t ∈ ℝ^k`, with k set by the configured feature list.
 
-The covariance gets a fixed shrinkage toward a scaled identity (weight 0.15) plus a tiny ridge, keeping it invertible when features are nearly collinear. A fixed-weight, Ledoit-Wolf-style ridge, not the full data-driven Ledoit-Wolf estimator.
+EWMA mean: `μ_t = λ·μ_{t−1} + (1−λ)·x_t`.
 
-Each tick it computes the squared Mahalanobis distance
+EWMA covariance: `Σ_t = λ_c·Σ_{t−1} + (1−λ_c)·(x_t − μ_{t−1})(x_t − μ_{t−1})ᵀ`. The update uses the pre-update mean `μ_{t−1}`, so there is no look-ahead. Stored flat and symmetric.
 
-```
-d2 = (x - mu)^T * Sigma^-1 * (x - mu)
-```
+Shrinkage and diagonal loading: `Σ̃ = (1−δ)·Σ_t + δ·(tr(Σ_t)/k)·I` with δ = 0.15 fixed, plus `ε·I`. This is a fixed ridge, Ledoit-Wolf-style but with δ constant, not the full data-driven Ledoit-Wolf estimator.
 
-via a Cholesky solve. The covariance term handles the joint case, firing when features that normally agree start disagreeing, even when none is alarming on its own.
+Squared Mahalanobis distance: `d²_t = (x_t − μ_t)ᵀ Σ̃⁻¹ (x_t − μ_t)`, computed by Cholesky `Σ̃ = LLᵀ`, solving `L y = (x − μ)` then `d² = yᵀy`.
 
-It decomposes `d2` into per-feature contributions `c_i = (x_i - mu_i) * z_i`, where `z = Sigma^-1 (x - mu)`. These sum exactly to `d2`, so the dashboard shows which feature drove the score.
+Per-feature contribution: `z = Σ̃⁻¹(x − μ)`, `c_i = (x_i − μ_i)·z_i`, and `Σ_i c_i = d²` exactly. Bar height is `c_i/d²`. A negative `c_i` is a correlation-surprise term (the Kritzman-Li signal); clamp at 0 for display, keep it signed in the event log. This drives the joint-anomaly demo beat, where no single feature dominates yet the joint configuration is improbable.
 
-Prior art, so it's clear what is and isn't new. The Mahalanobis-distance-of-returns is the Kritzman-Li Financial Turbulence Index (Financial Analysts Journal, 2010); the EWMA covariance is RiskMetrics (J.P. Morgan, 1996). Neither estimator is our invention. New is the application, oracle vs CLOB vs CEX divergence as a real-time circuit-breaker signal, and the on-chain enforcement around it.
+### Score
 
-## Calibrating the 0-100 score
+Map d² to 0-100. Under a multivariate-normal null `d² ~ χ²(k)`, so the nominal score is `100 · F_{χ²,k}(d²_t)`. Engineered features are heavy-tailed and autocorrelated, so the empirical d² deviates from χ²(k). The reported gauge bands are calm-period empirical percentiles, with χ²(k) noted as the nominal reference. The claim is "score = p means more extreme than p% of calm-market configurations, empirically calibrated," not a clean χ² probability.
 
-Under a Gaussian null, `d2` is chi-squared, so the textbook move is to push it through the chi-squared CDF for a 0-100 number. It over-fires: real features are heavy-tailed and autocorrelated, so the empirical `d2` does not match chi-squared, and the chi-squared score flagged 2-5% of genuinely calm minutes.
+An alert fires when the score is at or above 99 for two consecutive ticks. The debounce keeps single-tick noise from tripping it.
 
-So the reported score is the empirical percentile of `d2` against a calm reference window, not the chi-squared CDF. A score of 99 means "more extreme than 99% of calm minutes." This pins the calm false-alarm rate at about 1% by construction; chi-squared stays only as the nominal reference for intuition.
+### Prior art
 
-An alert, which triggers a parameter request, is score >= 99 for two consecutive ticks (filtering single-tick noise).
+The estimator is not new. Mahalanobis-of-returns is the Kritzman-Li Financial Turbulence Index (Kritzman and Li, FAJ 66(5), 2010); the EWMA covariance is RiskMetrics (J.P. Morgan, 1996). What is new is the application, oracle-vs-CLOB-vs-CEX divergence as a real-time breaker, plus the on-chain enforcement. The math is borrowed and named as such.
 
-## The component split
+## Score to parameters
 
-`max_ltv` and `borrow_cap` respond to different kinds of risk, so they are scored separately, not from one shared number.
+The agent emits a parameter target that the contract clamps. The score maps to a fraction `f ∈ [0,1]` of each corridor, where f=1 is the loosest baseline and f=0 the tightest floor: `target_p = floor_p + f(score)·(baseline_p − floor_p)`. The shape is a dead-band plus logistic, so noise below the dead-band produces no change and the response saturates at the floor for extreme scores. Corridors are `max_ltv` [55%, 75%] and `borrow_cap` [40%, 100%].
 
-- `max_ltv` is driven by solvency risk: the marginal Mahalanobis distance over `{div, divvel}`, the oracle/price-correctness features.
-- `borrow_cap` is driven by liquidity and systemic risk: the marginal distance over `{disp, volvel}` (plus depth, live).
+`liq_buffer` is deliberately excluded from this map. It is retroactive, so tightening it could force liquidations and harm existing users, which makes it DAO-only.
 
-"Marginal" means the sub-block of the covariance for just those features, scored on its own and calibrated to its own calm percentile. The USDC de-peg case shows the split working: an oracle/peg anomaly drove `max_ltv` to its floor while `borrow_cap` stayed at baseline.
+### Component split
 
-## Score to parameter
+The features divide into two groups, and each group drives one parameter. This is what lets the model separate idiosyncratic stress from systemic stress.
 
-Each component maps its score to its parameter through a dead-band plus a logistic. Below 60 the parameter sits at baseline (loosest), so ordinary noise tightens nothing. Between 60 and 95 it follows the logistic; above 95 it sits at the floor (tightest).
+- `max_ltv ← solvency {div, divvel}`. These measure the token's own oracle-vs-market gap and how fast it is widening. The token moving while the broader market is calm points at an oracle or manipulation problem specific to that asset, so the response is to tighten loan-to-value on that collateral.
+- `borrow_cap ← liquidity {disp, volvel, mktvol}` (plus the live depth features). Cross-venue dispersion, the token's own vol velocity, and the market proxy's vol velocity together describe how stressed and thin the broader environment is. When the token falls alongside the market, that is systemic risk-off rather than an asset-specific oracle fault, so the response is to cap new borrowing rather than mark one collateral down.
 
-```
-max_ltv:    floor 55%   baseline 75%
-borrow_cap: floor 40%   baseline 100%
-```
+`mktvol` is what carries the systemic signal into the liquidity group. The cross-asset discrimination falls out of the covariance cross-terms between the token's features and the market proxy's, so no explicit beta feature is needed: when the token and the market move together, the joint configuration sits where the calm covariance expects it; when the token moves and the market does not, the cross-terms make that an outlier. Because `mktvol` is off-chain context, it only shifts the advisory score and the clamped parameter request, never the contract's own on-chain re-derivation.
 
-The corridor `[floor, baseline]` is on-chain state set by the DAO or the protocol, not the agent. The agent can only move `current` toward `floor`, never past it or back toward baseline. Loosening is the contract's own job.
+### Ratchet
 
-## What this does not do
+The ratchet is enforced twice for redundancy. On the agent side, `request = min(target_now, last_applied)`, so it never even asks to loosen mid-episode; RELAX is contract-only on a sustained all-clear. On the contract side, which is authoritative, it clamps to [floor, baseline], rejects any looser-than-current component, and takes `tighter_of(agent_target, contract_own_target)`.
 
-This model covers the oracle/price-anomaly class: de-pegs, oracle/market divergence, cross-venue fragmentation, accelerating volatility. It does not detect key or governance compromise, catch logic bugs in a protocol's own contracts, or say anything about credit quality. One guardian, not a general safety system.
+The 0-100 score rides along as an advisory event field. The contract acts on the clamped `ParamRequest` and its own on-chain re-derivation, never on the number, so "its score is never trusted" is literally true.
 
-More limits:
+## On the freeze
 
-- The backtest runs on 1-minute bars while the live agent ticks every few seconds. 1-second backtests are a possible refinement, not done yet.
-- The reported lead times are in-sample case studies: the threshold is calibrated and measured on the same four episodes, so they are illustrative, not a statistically validated general lead. The calm false-alarm rate and the synthetic out-of-sample floor are the genuinely held-out parts.
-- The depth features are live-only, with no free historical L2 depth. The backtested model is the four-feature version.
-
-## Reproducing the results
-
-One command:
-
-```
-tsx packages/agent/src/backtest.ts all
-```
-
-The four real events, the false-positive probes, and the threshold decision are written up in [`ml-backtest.md`](./ml-backtest.md).
+When describing the contract, the FREEZE is contract-only, sitting on top of the three-layer design. The agent does not modulate the freeze threshold. The model in this document supplies the graded CAUTION request and the advisory score; the hard freeze is the contract's own on-chain check.

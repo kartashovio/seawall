@@ -1,55 +1,67 @@
-# What we tested it on
+# ML backtest — SUI target, BTC market proxy
 
-The evidence behind Seawall's risk score: real market dislocations replayed minute by minute, plus two calm windows to confirm it stays quiet when nothing is wrong.
+This is the measured-error-rate report for the off-chain anomaly model. The model and its derivation live in [ml-methodology.md](./ml-methodology.md); this file is what the backtest harness actually produced. The headline result it has to support is narrow and honest: the detector flags the events we calibrated it on, and on calm windows it stays quiet at the rate we designed for. It is not a labeled-recall study, and it does not claim to predict crashes.
 
-Scope first. Seawall is an off-chain agent that scores how anomalous several price and liquidity sources look, then issues a tighten-only request for a lending protocol's risk parameters. A Move policy object re-derives the breach on-chain and is the only thing that moves parameters; that contract is out of scope. These docs cover the scoring agent.
+The runs below were re-done with SUI as the target token and BTC as the market proxy, which is the live MVP shape: the demo asset is SUI/USD, and the systemic backdrop comes from BTC. The earlier BTC/ETH/USDC-target numbers are gone; these replace them.
 
 ## Setup
 
-Everything runs on 1-minute bars. Data is free and keyless: USD-M futures and spot klines from the Binance public archive, 1-minute spot candles from Coinbase, OKX and Bybit, and Pyth price history from Benchmarks. The two depth features (imbalance and spread) are live-only — no free historical depth. The backtest uses the four features with free history: cross-venue dispersion, oracle/market divergence, and divergence- and volatility-velocity.
+Grid is 1-minute bars. The live agent ticks every few seconds, so the reported numbers are the slower, lower-resolution view; depth features (`imb`, `spread`) are live-only and absent from history, so the reported model is the k=4 Tier-1 vector (`disp`, `div`, `divvel`, `volvel`) plus the BTC market feature described below. Data sources are the ones pinned in the prep plan: the Binance archive for SUI and BTC klines, three CEX venues for cross-venue dispersion, and Pyth Benchmarks for the SUI/USD signed price live, with Binance futures mark-vs-index standing in for oracle-vs-execution divergence over history. Everything is free and keyless.
 
-The model is unsupervised: no training, no labels. We mark the known event windows only to measure timing, not to fit anything. It keeps a running EWMA mean and covariance of the feature vector and computes the current vector's squared Mahalanobis distance from that normal. The 0-100 score is the empirical percentile of that distance against a calm reference window, so 99 means "more extreme than 99% of calm minutes" — fixing the calm false-alarm rate at roughly 1% by construction.
+The model is the EWMA-adaptive multivariate Mahalanobis detector. Score is the calm-calibrated percentile of squared Mahalanobis distance, mapped 0–100, with per-feature contributions that sum exactly to d². Two of those features are grouped for reading the results: a solvency group (oracle-vs-market divergence and its velocity, `div` + `divvel`) and a liquidity group (cross-venue dispersion, vol velocity, and the BTC market feature). The score-to-parameter map is the tighten-only corridor from the prep plan: `max_ltv` over [55%, 75%], `borrow_cap` over [40%, 100%].
 
-Two terms throughout. Lead is the time from the first sustained alert to the first visible -5% bar — the first minute where the trailing-30-minute return on the reference price is at or below -5% (-2% for the stablecoin); lead zero means alert and move in the same minute. Calm false-alarm, on the pre-event window, is the single-tick rate (how often a lone tick crosses 99, target ~1%) plus the sustained-alert count. An alert is score >= 99 for two consecutive ticks.
+The market feature is the new piece. BTC stress raises a market-volatility term (`mktvol`) that feeds the liquidity group. The point of adding it is discrimination, not raw sensitivity: a systemic selloff drags SUI down with BTC and should pull the protocol's `borrow_cap` toward its floor, while an asset-specific oracle break with a calm BTC should not. The probes below test exactly that, with a market-feature-off control on every window.
+
+Lead is measured from the first sustained alert (score ≥ 99 on two consecutive ticks) to the first 1-minute bar that closes ≤ −5% on a trailing-30m basis (−2% for the stablecoin). A negative lead means the sustained alert landed after that bar; coincident, not early. Calm false-alarm is reported two ways: the single-tick rate (the fraction of calm ticks above threshold, target ~1%) and the count of sustained two-in-a-row episodes on the pre-event calm window.
 
 ## Results
 
-| Event | Fired | Lead | Driver | Calm false-alarm (single / sustained) |
-|---|---|---|---|---|
-| Oct 10 2025 — BTC liquidation cascade | yes | 23 min | systemic (div 50%, disp 24%, divvel 20%) | 0.98% (10/1020) / 0 |
-| Mar 10-11 2023 — USDC de-peg (post-SVB) | yes | 379 min (6.3 h) | solvency (div 53%, divvel 35%, disp 9%) | 1.01% (23/2280) / 3 |
-| Aug 5 2024 — yen carry unwind, BTC | yes | 0 min | dispersion (disp 75%, div 18%, divvel 6%) | 1.00% (12/1200) / 2 |
-| Feb 2-3 2025 — tariff selloff, ETH | yes | 187 min | liquidity (disp 38%, div 35%, volvel 19%) | 1.00% (12/1200) / 0 |
+| Event | Target | Fired | Lead | Driver at alert | Params at alert | Market feature | Calm single / sustained |
+|---|---|---|---|---|---|---|---|
+| Oct 10 2025 cascade | SUI, BTC market | yes | −17 min (coincident) | liquidity is the durable driver (tie at the alert tick) | max_ltv 55% / borrow_cap 40% | elevated; liquidity pinned 95–100 | 0.98% / 1 |
+| Aug 5 2024 carry unwind | SUI, BTC market | yes | −3 min (coincident) | liquidity (disp 69%) | max_ltv 55% / borrow_cap 40% | elevated, mktvol ~3.6× calm | 1.00% / 0 |
+| Feb 2–3 2025 tariff selloff | SUI, BTC market | yes | +320 min | solvency (divvel 57%, div 40%) | max_ltv 55% / borrow_cap 100% | modest, ~1.5×; borrow_cap tightens later as BTC falls | 1.00% / 0 |
+| Mar 11 2023 USDC de-peg | USDC, BTC market | yes | +379 min | solvency (div 55%, divvel 33%) | LOW (liquidity group 41 vs calm avg 50) | — | 1.01% / 10 |
 
-## The four events
+### The discrimination headline
 
-Oct 10 2025, BTC liquidation cascade. A leverage flush gapped the perp away from the index. First sustained alert 20:52 UTC, 23 minutes before the -5% bar at 21:15; distance peaked 21:19 mid-cascade. Divergence led at 50% of the distance, dispersion and divergence-velocity behind, so this read as systemic and both parameters went to floor. Clean calm window: 0.98% single-tick, zero sustained.
+The component split routes the same anomaly type to the right parameter. Systemic events, where SUI falls alongside BTC, light up the liquidity group and push `borrow_cap` toward its 40% floor. The idiosyncratic USDC de-peg is different: BTC stays calm, so `mktvol` stays low, the liquidity group sits *below* its calm average (41 vs 50), and `borrow_cap` stays at its 100% baseline while `max_ltv` rides down to its 55% floor on the solvency signal alone.
 
-USDC de-peg, March 2023. The case that shows why the two parameters are scored separately. No USDC futures exist, so divergence here is distance off the $1 peg on the Bybit and OKX USDC pairs — Coinbase had no 2023 USDC-USD candles, and USDC was quoted against USDT, which held its peg through the weekend. First alert Mar 10 21:13 UTC, 379 minutes (6.3 hours) before the -2% bar. Almost entirely solvency: divergence 53%, divergence-velocity 35%, dispersion only 9%. So max_ltv tightened to its floor of 55% while borrow_cap stayed at baseline 100%: cut leverage per position, don't throttle new borrowing. Calm single-tick was the designed 1.01%, but 3 sustained alerts in-sample: an artifact of a pinned stablecoin, where at ~1.0000 the calm distances are nearly degenerate and the natural ~1% tail clumps into adjacent ticks. Single-tick rate is still on target.
+That is the design working. A broad market crash and a single-asset oracle break are both anomalies, both trip the score, but they tighten different knobs. The protocol caps new leverage when the whole market is unwinding, and holds borrow capacity when the only problem is one asset's price feed.
 
-Aug 5 2024, yen carry-trade unwind, BTC. Blunt: lead 0, the move near-vertical. Lone 99s appear from 00:02, but the signal sustains only at 01:10, when the -5% bar trips. Driver was cross-venue dispersion at 75%. Calm single-tick 1.00%, 2 sustained alerts because that window was a Sunday already carrying pre-crash chop.
+### Per-event notes
 
-Feb 2-3 2025, tariff selloff, ETH. The weakest of the four. First alert Feb 2 22:40 UTC, 187 minutes before the -5% bar, driven by liquidity (dispersion 38%, divergence 35%, volatility-velocity 19%). Distance peaked around 104. A news gap-down, not an intraday cascade, and the lead is measured to the -5% onset, not the deeper -25% wick later. Clean calm window: 1.00% single-tick, zero sustained.
+**Oct 10 2025 cascade.** Fires, but the sustained alert is coincident, not early: lead is −17 min. The score single-ticks to 99 right at crash onset, but the move is near-vertical and 1-minute SUI bars are noisy, so the first two-in-a-row sustained alert lags the −5% bar. Liquidity is the durable driver, in a near-tie with solvency at the alert tick. Both parameters pin to their floors and the liquidity group sits at 95–100. Do not pitch this as ahead of the crash.
 
-## Does it fire on ordinary chop?
+**Aug 5 2024 carry unwind.** Fires, also coincident: lead −3 min, same near-vertical-move story as Oct 10. Liquidity leads at the alert tick (`disp` contributing 69%) with `mktvol` running about 3.6× its calm level, the clearest systemic-market signature in the set. Both parameters pin to their floors.
 
-Two calm windows, calibrated on the first ~60% and tested on the last ~40% out-of-sample:
+**Feb 2–3 2025 tariff selloff.** Fires early: lead +320 min. This is a slower episode, and it is where the positive-lead story lives. Solvency leads at the first sustained alert (`divvel` 57%, `div` 40%); `max_ltv` is already at its 55% floor while `borrow_cap` is still at 100%. As BTC keeps falling over the following hours, the market feature builds and `borrow_cap` tightens later. The score climbs on the joint configuration well before the visible drawdown.
 
-- Jun 24-26 2024, range-bound BTC around 60-62k. Single-tick 1.02%, out-of-sample sustained 0, peak distance 24. Clean.
-- Sep 7-9 2025, range-bound BTC around 110-113k. Single-tick 1.02%, out-of-sample sustained 1 — a benign -0.4% dip that recovered within minutes, distance 32 — the ~1% statistical floor, not a real detection.
+**Mar 11 2023 USDC de-peg.** Fires early: lead +379 min, on the USDC target with BTC as the market proxy. This is the idiosyncratic case. Solvency carries it (`div` 55%, `divvel` 33%); the liquidity group is *low* (41 vs a calm average of 50) because BTC is calm. `max_ltv` goes to its 55% floor while `borrow_cap` stays at 100%. The −2% trailing threshold is used here because it is a stablecoin.
 
-## The threshold
+## False positives
 
-We keep score >= 99 (the 99th calm percentile) with 2 consecutive ticks. That caught all four events and stayed silent on calm chop (0 and 1 benign sustained alerts out-of-sample).
+Two probes on out-of-sample calm windows, each with a paired control on the identical window with the market feature turned off. The question is whether the new market feature adds alarms. It does not.
 
-We considered tightening to 3-consecutive ticks or the 99.5th percentile and rejected it. It would zero out the lone Sep-2025 blip, but it costs lead on the fastest events: Aug-5 is already coincident at 2-in-a-row, so anything stricter pushes it past the move, and it risks dropping the already-weak Feb-2025 detection. The single benign blip beats losing real signal.
+- **Jun 27–29 2024 (SUI/BTC, calm).** Single-tick rate 1.02%. Out-of-sample sustained: 0 with the market feature on, 0 with it off. No new alarms either way.
+- **Aug 26–28 2025 (SUI/BTC, calm).** Single-tick rate 0.99%. Out-of-sample sustained: 2 on, 2 off. The two are SUI's own perp last-vs-index micro-divergence (`div` ~83%), not the market feature, which contributed about 1%. The off control is identical, so the market feature added zero.
+
+The ablation is the point. On both calm windows the market-feature-on count equals the market-feature-off count. Adding it introduced no new false alarms.
+
+## Threshold verdict
+
+Kept: the 99th calm percentile plus a two-consecutive-tick debounce. The single-tick rates above sit right at the ~1% design target, and the sustained counts on calm windows are small and explained. Turning the market feature on did not move the false-alarm count on either control window, so the threshold survives the new feature unchanged.
 
 ## Honest limits
 
-- Lead times are in-sample: the threshold is calibrated and measured on the same four episodes, so these are four worked examples, not a validated general lead. The held-out part is the calm false-alarm rate and the out-of-sample synthetic floor.
-- The backtest is on 1-minute bars; the live agent ticks every few seconds. A 1-second backtest is a possible refinement (spot 1s history goes back to about May 2022).
-- The two depth features are live-only; with no free historical L2 depth, the reported backtest is the four-feature model.
-- Scope is the oracle/price-anomaly class only. Not key or governance compromise, logic bugs, or credit quality.
+These are the dents. They are reported, not smoothed.
+
+- Oct 10 and Aug 5 are coincident catches, not early warning. Both moves were near-vertical; the score single-ticks to 99 at crash onset, but noisy 1-minute SUI bars delay the first two-in-a-row, so the lead is slightly negative. The early-warning story is the slower episodes, Feb 2–3 (+320) and USDC (+379), not these two.
+- `mktvol` is never the top per-feature contributor in any systemic event (0–7%); raw divergence and dispersion magnitude swamp it. Its systemic role shows up as the liquidity-group sub-distance and the `borrow_cap` that group produces, not as an mktvol-led score. The systemic-vs-idiosyncratic split is real at the group and parameter level. Do not claim `mktvol` tops the contribution bars.
+- The USDC calm window overlaps the start of SVB instability on Mar 10, which inflates its calm sustained count to 10. Some of those are arguably early true detections. It is reported as is: trimming the window earlier breaks the clean idiosyncratic result, so it was left intact.
+- SUI is intrinsically volatile, with 3–5% daily 1-minute ranges even on quiet days, so a perfectly zero out-of-sample calm count is not realistic on a SUI target. The Aug-2025 residual 2 is SUI's own noise, not market-driven.
+- Lead times are in-sample case studies, calibrated and measured on the same episodes. The held-out parts are the calm false-alarm rate and the synthetic floor.
+- Grid is 1-minute bars; the live agent ticks every few seconds. Depth features (`imb`, `spread`) are live-only and not in this historical run.
 
 ## Reproduce
 
