@@ -1,0 +1,13 @@
+{
+  "name": "@seawall/agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@mysten/sui": "^1.45.2",
+    "@pythnetwork/pyth-sui-js": "3.0.0",
+    "@seawall/model": "workspace:*",
+    "@seawall/shared": "workspace:*"
+  }
+}
