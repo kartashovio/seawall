@@ -14,6 +14,8 @@ export interface ScoreResult {
   score: number; // 0-100
   d2: number; // squared Mahalanobis distance
   contributions: Record<string, number>; // each feature's share of d2
+  // per-component marginal d2 (solvency vs liquidity), drives the two params
+  groupD2: Record<string, number>;
 }
 
 // What the agent asks the contract to set. Tighten-only; the contract clamps it

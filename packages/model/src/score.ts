@@ -28,10 +28,20 @@ export function scoreToFraction(score: number): number {
   return (raw(score) - hi) / (lo - hi);
 }
 
-// Tighten-only parameter targets. The agent sends these; the contract clamps
-// them to [floor, baseline] and only accepts moves toward floor.
-export function scoreToParams(score: number): { maxLtv: number; borrowCap: number } {
-  const f = scoreToFraction(score);
-  const lerp = (c: { floor: number; baseline: number }) => c.floor + f * (c.baseline - c.floor);
-  return { maxLtv: lerp(MAX_LTV), borrowCap: lerp(BORROW_CAP) };
+// One tighten-only parameter target from one (calibrated) score and its corridor.
+export function paramFromScore(score: number, corridor: { floor: number; baseline: number }): number {
+  return corridor.floor + scoreToFraction(score) * (corridor.baseline - corridor.floor);
+}
+
+// Tighten-only parameter targets. With one overall score both params move
+// together; pass two component scores to drive them independently
+// (max_ltv from solvency risk, borrow_cap from liquidity risk).
+export function scoreToParams(
+  score: number,
+  liquidityScore = score,
+): { maxLtv: number; borrowCap: number } {
+  return {
+    maxLtv: paramFromScore(score, MAX_LTV),
+    borrowCap: paramFromScore(liquidityScore, BORROW_CAP),
+  };
 }

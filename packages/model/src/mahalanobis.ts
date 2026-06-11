@@ -31,3 +31,14 @@ export function mahalanobis(cov: number[][], diff: number[]): MahalanobisResult 
   const contributions = diff.map((d, i) => d * z[i]);
   return { d2, z, contributions };
 }
+
+// Marginal squared distance over a subset of features. Uses the corresponding
+// sub-block of the covariance (the marginal of a Gaussian), so it measures how
+// anomalous just those features are on their own. Lets us score risk
+// "components" (e.g. oracle divergence vs liquidity) separately from one model.
+export function subDistance(cov: number[][], diff: number[], indices: number[]): number {
+  if (indices.length === 0) return 0;
+  const sub = indices.map((i) => diff[i]);
+  const subCov = indices.map((i) => indices.map((j) => cov[i][j]));
+  return mahalanobis(subCov, sub).d2;
+}
