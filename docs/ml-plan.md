@@ -89,8 +89,6 @@ Lead config (B): Binance futures mark/index/last 1m klines for BTCUSDT plus alt 
 
 Secondary headline (A): Binance `USDEUSDT` spot vs $1.00 fair value, window 21:36–22:16 UTC, Binance's own stated USDe/wBETH/BNSOL dislocation. `div = (1 − p_USDe)/1`. Expect `div` to be the lead signal, near-instant. USDEUSDT listed ~Sep 2025, so there's only about a month of pre-crash baseline. Disclose that and warm the EWMA covariance on BTC/ETH/SOL long history, using USDe only for the divergence dimension. Per-venue lows are re-derived from the downloaded data, not asserted: the earlier "Bybit ~$0.92" figure is dropped because contemporaneous reporting puts non-Binance slips in the single-digit percent range and the deep ~$0.65 print was Binance-only.
 
-A note on how to describe Oct 10. It was a venue-isolated oracle dislocation: Binance used its own thin orderbook as the price while Curve and redemptions held. Don't call it a USDe depeg or collapse (Ethena's founder is on record that it did not depeg), and don't claim it "would have prevented the crash." The accurate statement is that the model flagged the USDe/wBETH/BNSOL collateral mispricing in its early minutes and would refuse to mark collateral down on a single divergent venue. The macro tariff selloff is real news, not an oracle anomaly. The "$19B largest ever" figure is CoinGlass-sourced and contested, so say "largest recorded/tracked."
-
 Cross-validation cases:
 
 - USDC depeg, Mar 11 2023 (~02:00 UTC, bottomed ~$0.87): a fast, clean single-asset divergence with a crisp recovery, good for clean latency and a clean FP baseline. Binance `USDCUSDT` spot. No Pyth conf (pre-Oct-2023), so price comes from Binance klines only.
@@ -112,115 +110,20 @@ Threshold sweep: sweep τ from 50 to 99 and plot (lead-time plus synthetic-detec
 
 State it plainly in the writeup: calibrated on these 3 historical episodes; lead times are in-sample; false-alarm rate and synthetic detection-rate are on held-out calm months.
 
-## Repo layout and deps
-
-pnpm monorepo. The v1/v2 split matters. The agent package stays on `@mysten/sui` v1 (pyth-sui-js@3.0.0 needs it), while the DeepBook-v3 SDK and dashboard live on v2 in separate packages. A peer-dep warning when installing them alongside v1 is expected and fine. The ML core has no Sui dep at all, so `packages/model` is importable by the v1 agent and the backtest harness without dragging SDK versions in. Current repo state: Node 24.16.0, pnpm 11.5.2, agent already on `@mysten/sui@^1.45.2` plus `pyth-sui-js@3.0.0`.
-
-```
-seawall/                             (repo root)
-├─ README.md  ·  Architecture_ru.md
-├─ pnpm-workspace.yaml               # packages: ["packages/*"]
-├─ packages/
-│  ├─ model/                         # pure TS, zero deps, the ML core, no Sui
-│  │  ├─ src/
-│  │  │  ├─ ewma.ts                  # EWMA mean+cov recurrences
-│  │  │  ├─ linalg.ts                # Cholesky solve + matrix helpers
-│  │  │  ├─ chisq.ts                 # gammp / regularized incomplete gamma
-│  │  │  ├─ mahalanobis.ts           # d² + per-feature contribution
-│  │  │  ├─ score.ts                 # χ²-CDF + empirical-percentile calibration; logistic dead-band map
-│  │  │  ├─ align.ts                 # canonical-grid as-of join + max-staleness
-│  │  │  ├─ features.ts              # x_t assembly from aligned inputs (the one shared path)
-│  │  │  └─ index.ts
-│  │  └─ test/*.test.ts              # unit tests (div==0, contribution-sum, monotone map, cross-source epoch-ms)
-│  ├─ shared/                        # pure TS types + constants, no deps
-│  │  └─ src/
-│  │     ├─ constants.ts             # λ, λ_c, δ, ε, s_lo, s_hi, s_mid, γ, corridors, τ, gauge bands (single source)
-│  │     ├─ feeds.ts                 # both named feed ids, pool ids
-│  │     └─ types.ts                 # FeatureVector, ParamRequest, RiskEvent
-│  ├─ agent/                         # @mysten/sui v1 + pyth-sui-js, runtime + backtest driver
-│  │  ├─ src/
-│  │  │  ├─ sources/
-│  │  │  │  ├─ cex.ts                # hand-rolled keyless fetch: Coinbase/OKX/Bybit (live + backtest)
-│  │  │  │  ├─ binanceArchive.ts     # data.binance.vision zip loader (per-source epoch-ms normalizer)
-│  │  │  │  ├─ pyth.ts               # hermes-beta live (beta id) + Benchmarks historical conf (mainnet id)
-│  │  │  │  └─ depth.ts              # live DeepBook L2 + CEX /depth (live only)
-│  │  │  ├─ tick.ts                  # live loop: gather → align → features → model → ParamRequest → PTB
-│  │  │  ├─ backtest.ts              # replay loop over cached data → scores + metrics
-│  │  │  └─ metrics.ts               # lead-time, FP/day, synthetic-injection, ROC sweep
-│  │  └─ package.json                # @mysten/sui ^1.45.2, pyth-sui-js 3.0.0
-│  └─ dashboard/                     # later: Vite SPA on @mysten/dapp-kit v2, out of scope here
-├─ data/                             # cache dir (gitignored except README + checksum manifest)
-│  ├─ binance/  cex/  pyth/          # downloaded zips / json caches
-│  └─ events.json                    # the marked event windows (start/end UTC), not labels
-└─ docs/ml-plan.md                   # this document
-```
-
-Deps: `packages/model` and `packages/shared` have zero runtime deps (TS plus vitest in dev). `packages/agent` keeps `@mysten/sui@^1.45.2` and `@pythnetwork/pyth-sui-js@3.0.0`, and adds `unzipper` or `adm-zip` to read Binance zips plus `csv-parse` (or hand-split, the CSV has no header). Node-native `fetch` for the REST calls. No ccxt. No onnxruntime-node, Python, or IsolationForest in v1. Root dev deps: `typescript`, `vitest`, `tsx`.
-
-Fetch scripts, in order:
-
-1. `binanceArchive.ts`: download and cache zips from `data.binance.vision`. Functions `fetchSpot1s(sym,date)`, `fetchFutMarkIndexLast(sym,date)`, `fetchBookDepth(sym,date)`. The per-source epoch-ms normalizer is the tricky part: spot-1s openTime is 16-digit microseconds in 2025, so divide by 1000, while bookDepth timestamps are second-resolution wall-clock strings (`'2025-10-10 00:00:07'`), so `Date.parse(...+'Z')`. URLs: `data/spot/daily/klines/{SYM}/1s/{SYM}-1s-{DATE}.zip`, `data/futures/um/daily/{markPriceKlines|indexPriceKlines|klines}/{SYM}/1m/…`, `data/futures/um/daily/bookDepth/{SYM}/{SYM}-bookDepth-{DATE}.zip`. Verify the `.CHECKSUM` sibling.
-2. `cex.ts`: hand-rolled keyless fetch. Coinbase `/candles` (epoch-seconds, ×1000, returns descending so reverse), OKX `/market/history-candles` (epoch-ms strings, 300/req, paging), Bybit `/v5/market/kline` (epoch-ms strings, descending so reverse). Write the since+limit paging loop before the Config-B/Config-A runs. One path for live and backtest.
-3. `pyth.ts`: historical, loop `GET benchmarks…/v1/updates/price/{ts}/60?ids=0x{MAINNET}&parsed=true` (returns a list, iterate `item.parsed[0].price`); OHLC via the TradingView shim. Live, `hermes-beta /v2/updates/price/latest?ids[]={BETA}` (bracket syntax, even-length hex).
-4. `align.ts` + `backtest.ts`: load cache, `align.ts` normalizes every source to epoch-ms, sorts ascending, as-of-joins onto the canonical grid, `features.ts` builds `x_t` (k=4 reported path), stream through the detector to per-tick scores and contributions, then `metrics.ts`.
-
-## Timeline (2 working days)
-
-Honest total is two days. Day 2 is required deliverables, not slack. Live Tier-2 depth wiring is out of this plan entirely; it belongs to the live-agent/dashboard build, depends on the running agent and DeepBook IDs, and doesn't bear on the ML core or backtest.
-
-Day 1, model plus data plus backtest, about 8 effective hours:
-
-- H0–0.5, scaffold and alignment contract. `pnpm-workspace.yaml`; `packages/model`, `shared`, wire `agent`; `constants.ts` with every param (λ=0.97, λ_c=0.94, δ=0.15, ε=1e-9, s_lo=60, s_hi=95, s_mid=80, γ=0.15, corridors, τ, gauge bands) plus both named feed ids. Pin the alignment contract: canonical grid 1s on Oct-10 windows and 1m elsewhere; as-of/forward-fill with explicit max-staleness, dropping a venue's dispersion contribution if its last print is more than Ns stale rather than forward-filling a dead venue into a fake-tight cluster; open-vs-close convention decided once. `data/.gitignore`. Spend ≤20 min testing the stETH free-source; if it doesn't pin, demote stETH.
-- H0.5–3, model core (pure TS, the half-day that matters most). `ewma.ts`, `linalg.ts`, `chisq.ts`, `mahalanobis.ts` (assert `Σc_i == d²`), `score.ts`. TDD against known-d² fixtures, `gammp` vs a table, `div==0` on equal prices, the contribution-sum identity, the monotone tighten-only map, and a cross-source epoch-ms alignment test (a known wall-clock minute maps to the same epoch-ms across all five adapters). Network-free.
-- H3–5, data adapters, download everything first. `binanceArchive.ts` (µs and string-ts normalizers plus checksum), `cex.ts` (3-venue hand-rolled, paging loop written here), `pyth.ts` (Benchmarks mainnet id plus shim). Pull all needed historical data to `data/` in one early pass before writing the backtest loop, so an endpoint hiccup later can't stall the run. Smoke all three CEX venues to Oct 10 in the first 20 minutes so a paging surprise surfaces early.
-- H5–7, backtest harness and Oct 10. `align.ts`, `features.ts` (k=4 reported path), `backtest.ts`, `metrics.ts`. Run Config B (mark/index alt perps, 20:50–21:30), the lead, then Config A (USDe spot, 21:36–22:16). Re-derive SUI conf-width from the fetched SUI series (mainnet id) to replace the unverified table numbers. Confirm early-fire plus contribution bars.
-- H7–8, secondary cases, ROC, calibration. USDC-Mar-2023 (plus stETH if pinned), then the synthetic-injection sweep, then empirical-CDF calibration on the calm month, then a τ sweep 50→99 to the knee, then lock τ into `constants.ts`. Dump lead-time, FP/day, the synthetic-detection curve, and ROC to `data/backtest-report.json`.
-
-Day 2, deliverables plus slack: METHODOLOGY.md, the synthetic Scene-2 joint-anomaly trace and chart, the one-command `pnpm backtest` entry plus checksum manifest, and slack for the known edge cases (µs/string timestamps, OKX/Coinbase/Bybit paging and descending order, Cholesky PD).
-
-Download volume is bounded. Oct-10 1s spot for ~6 symbols (~2.8 MB/zip each) plus futures mark/index 1m (tiny) plus USDC-Mar-2023 1s plus one calm month at 1m per asset (not 1s) keeps the total well under a GB and parse time in seconds.
-
-## Deliverables
-
-METHODOLOGY.md outline:
-
-1. Problem and scope: oracle/price-anomaly class only, not key/governance/logic-bug/credit. One line noting that human override / DAO-unfreeze is contract-side (a `&GovernanceCap`-gated fn), out of this ML plan's scope.
-2. Feature vector: the 6 named features, each with formula, units, source, and Tier-1/Tier-2 backtestability. The depth caveat stated plainly. Pin the exact feed id per asset per source.
-3. Model: EWMA mean+cov (λ, λ_c), shrinkage (δ, fixed LW-style), Mahalanobis d², χ²-CDF→0-100 plus empirical calibration, per-feature contribution. A prior-art box naming Kritzman-Li and RiskMetrics, with novelty claimed only on application plus on-chain enforcement.
-4. Score as empirically-calibrated probability: score=p means more extreme than p% of calm-market configs (χ²(k) nominal reference, empirical-percentile calibrated); gauge bands are percentiles, not arbitrary dials.
-5. Tighten-only mapping: score→{max_ltv, borrow_cap}, the corridor, the double ratchet, why liq_buffer is excluded.
-6. Validation: the 3 events, the label-free protocol, the measured error rate as latency plus FP/day plus the synthetic-injection curve (with the no-recall-by-design point stated), and the in-sample/held-out disclosure.
-7. Honest caveats: the risk list below, including the two-feed-id (live-beta vs backtest-mainnet) caveat.
-8. Reproduce: exact `data.binance.vision` URLs plus raw CEX calls, with `events.json`, a checksum manifest, and a single `pnpm backtest` entry so a judge re-runs the whole error-rate report in minutes.
-
-When writing the methodology, describe the contract as a contract-only FREEZE on top of the 3-layer design. The agent does not modulate the freeze threshold.
-
-Backtest report shape (`data/backtest-report.json` plus rendered table/charts): per event, the window (UTC), `t_visible`, `t_firstAlert`, lead-time (s), peak score, and top-3 contributing features at first alert; per calm month, FP episodes/day at τ; the synthetic detection-rate-vs-magnitude curve; the ROC (lead/detection-rate vs FP/day across τ=50→99) with the knee marked; one time-series chart per event (price plus feature z-scores plus the 0–100 score, with vertical lines at `t_firstAlert` and `t_visible`); plus a separate depth directional-sanity annex chart, clearly labeled as a coarse proxy outside the reported model.
-
-Scene-2 joint-anomaly demo beat: replay a slow/episodic divergence (the synthetic slow-drift is canonical; stETH-Curve only if its free source pinned). Show the dashboard with every univariate z-score visibly below its single-feature threshold (no individual `if` would fire), yet the Mahalanobis score climbs past τ because the joint configuration (divergence rising while dispersion widens while vol accelerates, a combination the calm covariance says shouldn't co-occur) is improbable. The per-feature contribution bars show no single feature dominating (interaction plus a negative correlation-surprise term). This is the clearest proof the model does real work on CAUTION rather than running a hidden threshold.
-
 ## Risks and caveats
 
 1. Order-book depth history isn't freely available, so `imb`/`spread` are live-only. They run live (real DeepBook on-chain plus real CEX `/depth`) in the demo at full 6-D. The reported historical backtest is k=4 Tier-1. The bookDepth/spread proxy appears only as a separate directional-sanity annex (±band notional, 30s, a different venue and instrument than on-chain DeepBook; it shows the sign of depth deterioration, not the same estimator). Never imply you backtested real L2 DeepBook depth, and never fold the proxy into the reported feature slot. Tier 1 carries every historical detection.
 
 2. Prior-art honesty. Name Kritzman-Li and RiskMetrics; claim novelty only on application plus on-chain enforcement. Never "novel ML." Shrinkage is "Ledoit-Wolf-style, δ fixed," a constant ridge, not data-driven LW.
 
-3. Oct-10 narration. Say "venue-isolated oracle dislocation," never "USDe depegged/collapsed." Say "flagged the collateral mispricing early and refused to act on one divergent venue," never "would have prevented the crash." Say "$19B largest recorded/tracked" (CoinGlass-sourced, contested). Per-venue lows are re-derived from downloaded data, never asserted; the "$0.92 Bybit" specific is dropped, the deep ~$0.65 print was Binance-only, other venues single-digit percent.
+3. The USDe calibration window is short, about a month pre-crash. Disclose it; warm the EWMA covariance on BTC/ETH/SOL long history and use USDe only for the divergence dimension.
 
-4. The USDe calibration window is short, about a month pre-crash. Disclose it; warm the EWMA covariance on BTC/ETH/SOL long history and use USDe only for the divergence dimension.
+4. Pyth signed-with-conf history starts ~Oct-11-2023 (Sep-29-2023 returns 404), so LUNA-2022 and USDC-Mar-2023 can't use Pyth conf; use Binance klines for price and scope conf to the Oct-10 headline. stETH's cleanest source is the on-chain Curve ratio (free source not yet pinned, demoted if not found). Oracle staleness `conf`/age is a live-only / proxied feature: Benchmarks is ~1 Hz resampled, so the `prev_publish_time` gap is always ~1s and doesn't reflect real on-chain staleness, same discipline as the depth caveat.
 
-5. Pyth signed-with-conf history starts ~Oct-11-2023 (Sep-29-2023 returns 404), so LUNA-2022 and USDC-Mar-2023 can't use Pyth conf; use Binance klines for price and scope conf to the Oct-10 headline. stETH's cleanest source is the on-chain Curve ratio (free source not yet pinned, demoted if not found). Oracle staleness `conf`/age is a live-only / proxied feature: Benchmarks is ~1 Hz resampled, so the `prev_publish_time` gap is always ~1s and doesn't reflect real on-chain staleness, same discipline as the depth caveat.
+5. In-sample tuning: τ/λ/δ are tuned on the same 3 events they're measured on. Disclose "lead times in-sample; FP rate and synthetic detection-rate on held-out calm months." The result is genuinely good, so the disclosure costs nothing.
 
-6. In-sample tuning: τ/λ/δ are tuned on the same 3 events they're measured on. Disclose "lead times in-sample; FP rate and synthetic detection-rate on held-out calm months." The result is genuinely good, so the disclosure costs nothing.
+6. IsolationForest → ONNX → onnxruntime-node is skipped for v1. It breaks the pure-TS, unsupervised, no-training-set, reproducible-from-free-data story, adds a Python plus native-dep toolchain and a shipped artifact, and adds nothing to the must-haves (the empirically-calibrated χ²-CDF score is better-defined than an IsolationForest's arbitrary score). Keep it as a one-paragraph future-work toggle. If asked whether there's a supervised component, the better answer is "deliberately no, unsupervised-by-design generalizes to novel anomaly types, and the Oct-10-2025 catch post-dates any plausible training cutoff."
 
-7. IsolationForest → ONNX → onnxruntime-node is skipped for v1. It breaks the pure-TS, unsupervised, no-training-set, reproducible-from-free-data story, adds a Python plus native-dep toolchain and a shipped artifact, and adds nothing to the must-haves (the empirically-calibrated χ²-CDF score is better-defined than an IsolationForest's arbitrary score). Keep it as a one-paragraph future-work toggle. If asked whether there's a supervised component, the better answer is "deliberately no, unsupervised-by-design generalizes to novel anomaly types, and the Oct-10-2025 catch post-dates any plausible training cutoff."
+7. Operational data watch-outs. Binance.com live REST geo-blocks the US (451), so the backtest uses the static archive (no geo-block). Per-source timestamp encodings differ, so normalize all to epoch-ms at ingest: spot-1s µs ÷1000; bookDepth wall-clock strings via `Date.parse(...+'Z')`; OKX/Bybit ms strings; Coinbase epoch-seconds ×1000; Coinbase and Bybit return newest-first, so reverse. OKX deep history needs `history-candles` (not `/candles`) at 300/req; Coinbase is ~300/req; both need paging for the full window plus warm-up. Kraken REST is unusable (720-candle wall). Pyth/Hermes require an API key after July 31 2026 (fine for the June-21 submit and the July 20–21 Demo Day; note it in the README). Live Tier-2 depth reads ids live from the SDK `utils/constants.ts`, never frozen.
 
-8. Operational data watch-outs. Binance.com live REST geo-blocks the US (451), so the backtest uses the static archive (no geo-block). Per-source timestamp encodings differ, so normalize all to epoch-ms at ingest: spot-1s µs ÷1000; bookDepth wall-clock strings via `Date.parse(...+'Z')`; OKX/Bybit ms strings; Coinbase epoch-seconds ×1000; Coinbase and Bybit return newest-first, so reverse. OKX deep history needs `history-candles` (not `/candles`) at 300/req; Coinbase is ~300/req; both need paging for the full window plus warm-up. Kraken REST is unusable (720-candle wall). Pyth/Hermes require an API key after July 31 2026 (fine for the June-21 submit and the July 20–21 Demo Day; note it in the README). Live Tier-2 depth reads ids live from the SDK `utils/constants.ts`, never frozen.
-
-9. The SUI conf-width figures from the earlier draft (0.073% → 1.75%/5.09%) were not verified from fetched data; the only Benchmarks data in-repo is BTC. The mechanism is verified (1s signed price+conf, conf populated, reaching Oct 2025, and the SUI live feed confirmed reachable), but the SUI conf-width numbers are re-pulled and re-derived during H5–7 against the mainnet id, then either reproduced exactly or the claim downgraded.
-
-## Confidence
-
-High, around 8.5/10, that the core is doable in two days, fully free, keyless, and label-free. The core here means the k=4 Tier-1 EWMA-Mahalanobis detector plus Oct 10 plus at least one secondary plus the measured-error-rate report. Every source it depends on was confirmed reachable for Oct-10-2025 (the S1 archive, Benchmarks mainnet, all three CEX venues, hermes-beta live), the math is ~150 LOC of network-free pure TS that test-drives fast, and the no-label design holds (event windows are for measuring latency and FP, never for training). Day 1 is tight but real for model plus data plus backtest; day 2 is the required deliverables.
-
-The biggest residual risk is cross-venue time alignment and data-wrangling overrun on Day 1, H3–7. Four-plus timestamp encodings, two descending-order feeds, two venues needing paged requests, and an as-of join whose max-staleness rule directly drives the calm-period covariance and therefore the headline FP number. If alignment is sloppy, the FP metric degrades silently without throwing, which is what makes it the top risk. It's mitigated by pinning it as the first block, downloading everything first, a cross-source epoch-ms unit test, and a 1m calm baseline to bound volume, but it's the one place an under-budgeted hour cascades into the Day-2 deliverables. Secondary residual: the stETH Scene-2 case has no confirmed free historical Curve-ratio source, handled by demoting to the synthetic slow-drift trace if it doesn't pin in the first hour.
+8. The SUI conf-width figures from the earlier draft (0.073% → 1.75%/5.09%) were not verified from fetched data; the only Benchmarks data in-repo is BTC. The mechanism is verified (1s signed price+conf, conf populated, reaching Oct 2025, and the SUI live feed confirmed reachable), but the SUI conf-width numbers are re-pulled and re-derived during H5–7 against the mainnet id, then either reproduced exactly or the claim downgraded.
