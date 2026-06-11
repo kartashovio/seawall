@@ -1,71 +1,71 @@
-# ML-модель риска
+# Risk model
 
-Оффчейн-агент на TypeScript. Тикает раз в несколько секунд, считает, насколько рынок аномален, и шлёт в контракт запрос «сделать строже». Без обучения, без разметки.
+Off-chain TypeScript agent. Ticks every few seconds, scores how anomalous the market looks, and sends the contract a "tighten" request. No training, no labels.
 
-## Вход / выход
+## Input / output
 
-- Вход: рыночные данные из нескольких бесплатных источников.
-- Выход: risk score 0–100 (для дашборда) + max_ltv % + borrow_cap %.
-- score — только для показа, не на пути решения. max_ltv / borrow_cap контракт клампит и принимает только в сторону «строже».
+- Input: market data from a few free sources.
+- Output: risk score 0–100 (for the dashboard) + max_ltv % + borrow_cap %.
+- The score is display-only, off the decision path. max_ltv / borrow_cap are clamped by the contract and only ever applied in the safer direction.
 
-## Источники (всё бесплатно, без ключей)
+## Sources (all free, no keys)
 
-| | Источник | Что даёт | Роль |
-|-|----------|----------|------|
-| S1 | data.binance.vision (архив) | klines spot 1s, futures mark/index/last 1m, bookDepth | бэктест |
-| S2 | Pyth Benchmarks | цена + confidence (mainnet feed) | бэктест |
-| S3 | Coinbase / OKX / Bybit 1m | цена по разным биржам | live + бэктест |
-| S4 | Binance /depth + DeepBook (onchain) | глубина стакана | только live |
-| S5 | hermes-beta | live SUI/USD, его читает контракт | live |
+| | Source | What it gives | Role |
+|-|--------|---------------|------|
+| S1 | data.binance.vision (archive) | klines spot 1s, futures mark/index/last 1m, bookDepth | backtest |
+| S2 | Pyth Benchmarks | price + confidence (mainnet feed) | backtest |
+| S3 | Coinbase / OKX / Bybit 1m | price across venues | live + backtest |
+| S4 | Binance /depth + DeepBook (on-chain) | order-book depth | live only |
+| S5 | hermes-beta | live SUI/USD, the feed the contract reads | live |
 
-Два разных feed id SUI/USD: beta (live) и mainnet (бэктест), это разные feed'ы. Резолвим из SDK на старте, хексы в `packages/shared/src/feeds.ts`.
+Two different SUI/USD feed ids: beta (live) and mainnet (backtest); they are separate feeds. Resolve from the SDK at startup; the hex sits in `packages/shared/src/feeds.ts`.
 
-Историческую глубину стакана бесплатно не достать, поэтому глубина живёт только в live.
+Historical order-book depth isn't available for free, so depth is live-only.
 
-## Фичи (6)
+## Features (6)
 
-- `disp` — разброс цены между биржами (bps)
-- `div` — расхождение oracle и рынка (bps)
-- `divvel` — скорость расхождения
-- `volvel` — скорость роста волатильности (загорается первой на крахе)
-- `imb` — имбаланс глубины, [-1, 1] (только live)
-- `spread` — спред (bps, только live)
+- `disp` — price dispersion across venues (bps)
+- `div` — oracle vs market divergence (bps)
+- `divvel` — divergence velocity
+- `volvel` — volatility velocity (fires first in a crash)
+- `imb` — depth imbalance, [-1, 1] (live only)
+- `spread` — spread (bps, live only)
 
-Бэктест считается на первых четырёх. Глубина (`imb`, `spread`) есть только в live; в бэктесте идёт отдельным sanity-графиком, не частью модели.
+The backtest runs on the first four. Depth (`imb`, `spread`) only exists live; in the backtest it's a separate sanity chart, not part of the model.
 
-## Модель
+## Model
 
-- EWMA: среднее λ=0.97, ковариация λ_c=0.94, ridge δ=0.15.
-- Дистанция Махаланобиса d² → χ²-CDF → 0–100.
-- Вклад по фичам: `c_i = (x_i − μ_i)·z_i`, `Σ c_i = d²`. Видно, что именно подняло score.
-- Это индекс турбулентности Кричмена-Ли (ковариация — RiskMetrics). Новое — применение, не математика.
+- EWMA: mean λ=0.97, covariance λ_c=0.94, ridge δ=0.15.
+- Mahalanobis distance d² → χ²-CDF → 0–100.
+- Per-feature contribution: `c_i = (x_i − μ_i)·z_i`, `Σ c_i = d²`. Shows what drove the score.
+- This is the Kritzman-Li turbulence index (covariance is RiskMetrics). What's new is the application, not the math.
 
-score → доля коридора `f ∈ [0,1]` → max_ltv / borrow_cap:
+score → corridor fraction `f ∈ [0,1]` → max_ltv / borrow_cap:
 
-- score < 60 → не трогаем
-- 60–95 → логистика (s_mid=80, γ=0.15)
-- score > 95 → пол коридора
+- score < 60 → leave it
+- 60–95 → logistic (s_mid=80, γ=0.15)
+- score > 95 → corridor floor
 
-Коридор `[floor, baseline]` задаёт DAO/протокол. Агент двигает только к floor. `liq_buffer` не трогаем (ретроактивно, может вызвать ликвидации).
+The corridor `[floor, baseline]` is set by the DAO/protocol. The agent only moves toward floor. `liq_buffer` is left alone (retroactive, could trigger liquidations).
 
-## Бэктест (без разметки)
+## Backtest (no labels)
 
-Размечаем только окна известных событий, и только чтобы замерить latency/FP, не для обучения.
+Mark only the windows of known events, and only to measure latency/FP, not to train.
 
-- 10.10.2025 (главный): Binance futures `mark vs index`, 20:50–21:30 UTC. `volvel` первой, `div`/`divvel` — по мере истончения книг.
-- USDe spot vs $1, 21:36–22:16 — вторично. Это перекос цены на одной бирже, не «депег».
-- USDC мар-2023, stETH июн-2022 (если найдём бесплатный Curve ratio, иначе синтетика).
+- Oct 10 2025 (main): Binance futures `mark vs index`, 20:50–21:30 UTC. `volvel` first, `div`/`divvel` as books thin.
+- USDe spot vs $1, 21:36–22:16 — secondary. A single-venue price dislocation, not a "depeg".
+- USDC Mar 2023, stETH Jun 2022 (if a free Curve ratio turns up, otherwise synthetic).
 
-Метрики:
+Metrics:
 
-- lead time до краха (in-sample, 3 события)
-- ложные срабатывания в день на спокойном месяце (held-out)
-- синтетические инъекции шоков → кривая detection rate
-- sweep τ 50→99, берём колено
+- lead time before the crash (in-sample, 3 events)
+- false alarms per day on a calm month (held-out)
+- synthetic shock injections → detection-rate curve
+- sweep τ 50→99, take the knee
 
-## Риски
+## Risks
 
-- Историческую глубину бесплатно не достать → `imb`/`spread` только live.
-- Прайор-арт называем честно (Кричмен-Ли, RiskMetrics), «новую ML» не заявляем.
-- τ/λ/δ тюним на тех же событиях → latency in-sample, FP на held-out.
-- У источников разные таймстемпы → всё в epoch-ms на входе. Выравнивание бирж по времени — главный технический риск.
+- Historical depth isn't free → `imb`/`spread` are live-only.
+- Name the prior art honestly (Kritzman-Li, RiskMetrics); don't claim "novel ML".
+- τ/λ/δ are tuned on the same events → latency in-sample, FP on held-out.
+- Sources use different timestamps → normalize everything to epoch-ms at ingest. Cross-venue time alignment is the main technical risk.
