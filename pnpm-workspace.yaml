@@ -1,9 +1,9 @@
 packages:
   - "packages/*"
 
-onlyBuiltDependencies:
-  - esbuild
+# esbuild ships its platform binary via an optional dep; allow its postinstall
+# so pnpm stops flagging it as an ignored build.
+allowBuilds:
+  esbuild: true
 
-# esbuild ships its platform binary via an optional dep, so its postinstall is
-# not actually needed; skip pnpm's pre-run deps check that trips on it.
 verifyDepsBeforeRun: false

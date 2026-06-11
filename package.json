@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "pnpm -r test",
+    "test": "vitest run",
     "backtest": "tsx packages/agent/src/backtest.ts"
   },
   "devDependencies": {
