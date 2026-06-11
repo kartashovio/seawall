@@ -7,8 +7,8 @@ A Move policy object re-derives the breach on-chain and is the only thing that
 can actually act, so you never have to trust the agent's number.
 
 See [Architecture_ru.md](./Architecture_ru.md) for the overall design,
-[docs/methodology.md](./docs/methodology.md) for how the risk model works, and
-[docs/backtest.md](./docs/backtest.md) for what it was tested on.
+[docs/ml-methodology.md](./docs/ml-methodology.md) for how the risk model works, and
+[docs/ml-backtest.md](./docs/ml-backtest.md) for what it was tested on.
 [docs/ml-plan.md](./docs/ml-plan.md) is the working build plan.
 
 ## Layout
