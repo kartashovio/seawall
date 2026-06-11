@@ -30,10 +30,10 @@ export class Detector {
   private ewma: Ewma;
   private seen = 0;
 
-  constructor(k: 4 | 6 = 4, warmup = 60) {
+  constructor(k: 4 | 6 = 4, warmup = 60, lambdas?: { mean?: number; cov?: number }) {
     this.k = k;
     this.warmup = warmup;
-    this.ewma = new Ewma(k);
+    this.ewma = new Ewma(k, lambdas?.mean, lambdas?.cov);
   }
 
   update(x: FeatureVector | number[]): ScoreResult {
