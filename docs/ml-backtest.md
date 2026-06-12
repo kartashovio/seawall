@@ -14,12 +14,14 @@ Two definitions used throughout. **Lead** is measured from the first sustained a
 
 ## Results
 
-| Event | Target | Fired | Lead | Driver at alert | Params at alert | Market feature | Calm single / sustained |
+| Event | Target | Fired | Alert lead | Driver at alert | Params at alert | Market feature | Calm single / sustained |
 |---|---|---|---|---|---|---|---|
 | Oct 10 2025 cascade | SUI, BTC market | yes | −17 min (coincident) | liquidity is the durable driver (tie at the alert tick) | max_ltv 55% / borrow_cap 40% | elevated; liquidity pinned 95–100 | 0.98% / 1 |
 | Aug 5 2024 carry unwind | SUI, BTC market | yes | −3 min (coincident) | liquidity (disp 69%) | max_ltv 55% / borrow_cap 40% | elevated, mktvol ~3.6× calm | 1.00% / 0 |
 | Feb 2–3 2025 tariff selloff | SUI, BTC market | yes | +320 min | solvency (divvel 57%, div 40%) | max_ltv 55% / borrow_cap 100% | modest, ~1.5×; borrow_cap tightens later as BTC falls | 1.00% / 0 |
 | Mar 11 2023 USDC de-peg | USDC, BTC market | yes | +379 min | solvency (div 55%, divvel 33%) | LOW (liquidity group 41 vs calm avg 50) | — | 1.01% / 10 |
+
+That "Alert lead" column is the lead of the strict alert, not when protection starts. The parameters move on the gradual map (from a score of 60), so they reach their floor earlier — on Oct 10 the borrow cap was already floored well before the −5% bar, and the slower events floor hours ahead of it. So the two negative leads do not mean the model sat idle. The honest flip side: the parameter map has no debounce, so part of that early flooring is the noisy run-up locking in through the tighten-only ratchet, not foresight. The clean fix for fast and noise-safe timing is a 1-second grid or debouncing the request itself; both are listed as next steps.
 
 ## What the split actually separates
 
