@@ -10,7 +10,7 @@ The model is the EWMA-adaptive multivariate Mahalanobis detector (described in [
 
 The market feature is the new piece. BTC stress raises `mktvol`, which feeds the liquidity group. The point of adding it is discrimination, not raw sensitivity: a systemic selloff drags SUI down with BTC and should pull `borrow_cap` toward its floor, while an asset-specific oracle break with a calm BTC should not. Every window below carries a market-feature-off control to test exactly that.
 
-Two definitions used throughout. **Lead** is measured from the first sustained alert (score ≥ 99 on two consecutive ticks) to the first 1-minute bar that closes ≤ −5% on a trailing-30m basis (−2% for the stablecoin). A negative lead means the sustained alert landed after that bar: coincident, not early. **Calm false-alarm** is reported two ways: the single-tick rate (fraction of calm ticks above threshold, target ~1%) and the count of sustained two-in-a-row episodes on the pre-event calm window.
+Two definitions used throughout. **Lead** is measured from the first sustained alert (score ≥ 99 on two consecutive ticks) to the first 1-minute bar that closes ≤ −5% on a trailing-30m basis (−2% for the stablecoin). A negative lead means the sustained alert landed after that bar: coincident, not early. Note that lead is conservative on purpose: it waits for that strict alert, while the parameters themselves start tightening earlier as the score climbs through the 60–95 map. A negative lead is the metric being late, not the protection. **Calm false-alarm** is reported two ways: the single-tick rate (fraction of calm ticks above threshold, target ~1%) and the count of sustained two-in-a-row episodes on the pre-event calm window.
 
 ## Results
 
@@ -33,7 +33,7 @@ So the honest statement: the split is real and works at the feature level, and `
 
 ## Per event
 
-**Oct 10 2025 cascade.** Fires, but the sustained alert is coincident, not early: lead −17 min. The score single-ticks to 99 right at crash onset, but the move is near-vertical and 1-minute SUI bars are noisy, so the first two-in-a-row sustained alert lags the −5% bar. Liquidity is the durable driver, in a near-tie with solvency at the alert tick. Both parameters pin to their floors and the liquidity group sits at 95–100. Do not pitch this as ahead of the crash.
+**Oct 10 2025 cascade.** Fires, but the sustained alert is coincident, not early: lead −17 min. The score single-ticks to 99 right at crash onset, but the move is near-vertical and 1-minute SUI bars are noisy, so the first two-in-a-row sustained alert lags the −5% bar. Liquidity is the durable driver, in a near-tie with solvency at the alert tick. Both parameters pin to their floors and the liquidity group sits at 95–100. Do not pitch the alert as ahead of the crash. But the protection was not late: the borrow cap was already at its 40% floor by ~20:47, before the −5% bar at 20:59, because the parameters react from a score of 60, not at the 99 alert.
 
 **Aug 5 2024 carry unwind.** Fires, also coincident: lead −3 min, same near-vertical-move story as Oct 10. Liquidity leads at the alert tick (`disp` contributing 69%) with `mktvol` running about 3.6× its calm level, the clearest systemic-market signature in the set. Both parameters pin to their floors.
 

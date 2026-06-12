@@ -82,6 +82,8 @@ The score then maps to a fraction `f ∈ [0,1]` of each corridor, with `target =
 - 60 to 95: a logistic ramp
 - above 95: it sits at the floor
 
+So the parameters start tightening from a score of 60 and are fully tightened by 95. They do not wait for the 99 alert. That alert is just a marker we use to time detection and count false alarms; it is not the gate that moves the parameters.
+
 Corridors are `max_ltv` [55%, 75%] and `borrow_cap` [40%, 100%], set on-chain by the DAO. Each group is calibrated on its own, so the two parameters move independently. The map is tighten-only: it only ever moves toward the floor, and loosening (RELAX) is the contract's job, on a sustained all-clear.
 
 The ratchet is enforced twice. On the model side, `request = min(target_now, last_applied)`, so it never even asks to loosen mid-episode. On the contract side, which is authoritative, the contract clamps to [floor, baseline], rejects any looser-than-current component, and takes `tighter_of(model_target, contract_own_target)`. The 0-100 score rides along only as an advisory event field; the contract acts on the clamped request and its own on-chain re-derivation, never on the number.
