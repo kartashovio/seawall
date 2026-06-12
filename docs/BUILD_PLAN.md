@@ -11,7 +11,7 @@
 | **Jun 12** | Step 0: toolchain doc, v1/v2 split *proven* (install v2, `pnpm why`), guardian Move skeleton compiles, single Constants table (TS+Move) + parity stub. **Bank testnet gas.** |
 | **Jun 13** | Step 1: full `guardian` package — `GuardianPolicy`, `compute_divergence`, `submit`/`poke`/`apply_`, governance fns, events; `sui move build` + unit tests green; **ABI frozen**. |
 | **Jun 14** | Step 2: TS↔Move parity (V0–V4 + boundary vector) + **testnet deploy** + `create_policy` + capture IDs → `config/testnet.json` + same-PTB `poke` devInspect smoke + **live $0.764 anchor**. |
-| **Jun 15** | Step 3: `demo_vault` + inline Layer-1 floor (`borrow` + `withdraw_collateral`); vault floor tests (5 abort codes + calm-path); redeploy. |
+| **Jun 15** | Step 3: `demo_vault` + inline params-less `poke` on `borrow`+`withdraw_collateral` (writes+enforces, D5); vault tests (4 abort codes + calm-path); redeploy. |
 | **Jun 16** | Step 4: `@seawall/agent` live loop — sources, warm-start, calibration, send-on-tighter-OR-5min, same-PTB `submit`, event readback. |
 | **Jun 17** | Step 5: `@seawall/keeper` — params-less `poke` every 5 min, drift-free loop, `readPolicy`; verify on-chain FREEZE + drip-RELAX + `last_check`. |
 | **Jun 18** | Step 6a: dashboard shell + gauge + ModelInternals + ActionLog + GovernancePanel against the live package/agent. |
@@ -30,7 +30,7 @@
 | Off-chain ML agent: score + `max_ltv%`/`borrow_cap%`, send when tighter OR every 5 min, `Liq_buffer не трогаем` | `packages/agent` (Step 4); reuses `packages/model` `Detector` |
 | Off-chain keeper: every 5 min params-less call to compute `div_own`, updates `last_check` | `packages/keeper` (Step 5) → calls `guardian::poke` |
 | On-chain code-package: re-derive `div_own = f(divergence, depth)` w/ coin_decimal; `tighter_of(clamp(agent), clamp(onchain_own))`; instant-tighten/drip-relax | `packages/guardian/sources/{guardian,divergence,constants}.move` (Steps 1–2) |
-| Freeze on `divergence ≥ X%` (contract-only) | `guardian::apply_` Layer-3 (Step 1) |
+| Freeze on `divergence ≥ X%` **OR book-not-ok (one-sided/empty)**, contract-only | `guardian::apply_` (Step 1) |
 | Inline on `borrow`/`withdraw_collateral`, params-less, reject on freeze/params | `packages/guardian/sources/demo_vault.move` (Step 3) |
 | Freeze exit DAO/owner only; DAO changes `[baseline; cap]` | `guardian::governance_unfreeze` / `governance_set_corridor` (`&GovernanceCap`) (Step 1) |
 | Per-protocol isolation, own-policy-only auth | per-protocol `GuardianPolicy` instances, no registry; `cap.policy_id`/`registered_agent` asserts (Step 1) |
@@ -44,13 +44,13 @@
 
 These resolve the tensions the reviews surfaced. **The architecture text wins; every deviation is recorded here.**
 
-**D1 — `div_own = f(divergence, depth)` and "depth ≠ ok → frozen" vs the thin 1-tick testnet book.**
-*Tension:* the spec makes depth a first-class input to both `div_own` and the freeze predicate (line: "иначе если depth DeepBook != ok, is_frozen=true"). But the live SUI_DBUSDC book is ~1 tick/side (de-risk confirmed `bid_p=760000, ask_p=768000`). A naive `Σqty over N ticks < min_depth → freeze` with `TICKS=10` against a 1-tick book reads as "depth not ok" → **freezes permanently** (exactly must-fix #5's landmine).
-*Resolution (architecture-amended, recorded):* **v1 `div_own` = divergence-only** (Pyth↔DeepBook mid via best-bid/ask). **`TICKS = 1`.** The freeze predicate is **`div_own ≥ T` only** — the depth-bad freeze leg is **NOT implemented in v1** because the live book makes any honest `min_depth` either always-true or always-false. **Empty/one-sided book → CAUTION (loss-of-signal), never freeze and never `div=0`** (must-fix #5). This is a deliberate, loud amendment to the spec's depth-freeze leg, justified by data: a depth gate calibrated against a 1-tick book is not honestly implementable on testnet by Jun 21. **Stated in README/pitch as roadmap** ("v1 freezes on oracle↔CLOB divergence; depth-gated freeze is calibrated post-mainnet"). `MIN_DEPTH` and `TICKS=10` are **deleted** from the Constants table. *(Resolves correctness #2, #5-leg; fidelity #5/#6.)*
+**D1 — `depth ≠ ok → freeze`: a STRUCTURAL book-usability check (RE-INSTATED per the builder's clarification).**
+*Clarified by the builder:* "depth ≠ ok" means the book is **one-sided / empty / crashed (unusable)** — NOT "thin." That IS honestly implementable on the 1-tick/side testnet book: a 1-tick **two-sided** book is OK; only a missing/empty side is "not ok."
+*Resolution (architecture-faithful):* `read_divergence` calls `get_level2_ticks_from_mid(1, clock)`; **either side empty/missing ⇒ `signal = BOOK_NOT_OK`**. The freeze predicate is the spec's two legs verbatim: **`div_own ≥ T` OR `signal == BOOK_NOT_OK` ⇒ `is_frozen = true`** (contract-only). NO `MIN_DEPTH` notional threshold (that is the part uncalibratable on a 1-tick book — and is NOT what the spec meant). *(Supersedes the earlier "CAUTION-on-loss-of-signal" softening: per the architecture + the builder, loss of a usable book FREEZES, and only DAO/owner unfreezes.)* Operational note: in the demo keep the injected book two-sided except in the scene that intentionally shows the book-not-ok freeze.
 
 **D2 — One on-chain function "с параметрами либо без" → two entries (`submit` + `poke`).**
 *Tension:* spec says ONE function, optional params. The build froze TWO entries.
-*Resolution:* **`submit` (sender-gated, carries `ParamRequest` + `advisory_score`) and `poke` (permissionless, no params) both delegate to ONE internal `apply_(policy, &DivResult, Option<ParamRequest>, advisory_score, clock)`.** This is a faithful *encoding* of the spec's "optional params" (the spec under-specifies entry count) AND preserves the single re-derivation/clamp code path the auditor judge wants (no second path to drift). `submit` passes `Some(req)`; `poke` passes `None` (→ `apply_` uses `baseline` for the agent term = "выполняем без него"). The params-less-ness of `poke` is now a *type-level* guarantee — strictly more trust-minimized than `Option<None>`. **Audit gate: grep that both entries call the same `apply_` and nothing else mutates state.**
+*Resolution:* **`submit` (sender-gated, carries `ParamRequest` + `advisory_score`) and `poke` (permissionless, no params) both delegate to ONE internal `apply_(policy, &DivResult, Option<ParamRequest>, advisory_score, clock)`.** This is a faithful *encoding* of the spec's "optional params" (the spec under-specifies entry count) AND preserves the single re-derivation/clamp code path the auditor judge wants (no second path to drift). `submit` passes `Some(req)`; `poke` passes `None` (→ `apply_` uses `baseline` for the agent term = "выполняем без него"). The params-less-ness of `poke` is now a *type-level* guarantee — strictly more trust-minimized than `Option<None>`. **`poke(&mut policy, pio, pool, clock): DivResult` — the SINGLE permissionless params-less entry, called BOTH by the keeper (standalone tx, discards the return) AND by the vault's inline `borrow`/`withdraw_collateral` (uses the returned `DivResult.pyth_px` to value collateral). Inline ≡ keeper (D5).** **Audit gate: grep that both entries call the same `apply_` and nothing else mutates state.**
 
 **D3 — Cadences: 5 min (keeper tick + agent heartbeat) vs 10 min (relax).**
 *Resolution (no conflict — distinct timers):* `KEEPER_TICK_MS = AGENT_HEARTBEAT_MS = 300_000` (the loop period, spec's 5 min). `RELAX_COOLDOWN_MS = ALL_CLEAR_WINDOW_MS = 600_000` (spec's 10 min), enforced **on-chain** via `last_relax_ms`/`last_breach_ms`. Two consecutive 5-min ticks → at most one relax step (the second no-ops until cooldown elapses). Setting `all_clear_window == relax_cooldown` collapses the two gates to the spec's single "каждые 10 минут … если нет причин делать строже." The all-clear-window being a *separate* gate is a stricter-than-spec safety addition (slower to relax) — recorded.
@@ -58,15 +58,16 @@ These resolve the tensions the reviews surfaced. **The architecture text wins; e
 **D4 — `last_check` / `last_change`.**
 *Resolution:* `apply_` writes `last_check_ms = now` on **every** call (liveness heartbeat; the dashboard "stale guardian" alarm + the keeper's whole point depend on it) and `last_change_ms = now` **only** when `current` params moved or `paused` flipped (so the dashboard's "last action N min ago" + timeout calc read it). Plus `last_breach_ms`/`last_relax_ms` to drive the relax gate, and a monotone `epoch` for anti-replay/idempotency telemetry. Verbatim to "Помимо last_check необходимо фиксировать last_change."
 
-**D5 — Inline floor "writes results to GuardianPolicy" vs read-only.**
-*Tension:* spec line: the `borrow`/`withdraw_collateral` tx runs the params-less calc and "Результаты записываем в GuardianPolicy и используем." The build makes the inline floor **read-only** on the policy.
-*Resolution (architecture-amended, recorded):* the inline floor takes **`&GuardianPolicy`** (immutable) and *enforces* the last-written `paused`/`current`; it does **NOT** write `is_frozen`. Reason (must-fix #2 spirit): a `&mut` on a *shared* object inside a *permissionless user* `borrow` tx is an authority/contention surface and forces every borrower to serialize on the policy object. The actual freeze-write happens in keeper-driven `poke` / agent `submit`. **Observable safety is identical** because `D_INLINE (3%) < T_FREEZE (5%)`: a divergence that would freeze (≥5%) is already aborted by the inline floor at ≥3%, regardless of whether `paused` has been set yet. So the freeze gate is never the *only* protection between pokes. This is the right engineering call **and** a recorded amendment to the literal "записываем" wording. *(Resolves fidelity #9, correctness #7.)*
+**D5 — Inline call ≡ keeper call: the params-less path that WRITES GuardianPolicy (corrected per the builder).**
+*Clarified by the builder:* the contract has exactly TWO call modes — **with params** (ML agent) and **without params** (used by BOTH the keeper AND the lending vault's inline `borrow`/`withdraw_collateral`). The inline call IS the same params-less call the keeper makes, and it **writes** into GuardianPolicy ("Результаты записываем … и используем").
+*Resolution (architecture-faithful, supersedes the earlier read-only design):* `borrow`/`withdraw_collateral` take **`&mut GuardianPolicy`** and call the shared params-less **`evaluate(&mut policy, pio, pool, clock)`** — byte-identical to the keeper's path → it re-derives divergence in-tx and writes `is_frozen`/`current`/`last_check`/`last_change`. THEN the vault enforces the freshly-written state: abort if `is_frozen`, or if the post-action LTV exceeds the just-written `max_ltv_current`/`borrow_cap_current`. **No separate `D_INLINE` band** — inline ≡ keeper, exactly as the builder said; the loss-preventer is automatic because every borrow runs a FRESH evaluate (independent of keeper liveness). Safe-by-construction: the params-less path is monotone-toward-safe (can only tighten/freeze; relax only on the gated all-clear), so a permissionless/inline caller can't loosen anything — no authority bypass (must-fix #2 still holds: only `&GovernanceCap`-gated fns are off-limits to the public). Accepted tradeoff: `&mut` on the shared policy serializes borrowers via consensus — fine for the demo; the prod optimization is snapshot-then-enforce. **Call model:** `submit(Some(req))` [agent, sender-gated] vs `evaluate(None)` [keeper + inline lending, permissionless] → one shared `apply_`.
 
 **D6 — `liquidate` vs `withdraw_collateral`.**
 *Resolution (architecture-primary):* gate **`borrow` + `withdraw_collateral`** (the spec's two frozen actions). Do **NOT** gate `liquidate` — it is toward-safe, and freezing it would trap bad debt. The old `vault_floor_test` (which referenced `liquidate`) is rewritten for `withdraw_collateral`.
 
-**D7 — The DEFINED `div_own` formula (the spec's "функцию предстоит уточнить").**
-*Resolution — pinned, identical on/off-chain, in `u128 @ 1e9`:*
+**D7 — `div_own = f(divergence, depth)`: depth STAYS (the builder pushed back — correctly).**
+*Depth is NOT dropped.* It enters two ways: (1) **structurally in the freeze leg** (D1: empty/one-sided/crashed → `BOOK_NOT_OK` → `is_frozen`); (2) the **continuous param driver** is the divergence term below. A quantitative depth-severity nudge (thin best-level size / wide spread → tighter params) reads the level2 quantities and is included with a **flagged placeholder threshold for v1** (a real notional-depth severity needs depth history we don't have → conservative now, recalibrate post-mainnet). Net: divergence drives the continuous tighten; depth gates the freeze (exact) and nudges severity (placeholder).
+*The DEFINED formula — pinned, identical on/off-chain, in `u128 @ 1e9`:*
 ```
 pyth_1e9 = mul_div(price_mag, PRICE_SCALE, pow10(expo_mag))     // expo asserted negative; same expo applied to conf
 dbk_1e9  = (base_dec >= quote_dec)                               // coin-decimal factor (must-fix #7, SIGN-CORRECTED)
@@ -74,7 +75,7 @@ dbk_1e9  = (base_dec >= quote_dec)                               // coin-decimal
            : mid_raw / pow10(quote_dec - base_dec)
 mid_raw  = (bid_p[0] + ask_p[0]) / 2                             // ONLY if both sides non-empty
 div_own  = mul_div(diff(pyth_1e9, dbk_1e9), PRICE_SCALE, pyth_1e9)   // |p−d|/p as fraction @1e9
-signal   = (bid empty OR ask empty) ? CAUTION_LOSS : NORMAL      // never div=0 on loss
+signal   = (bid empty OR ask empty) ? BOOK_NOT_OK : NORMAL       // BOOK_NOT_OK ⇒ freeze (D1); div set 0, the freeze leg catches it
 conf_frac= mul_div(conf_1e9, PRICE_SCALE, pyth_1e9)
 ```
 The factor is **`10^(baseDec − quoteDec)`** (the must-fix #7 *literal* `10^(quote−base)` is sign-inverted → a 10⁶ error; **do not "fix" the code to match the literal**). The V0/V1 parity vectors (`dbk_1e9 == 764_000_000` = $0.764) are the guard. `mul_div` rounds down (u256 upcast, matches BigInt floor); operation order is multiply-then-divide on both sides.
@@ -133,12 +134,12 @@ Pinned once in TS (`@seawall/shared`) and Move (`guardian::constants`), bound by
 | `MAX_LTV_BPS` | `{floor:5500, baseline:7500}` | bps (u16) | on-chain corridor (percent×100) |
 | `BORROW_CAP_BPS` | `{floor:4000, baseline:10000}` | bps (u16) | on-chain corridor |
 | `PRICE_SCALE` | `1_000_000_000` | u128 @1e9 | == DeepBook `FLOAT_SCALING` |
-| `D_INLINE` | `30_000_000` | fraction @1e9 (3.0%) | L1 inline-floor abort |
+| ~~`D_INLINE`~~ | — | — | **REMOVED (D5): inline ≡ keeper params-less `evaluate`; no separate inline band** |
 | `D_CAUTION` | `10_000_000` `[CHOSEN]` | fraction @1e9 (1.0%) | L2 CAUTION onset / RELAX gate |
 | `T_FREEZE` ("X%") | `50_000_000` | fraction @1e9 (5.0%) | L3 contract-only FREEZE. **>`D_INLINE` (D5/correctness #7)** |
 | `CONF_FRAC_MAX` | `10_000_000` `[CHOSEN]` | fraction @1e9 (1.0%) | oracle-health / loss-of-signal gate |
 | `MAX_AGE_SECS` | `60` | seconds | Pyth `get_price_no_older_than` (must-fix #7) |
-| `TICKS` | `1` | u64 | `get_level2_ticks_from_mid(1, clock)` — mid only; **depth deferred (D1)** |
+| `TICKS` | `1` | u64 | `get_level2_ticks_from_mid(1, clock)`; **either side empty ⇒ `BOOK_NOT_OK` ⇒ freeze (D1, structural)** |
 | `KEEPER_TICK_MS` | `300_000` | ms (5 min) | keeper loop |
 | `AGENT_HEARTBEAT_MS` | `300_000` | ms (5 min) | agent heartbeat |
 | `RELAX_COOLDOWN_MS` | `600_000` | ms (10 min) | min gap between relax steps (on-chain) |
@@ -151,7 +152,7 @@ Pinned once in TS (`@seawall/shared`) and Move (`guardian::constants`), bound by
 | `SUBMIT_SCORE` | `99` `[CHOSEN]` | score | agent anti-spam throttle (NOT the send condition) |
 | `LAMBDA_MEAN` / `LAMBDA_COV` | `0.99` / `0.99` | — | **single λ pair, used in BOTH live + backtest (minor #11)** |
 
-**DELETED (do not implement in v1):** `MIN_DEPTH`, `TICKS=10`, any `T_FREEZE=30_000_000` (D1, correctness #2/#7).
+**DELETED (do not implement in v1):** `MIN_DEPTH` / any notional-depth threshold (D1: "depth-not-ok" is STRUCTURAL — empty/one-sided side → freeze; a 1-tick **two-sided** book is OK); `D_INLINE` (D5: inline ≡ keeper, no separate band).
 **Feed ids (resolve live, never freeze; assert):** beta SUI/USD = `0x50c67b3fd225db8912a424dd4baed60ffdde625ed2feaaf283724f9608fea266` (hermes-beta, live runtime); mainnet = `0x23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744` (Benchmarks, backtest history only). Each 404s on the other host.
 
 ---
@@ -191,8 +192,8 @@ public struct GuardianPolicy has key {
 **`apply_` body (integers only):**
 ```
 now = clock.timestamp_ms()
-// L3 FREEZE — contract-only, NO agent term, divergence-only (D1):
-if (d.signal == NORMAL && d.div >= threshold_t && !paused) { paused = true; changed = true; emit Frozen{div, cause:0} }
+// FREEZE — contract-only, NO agent term; spec's TWO legs (D1): divergence OR book-not-ok
+if (!paused && (d.div >= threshold_t || d.signal == BOOK_NOT_OK)) { paused = true; changed = true; emit Frozen{div, cause: if (d.signal == BOOK_NOT_OK) 1 else 0} }
 // contract-own tighten (agent-independent), DISCRETE 3-tier over [d_caution, T]:
 contract_target = onchain_own(d.div, d.signal, d_caution, threshold_t, corridors)
 // L2 CAUTION — clamp-and-log, NEVER abort:
@@ -261,39 +262,37 @@ emit RiskEvaluated{ advisory_score, div_own:d.div, signal:d.signal, paused,
 
 ## Step 3 — Demo lending vault + Layer-1 inline floor (`borrow` + `withdraw_collateral`)
 
-**Goal.** `DemoVault<phantom Quote, Base>` + the always-on, agent-independent inline floor: on `borrow`/`withdraw_collateral`, re-derive divergence params-less (same `compute_divergence`), and **abort** (fail-CLOSED) on frozen / loss-of-signal / `div ≥ d_inline` / conf-too-wide / LTV-or-cap violation. Works with a dead agent and dead keeper.
+**Goal.** `DemoVault<phantom Quote, Base>` + the always-on, agent-independent inline path: on `borrow`/`withdraw_collateral`, call the params-less **`poke(&mut policy,…): DivResult`** — the SAME entry the keeper calls (D5); it re-derives divergence in-tx and WRITES `is_frozen`/`current`, then the vault **aborts** (fail-CLOSED) on `is_frozen` (div≥T OR book-not-ok) / LTV-or-cap violation. Works with a dead agent AND a dead keeper (every borrow self-evaluates).
 
 **Sub-tasks.**
 1. **Confirm cross-module surface (HARD DEP — correctness #3/G7):** `guardian.move` exposes `public fun` getters `is_paused`, `max_ltv_current_bps`, `borrow_cap_current_bps`, `feed_id`, `max_age_secs`, `conf_frac_max`; `DivResult.pyth_px_1e9` is public. Add in Step 1 if missing.
 2. **Decide (now):** `borrow_cap` = a second LTV-style bps fraction gate (`assert!(ltv_after ≤ borrow_cap_current_bps)`); debt = **counter-only + emit** (no `Coin<Quote>` mint; `withdraw_collateral` returns real `Coin<Base>`).
 3. **`demo_vault.move`:** `DemoVault<phantom Quote, Base>` (Base **non-phantom** — `Balance<Base>`); `new_vault`/`deposit_collateral` (ungated); private `floor_check` (shared preamble); `borrow` (counter bump + emit); `withdraw_collateral` (`coin::from_balance(balance::split(...))`).
 4. **`collateral_value_in_quote`** uses `DivResult.pyth_px_1e9` (no second Pyth read) + the coin-decimal factor. **Param gate as cross-multiply** (`debt * BPS_DENOM <= cap * coll_value`) to dodge rounding (correctness G9).
-5. **Abort codes:** `EFrozen`, `EInlineFloorBreach`, `ELtvExceeded`, `EBorrowCapExceeded`, `EPolicyMismatch`.
-6. **`vault_floor_test.move`** (rewritten for `withdraw_collateral`, NOT `liquidate`, D6): calm-path success (both hooks) + each of the 5 aborts; use a `#[test_only]` `floor_check` overload taking a pre-built `DivResult` + scalars (tests can't construct `&Pool`/`&PriceInfoObject`).
+5. **Abort codes:** `EFrozen`, `ELtvExceeded`, `EBorrowCapExceeded`, `EPolicyMismatch` (no `EInlineFloorBreach` — freeze is now written by the inline `evaluate` and caught via `is_frozen`, D5).
+6. **`vault_floor_test.move`** (for `withdraw_collateral`, NOT `liquidate`, D6): calm-path success (both hooks) + each abort (`EFrozen` via div≥T AND via book-not-ok, `ELtvExceeded`, `EBorrowCapExceeded`, `EPolicyMismatch`); use a `#[test_only]` `evaluate`/`floor_check` overload taking a pre-built `DivResult` + scalars (tests can't construct `&Pool`/`&PriceInfoObject`).
 7. Redeploy; update `config/testnet.json` with `vaultId`.
 
 **Inline-floor preamble (assert order):**
 ```move
 assert!(object::id(policy) == vault.policy_id, EPolicyMismatch);
-assert!(!guardian::is_paused(policy), EFrozen);
-let d = guardian::read_divergence(pool, pio, clock, guardian::feed_id(policy), guardian::max_age_secs(policy));
-assert!(d.signal == SIGNAL_NORMAL, EInlineFloorBreach);          // loss-of-signal aborts (must-fix #5)
-assert!(d.div_u128_1e9 < D_INLINE, EInlineFloorBreach);          // 3%
-assert!(d.conf_frac_1e9 < CONF_FRAC_MAX, EInlineFloorBreach);
-// cross-multiply param gate vs CURRENT corridor (no division):
+// inline ≡ keeper (D5): run the params-less evaluate — re-derives in-tx and WRITES is_frozen/current/last_check
+let d = guardian::poke(policy, pio, pool, clock);               // &mut GuardianPolicy (== keeper's entry); returns DivResult for valuation
+assert!(!guardian::is_paused(policy), EFrozen);                  // freeze just (re)written: div>=T OR book-not-ok (D1)
+// value collateral with the SAME pyth_px (no 2nd read / no TOCTOU); cross-multiply gate vs the FRESH current corridor:
 assert!(new_debt * BPS_DENOM <= (guardian::max_ltv_current_bps(policy) as u128) * coll_value, ELtvExceeded);
 assert!(new_debt * BPS_DENOM <= (guardian::borrow_cap_current_bps(policy) as u128) * coll_value, EBorrowCapExceeded);
 ```
 
 **Generic-order discipline (correctness #3 — BLOCKER).** `DemoVault<phantom Quote, Base>` → vault `moveCall`s use `typeArguments: [DBUSDC_TYPE, SUI_TYPE]` (Quote, Base). `poke`/`submit`/`read_divergence` are `<Base,Quote>` → `[SUI_TYPE, DBUSDC_TYPE]`. **These orders DIFFER — document loudly in the ABI doc; every caller (deploy script, agent, keeper, dashboard, tests) uses the declared order per function.**
 
-**Frameworks.** `coin::{into_balance,from_balance}`, `balance::{join,split,value}`. `&GuardianPolicy` (immutable — D5/G5). Real `borrow` = same-PTB `updatePriceFeeds` + `moveCall` off-chain.
+**Frameworks.** `coin::{into_balance,from_balance}`, `balance::{join,split,value}`. **`&mut GuardianPolicy`** (inline runs the params-less `poke`, which writes — D5). Real `borrow` = same-PTB `updatePriceFeeds` + `moveCall` off-chain (the inline `poke` needs the fresh `&PriceInfoObject`).
 
 **Files.** CREATE `packages/guardian/sources/demo_vault.move`, `tests/vault_floor_test.move`. EDIT `constants.move` (abort codes), `guardian.move` (getters if missing).
 
-**How it honors the architecture.** Inline on `borrow`+`withdraw_collateral`, params-less, rejects on freeze/params; loss-of-signal fail-CLOSED; freeze restricts only the two harmful actions (`deposit`/`repay` ungated). Read-only on policy (D5) — Layer-1 is the passive seatbelt that protects with a dead agent.
+**How it honors the architecture.** Inline on `borrow`+`withdraw_collateral` runs the **params-less `poke` (== keeper call, D5)**, WRITES results to GuardianPolicy ("записываем … и используем"), then rejects on `is_frozen`/params; book-not-ok freezes (D1) fail-CLOSED; freeze restricts only the two harmful actions (`deposit`/`repay` ungated). Every borrow self-evaluates → protects even with a dead agent AND dead keeper.
 
-**Gotchas.** `phantom` order (G1). Coin-decimal factor + single `pyth_px_1e9` (no TOCTOU, G3/G4). Grep `demo_vault.move`: zero `&mut GuardianPolicy`, zero `pyth::get_price`/`update_single_price_feed`, zero `mid_price`. `borrow` amount = QUOTE minor units; `withdraw` amount = Base minor (MIST) — don't cross (G10).
+**Gotchas.** `phantom` order (G1). Coin-decimal factor + single `pyth_px_1e9` from the inline `evaluate`'s `DivResult` (no 2nd Pyth read / no TOCTOU, G3/G4). Grep `demo_vault.move`: borrow/withdraw call `guardian::poke(&mut policy, …)` exactly once each; zero direct `pyth::get_price`/`update_single_price_feed`, zero `mid_price`. `borrow` amount = QUOTE minor units; `withdraw` amount = Base minor (MIST) — don't cross (G10).
 
 **Acceptance gate.** `sui move build`/`test` green; all 5 abort codes + calm-path covered; grep gates pass; getters confirmed public; redeployed with `vaultId`.
 **Estimate.** ~0.75–1 day.
