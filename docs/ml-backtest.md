@@ -4,11 +4,11 @@ We took four real market crashes and replayed them minute by minute, watching wh
 
 Here's the headline:
 
-> **In all four crashes, the guardian's protective parameters hit their tightest floor *before* the price visibly dropped.**
+> **In all four crashes, the protection the event called for was locked in *before* the price visibly dropped.**
 
-Not after. Not coincident. Before. By the time anyone staring at a price chart would have seen the move, the borrow cap and max-LTV were already clamped down.
+Not after. Not coincident. Before. By the time anyone staring at a price chart would have seen the move, the knob that mattered — leverage, the borrow cap, or both — was already clamped down.
 
-Two of the four are slow-burn events where we were ahead by **hours**. The other two are near-vertical flash crashes — and even there, protection locked in before the drop. (A stricter *detection* marker lands right at the crash on those two. That's an honest caveat, and it sits in the limits section below, not buried.) Every dent is reported.
+Two of the four are slow solvency events where the driving knob floored **hours** before the visible drop. The other two are near-vertical flash crashes — and even there, the protective parameters floored before the drop. One honest caveat on the fast pair: a *stricter detection marker* we track separately (the "alert," score ≥ 99 for two ticks) lands right at the crash, not ahead of it — that's the alert metric being conservative on a vertical move, not protection arriving late. It's spelled out in the limits below, not buried. Every dent is reported.
 
 ## The four crashes, one at a time
 
@@ -18,24 +18,26 @@ The interesting part isn't just *that* the model fired. It's how differently it 
 
 **Aug 5 2024 — the yen carry-trade unwind.** The cleanest systemic signature in the set. Cross-venue dispersion drove 69% of the anomaly and BTC's market-vol ran about 3.6× its calm level — the unmistakable shape of *everything selling off at once.* Both knobs to the floor. Borrow cap floored ~00:18; the −5% bar hit 01:07. On before the drop again.
 
-**Feb 2–3 2025 — the tariff selloff.** A slower grind, and this is where the early warning genuinely shines. At the alert it was *solvency*-led — divergence-velocity 57%, divergence 40%. The price was getting untrustworthy before it got violent, so `max_ltv` floored first; as BTC kept sliding over the following hours, the borrow cap tightened too. Params floored ~10:42; the −5% bar didn't come until 22:40. **Hours ahead.**
+**Feb 2–3 2025 — the tariff selloff.** A slower grind, and where the early warning genuinely shines. The model read it as *solvency*-led — divergence-velocity 57%, divergence 40%: the price was getting untrustworthy faster than it was getting violent. So `max_ltv` carried this one and rode to its floor by ~17:20, while `borrow_cap` stayed near its baseline — at our 1-minute resolution the violent-volatility signal never took over. The −5% bar didn't print until 22:40 — **about 5.3 hours ahead.**
 
 **Mar 11 2023 — the USDC de-peg after SVB.** The one that proves the model is thinking, not just panicking. USDC came off its peg — but a stablecoin off-peg is *mispriced, not crashing.* High divergence, low realized volatility, BTC dead calm. So only `max_ltv` tightened (divergence 55%), riding to its floor, while `borrow_cap` stayed wide open at its 100% baseline.
 
-> A de-peg is a price-correctness problem, not a volatility problem. The model tightened the leverage knob and *left the borrow cap alone* — exactly right. Params floored ~19:09; the −2% bar (a tighter threshold, because it's a stablecoin) came at 03:32 the next day. Hours ahead.
+> A de-peg is a price-correctness problem, not a volatility problem. The model tightened the leverage knob and *left the borrow cap alone* — exactly right. `max_ltv` floored ~20:03; the −2% bar (a tighter threshold, because it's a stablecoin) came at 03:32 the next day — **about 7.5 hours ahead**, timed off `max_ltv`, the only knob that moved.
 
 ## The results
 
-| Event | Type | Protection vs the drop | What drove it | Where the params ended up | Calm false-alarm |
-|---|---|---|---|---|---|
-| **Oct 10 2025** — SUI liquidation cascade | Systemic | ✅ Floored ~19:29, −5% bar at 20:59 → **on before the drop** | Liquidity (vol + dispersion + BTC) | max_ltv 55% · borrow_cap 40% (both floor) | 0.98% / 1 |
-| **Aug 5 2024** — yen carry-trade unwind | Systemic | ✅ Floored ~00:18, −5% bar at 01:07 → **on before the drop** | Liquidity-led (disp 69%); BTC vol ~3.6× calm | max_ltv 55% · borrow_cap 40% (both floor) | 1.00% / 0 |
-| **Feb 2–3 2025** — tariff selloff | Systemic | ✅ Floored ~10:42, −5% bar at 22:40 → **hours ahead** | Solvency-led (divvel 57%, div 40%) | max_ltv 55% (floor) · borrow_cap tightens as BTC falls | 1.00% / 0 |
-| **Mar 11 2023** — USDC de-peg (post-SVB) | Idiosyncratic | ✅ Floored ~19:09, −2% bar at 03:32 next day → **hours ahead** | Solvency (div 55%) | max_ltv 55% (floor) · borrow_cap stays 100% | 1.01% / 10 |
+| Event | Shape | Protection vs the drop *(driving knob floored)* | 99-alert vs the bar | What drove it | Params set | Calm FP |
+|---|---|---|---|---|---|---|
+| **Oct 10 2025** — SUI liquidation cascade | Flash crash | ✅ `borrow_cap` ~19:29 · −5% bar 20:59 → **~90 min ahead** | ~−17 min — *at* the crash | Liquidity (disp 91%, vol, BTC) · peak d² 107 | max_ltv 55% · borrow_cap 40% (both floor) | 0.98% / 1 |
+| **Aug 5 2024** — yen carry-trade unwind | Flash crash | ✅ `borrow_cap` ~00:18 · −5% bar 01:07 → **~49 min ahead** | ~−3 min — *at* the crash | Liquidity (disp 69%); BTC vol ~3.6× calm · peak d² 64 | max_ltv 55% · borrow_cap 40% (both floor) | 1.00% / 0 |
+| **Feb 2–3 2025** — tariff selloff | Slow grind | ✅ `max_ltv` ~17:20 · −5% bar 22:40 → **~5.3 h ahead** | **~+5.3 h ahead** | Solvency (divvel 57%, div 40%) · peak d² 88 | max_ltv 55% (floor) · borrow_cap 100% (baseline) | 1.00% / 0 |
+| **Mar 11 2023** — USDC de-peg (post-SVB) | Slow de-peg | ✅ `max_ltv` ~20:03 · −2% bar 03:32 next day → **~7.5 h ahead** | **~+6.3 h ahead** | Solvency (div 55%, divvel 33%) · peak d² 45 | max_ltv 55% (floor) · borrow_cap 100% (baseline) | 1.01% / 10 |
 
-Read the **Protection vs the drop** column first — that's the result. The parameters move on a gradual map starting at a risk score of 60, and they reach their floor before the visible drop in every single event. Protection was in place ahead of the move, not chasing it.
+**How to read it.** Start with **Protection vs the drop** — that's the result: which knob floored, when, and how far ahead of the visible price bar. Each lead is timed from the moment the **knob that actually drove that event** hit its floor — `borrow_cap` on the two flash crashes (both knobs floor; the cap is the binding one), `max_ltv` on the two slow solvency events (where `borrow_cap` correctly stays at baseline, so timing off it would just be timing off run-up noise). The parameters ride a gradual map that starts tightening at a risk score of 60 and reaches the floor by 95 — engaged well before the price moved, in every event.
 
-The **calm false-alarm** column is two numbers: the single-tick rate (fraction of calm ticks over threshold, tuned for ~1%) and the count of sustained two-in-a-row episodes on the pre-event window. The USDC window's 10 has a real explanation — that window overlaps the early SVB instability — and it's in the limits below.
+- **99-alert vs the bar** — a *stricter* marker (score ≥ 99 for two ticks), shown openly. On the two vertical crashes it lands ~−17 and ~−3 minutes: basically *at* the crash, a hair behind. That's the alert metric being conservative on a near-instant move, not protection arriving late — the params were already floored (see limits). On the two slow events the same strict marker leads by **5.3 and 6.3 hours**.
+- **Peak d²** — how far the whole picture got from normal at its worst (the raw Mahalanobis distance). Bigger = stranger.
+- **Calm FP** — two numbers: the single-tick rate (calm ticks over threshold, tuned to ~1%) and the count of sustained two-in-a-row episodes on the pre-event window. The USDC window's 10 has a real cause — it overlaps the early SVB instability (Mar 10), and some are arguably early true detections; we left the window intact rather than trim it to flatter the number. More in the limits below.
 
 ## What makes it smart: two knobs, two questions
 
