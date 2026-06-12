@@ -146,7 +146,7 @@ Pinned once in TS (`@seawall/shared`) and Move (`guardian::constants`), bound by
 | `AGENT_HEARTBEAT_MS` | `300_000` | ms (5 min) | agent heartbeat |
 | `RELAX_COOLDOWN_MS` | `600_000` | ms (10 min) | min gap between relax steps (on-chain) |
 | `ALL_CLEAR_WINDOW_MS` | `600_000` | ms (10 min) | quiet span before relax begins (= cooldown → spec's single interval, D3) |
-| `RELAX_STEP_BPS` | `1000` `[CHOSEN]` | bps | ABSOLUTE drip step (NB: =50% of the max_ltv span / 16.7% of borrow_cap span, NOT 10%). OPEN Step-1: flat-bps vs per-corridor %-of-span |
+| `RELAX_STEP_FRAC_BPS` | `1000` `[CHOSEN]` | bps frac (1e4=100%) | **DECIDED %-of-span:** per-param step = `mul_div(baseline−floor, 1000, 10000)` → max_ltv 200 bps / borrow_cap 600 bps per step (~10%/10min; both reopen in ~10 steps) |
 | `BASE_DECIMALS` / `QUOTE_DECIMALS` | `9` / `6` | u8 | SUI / DBUSDC (must-fix #7) |
 | `DBK_DECIMAL_RULE` | `base≥quote ⇒ raw·10^(base−quote)=×1000` | — | coin-decimal factor; live vector bid=760000/ask=768000→`764_000_000` |
 | `BPS_DENOM` | `10_000` | u16 | LTV math denominator |
@@ -185,7 +185,7 @@ public struct GuardianPolicy has key {
     base_decimals: u8, quote_decimals: u8,
     paused: bool,
     last_breach_ms: u64, last_relax_ms: u64,
-    all_clear_window_ms: u64, relax_cooldown_ms: u64, relax_step_bps: u16,
+    all_clear_window_ms: u64, relax_cooldown_ms: u64, relax_step_frac_bps: u16,  // fraction of span (1e4=100%)
     last_check_ms: u64, last_change_ms: u64, epoch: u64,
     pause_cap: PauseCap, param_cap: ParamCap,
 }
@@ -207,7 +207,8 @@ for p in {max_ltv, borrow_cap}:
     else if target > current[p] {                                              // would loosen → gated RELAX
         if (!paused && now-last_breach_ms >= all_clear_window_ms
             && now-last_relax_ms >= relax_cooldown_ms && d.div < d_caution && d.signal == NORMAL) {
-            current[p] = min(min(current[p] + relax_step_bps, target), baseline[p]); last_relax_ms = now; changed = true }
+            step = mul_div(baseline[p] - floor[p], relax_step_frac_bps, BPS_DENOM);  // %-of-span (DECIDED): max_ltv 200 / borrow_cap 600
+            current[p] = min(min(current[p] + step, target), baseline[p]); last_relax_ms = now; changed = true }
     }
     if (agent_req is Some && clamp(r[p]) != current[p]) emit RequestClamped / RequestRejected
 if (d.div >= d_caution || d.signal != NORMAL) last_breach_ms = now
@@ -384,7 +385,7 @@ assert!(new_debt * BPS_DENOM <= (guardian::borrow_cap_current_bps(policy) as u12
 
 **"One block" honesty (correctness #6).** Agent CAUTION (`submit`) and contract freeze (`poke`) are TWO separate txs on the same shared object — necessarily different checkpoints. **Re-narrate the timer as "seconds apart / consecutive blocks," NOT "agent-tighten and freeze in one block"** (the auditor judge catches the bluff). The "one block" pitch applies to the *single-PTB* post-Pyth-+-re-derive-+-act inside ONE tx, which is true.
 
-**Frameworks.** dapp-kit **classic hooks** (`useSuiClientQuery`, `useSignAndExecuteTransaction`, `useCurrentAccount`) — **NOT** the newer `@mysten/dapp-kit-react`/`useDAppKit` that context7 now serves (drift flag — won't resolve against 1.0.6). `react-gauge-component` `subArcs` (`limit`=upper bound, last omits `limit`); verify `labels.tickLabels.ticks` API for the ALERT_SCORE marker (minor #14). recharts `^2`.
+**Frameworks.** dapp-kit **classic hooks** (`useSuiClientQuery`, `useSignAndExecuteTransaction`, `useCurrentAccount`) — **NOT** the newer `@mysten/dapp-kit-react`/`useDAppKit` that context7 now serves (drift flag — won't resolve against 1.0.6). **v2 client (verified 2026-06-12): the DeepBook injection / any standalone v2 script uses `SuiJsonRpcClient` + `getJsonRpcFullnodeUrl` from `@mysten/sui/jsonRpc` — v1's `SuiClient`/`getFullnodeUrl` are GONE in v2 (see TOOLCHAIN.md); `DeepBookClient({client,address,network:'testnet'})`.** `react-gauge-component` `subArcs` (`limit`=upper bound, last omits `limit`); verify `labels.tickLabels.ticks` API for the ALERT_SCORE marker (minor #14). recharts `^2`.
 
 **Files.** CREATE `packages/dashboard/*`, `packages/agent/src/control-server.ts`, `packages/agent/scenes/scene2.json`, `{DEMO_SCRIPT.md, README.md, assets/logo-1x1.png}`.
 

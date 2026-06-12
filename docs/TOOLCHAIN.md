@@ -45,6 +45,55 @@ deepbook peer warning on install is expected.
 > sunset, Hermes API-key requirement, Pyth testnet State-ID migration. Pin
 > pre-migration IDs; note in README.
 
+### v2 client API (IMPORTANT for the dashboard, Step 6)
+
+In `@mysten/sui` **v2** the client was restructured — the v1 names are GONE:
+
+| | v1 (`@mysten/sui@1.45.2`) | v2 (`@mysten/sui@2.17.0`) |
+|---|---|---|
+| import path | `@mysten/sui/client` | `@mysten/sui/jsonRpc` |
+| client class | `SuiClient` | **`SuiJsonRpcClient`** |
+| url helper | `getFullnodeUrl('testnet')` | **`getJsonRpcFullnodeUrl('testnet')`** |
+
+v2 `@mysten/sui/client` now holds the abstract core (`CoreClient`/`BaseClient`);
+the package also exposes `./grpc`, `./graphql`, `./jsonRpc` transports. The
+DeepBook SDK's `DeepBookClient({ client, address, network: 'testnet' })` takes the
+v2 JSON-RPC client (note: param is `network`, not `env`). dapp-kit wires its own
+client via `SuiClientProvider`, so React components use `useSuiClient()` and rarely
+touch these names directly — but any standalone v2 script (deploy/injection) needs
+`SuiJsonRpcClient`.
+
+### Runtime verification (2026-06-12) — both islands live on testnet
+
+Beyond `pnpm why` (install-time), both islands were proven to interact with the
+chain at runtime (smokes: `packages/agent/src/chain-smoke.ts` v1, and
+`packages/dashboard/scripts/chain-smoke.ts` v2). Both report the **same testnet
+chainIdentifier `4c78adac`** and read the **same `SUI_DBUSDC` pool object** — the
+islands meet only on-chain:
+
+- **v1 island** (agent): resolves `1.45.2`; reads chain id + the pool; the same-PTB
+  Pyth update+read (must-fix #1) on the SUI/USD beta feed **devInspects to
+  `success`** (5 cmds, returns a PriceInfoObject).
+- **v2 island** (dashboard): resolves `2.17.0`; reads chain id + the pool; the
+  `@mysten/deepbook-v3` SDK reads the live book via `getLevel2TicksFromMid` —
+  two-sided (5 bids / 10 asks, **best bid 0.752 / ask 0.76**, mid ≈ $0.756, a real
+  SUI price consistent with the ×10³ coin-decimal factor).
+
+This is the architectural safety made concrete: the two `@mysten/sui` majors never
+exchange SDK objects (the v1 agent posts a Pyth PTB; the v2 dashboard reads events
++ the book + signs `governance_unfreeze`); they share only the chain + the pure-TS
+`@seawall/shared`. The fullnode accepts a valid PTB from either major.
+
+> Pool-type vs call-package nuance (Step 2/3 awareness): the live pool's TYPE is
+> `0xfb28c4cb…::pool::Pool<…>` (the original DeepBook publish), while calls go to
+> `DEEPBOOK_PACKAGE_ID 0x22be4cad…` (the latest upgrade). Normal Sui upgrade
+> behavior — type identity uses the original package id, calls use the latest.
+> The de-risk Spike B already proved the guardian's cross-module `&Pool` read
+> compiles + works live against this.
+
+Re-run the smokes any time: `pnpm -C packages/agent exec tsx src/chain-smoke.ts`
+and `pnpm -C packages/dashboard exec tsx scripts/chain-smoke.ts`.
+
 ## Move package (`packages/guardian`)
 
 `Move.toml` dependency set lifted verbatim from the de-risk probe that compiled

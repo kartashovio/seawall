@@ -51,7 +51,7 @@ fun full_table_literals() {
     assert!(constants::agent_heartbeat_ms() == 300_000, 19);
     assert!(constants::relax_cooldown_ms() == 600_000, 20);
     assert!(constants::all_clear_window_ms() == 600_000, 21);
-    assert!(constants::relax_step_bps() == 1000, 22);
+    assert!(constants::relax_step_frac_bps() == 1000, 22);
     assert!(constants::base_decimals() == 9, 23);
     assert!(constants::quote_decimals() == 6, 24);
     assert!(constants::submit_score() == 99, 25);

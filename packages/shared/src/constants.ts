@@ -68,12 +68,14 @@ export const AGENT_HEARTBEAT_MS = 300_000; // 5 min agent heartbeat
 export const RELAX_COOLDOWN_MS = 600_000; //  10 min min gap between relax steps (on-chain)
 export const ALL_CLEAR_WINDOW_MS = 600_000; // 10 min quiet span before relax begins
 
-// One drip step toward baseline, as an ABSOLUTE bps amount. NB: 1000 bps is NOT
-// 10% of either span — it's 50% of the max_ltv span (2000 bps) and 16.7% of the
-// borrow_cap span (6000 bps). OPEN (Step 1 apply_ relax math): keep this flat
-// absolute step, or switch to a per-corridor fraction (~10% of baseline-floor,
-// matching the architecture's "~10%/10min"). [CHOSEN placeholder]
-export const RELAX_STEP_BPS = 1000;
+// One drip step toward baseline = a FRACTION of each corridor's span, in bps
+// (10000 = 100%). DECIDED 2026-06-12: per-corridor %-of-span, matching the
+// architecture's "~10%/10min" — NOT a flat absolute step (which would reopen
+// max_ltv in 2 steps but borrow_cap in 6). Step 1 apply_ computes per param:
+//   step_bps = mul_div(baseline_bps - floor_bps, RELAX_STEP_FRAC_BPS, BPS_DENOM)
+//   => max_ltv: 10% of 2000 = 200 bps ; borrow_cap: 10% of 6000 = 600 bps
+// so both fully reopen in ~10 steps of 10 min. [CHOSEN fraction]
+export const RELAX_STEP_FRAC_BPS = 1000; // 10.00% of span
 
 // Coin decimals (SUI / DBUSDC). Coin-decimal factor (must-fix #7, SIGN-CORRECTED):
 // since BASE_DECIMALS >= QUOTE_DECIMALS, a DeepBook level2 price is scaled by

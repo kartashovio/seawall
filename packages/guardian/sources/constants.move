@@ -38,10 +38,11 @@ const AGENT_HEARTBEAT_MS: u64 = 300_000;   // 5 min agent heartbeat
 const RELAX_COOLDOWN_MS: u64 = 600_000;    // 10 min min gap between relax steps
 const ALL_CLEAR_WINDOW_MS: u64 = 600_000;  // 10 min quiet span before relax begins
 
-// --- relax step (bps, u16) ---
-// ABSOLUTE bps step (NOT 10% of span: 1000 = 50% of the max_ltv span, 16.7% of
-// the borrow_cap span). OPEN for Step 1 apply_: flat-bps vs per-corridor fraction.
-const RELAX_STEP_BPS: u16 = 1000;
+// --- relax step: FRACTION of each corridor's span, in bps (10000 = 100%) ---
+// DECIDED 2026-06-12 (%-of-span, matches "~10%/10min"). apply_ computes per param:
+//   step_bps = mul_div(baseline_bps - floor_bps, RELAX_STEP_FRAC_BPS, BPS_DENOM)
+//   => max_ltv 200 bps/step, borrow_cap 600 bps/step (both reopen in ~10 steps).
+const RELAX_STEP_FRAC_BPS: u16 = 1000;
 
 // --- coin decimals (u8) — SUI / DBUSDC (must-fix #7) ---
 // Coin-decimal factor (SIGN-CORRECTED): base >= quote => scale a DeepBook level2
@@ -76,7 +77,7 @@ public fun keeper_tick_ms(): u64 { KEEPER_TICK_MS }
 public fun agent_heartbeat_ms(): u64 { AGENT_HEARTBEAT_MS }
 public fun relax_cooldown_ms(): u64 { RELAX_COOLDOWN_MS }
 public fun all_clear_window_ms(): u64 { ALL_CLEAR_WINDOW_MS }
-public fun relax_step_bps(): u16 { RELAX_STEP_BPS }
+public fun relax_step_frac_bps(): u16 { RELAX_STEP_FRAC_BPS }
 public fun base_decimals(): u8 { BASE_DECIMALS }
 public fun quote_decimals(): u8 { QUOTE_DECIMALS }
 public fun bps_denom(): u16 { BPS_DENOM }

@@ -27,7 +27,7 @@ import {
   AGENT_HEARTBEAT_MS,
   RELAX_COOLDOWN_MS,
   ALL_CLEAR_WINDOW_MS,
-  RELAX_STEP_BPS,
+  RELAX_STEP_FRAC_BPS,
   BASE_DECIMALS,
   QUOTE_DECIMALS,
   SIGNAL_NORMAL,
@@ -62,7 +62,7 @@ describe("constants parity (TS <-> Move)", () => {
     expect(AGENT_HEARTBEAT_MS).toBe(300_000);
     expect(RELAX_COOLDOWN_MS).toBe(600_000);
     expect(ALL_CLEAR_WINDOW_MS).toBe(600_000);
-    expect(RELAX_STEP_BPS).toBe(1000);
+    expect(RELAX_STEP_FRAC_BPS).toBe(1000);
     expect(BASE_DECIMALS).toBe(9);
     expect(QUOTE_DECIMALS).toBe(6);
     expect(SIGNAL_NORMAL).toBe(0);
