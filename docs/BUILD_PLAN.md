@@ -109,9 +109,11 @@ edition = "2024.beta"
 
 [dependencies]
 Pyth     = { git = "https://github.com/pyth-network/pyth-crosschain.git", subdir = "target_chains/sui/contracts", rev = "sui-contract-testnet" }
-Wormhole = { git = "https://github.com/wormhole-foundation/wormhole.git", subdir = "sui/wormhole", rev = "sui/testnet" }
 deepbook = { git = "https://github.com/MystenLabs/deepbookv3.git", subdir = "packages/deepbook", rev = "testnet-v19.0.0" }
-# Sui framework pulled transitively by Pyth/deepbook; pin rev to match CLI 1.73.1 on deploy day.
+# SHIPPED FORM: Pyth + deepbook only (lifts the de-risk probe). Wormhole + the Sui
+# framework are pulled TRANSITIVELY via Pyth with no conflict (green guardian build
+# proves it). Do NOT re-add an explicit Wormhole/Sui dep — it can duplicate-conflict.
+# Pin revs to match CLI 1.73.1 on deploy day; commit Move.lock.
 
 [addresses]
 guardian = "0x0"
@@ -144,7 +146,7 @@ Pinned once in TS (`@seawall/shared`) and Move (`guardian::constants`), bound by
 | `AGENT_HEARTBEAT_MS` | `300_000` | ms (5 min) | agent heartbeat |
 | `RELAX_COOLDOWN_MS` | `600_000` | ms (10 min) | min gap between relax steps (on-chain) |
 | `ALL_CLEAR_WINDOW_MS` | `600_000` | ms (10 min) | quiet span before relax begins (= cooldown → spec's single interval, D3) |
-| `RELAX_STEP_BPS` | `1000` (≈10% of span) | bps | one drip step toward baseline |
+| `RELAX_STEP_BPS` | `1000` `[CHOSEN]` | bps | ABSOLUTE drip step (NB: =50% of the max_ltv span / 16.7% of borrow_cap span, NOT 10%). OPEN Step-1: flat-bps vs per-corridor %-of-span |
 | `BASE_DECIMALS` / `QUOTE_DECIMALS` | `9` / `6` | u8 | SUI / DBUSDC (must-fix #7) |
 | `DBK_DECIMAL_RULE` | `base≥quote ⇒ raw·10^(base−quote)=×1000` | — | coin-decimal factor; live vector bid=760000/ask=768000→`764_000_000` |
 | `BPS_DENOM` | `10_000` | u16 | LTV math denominator |

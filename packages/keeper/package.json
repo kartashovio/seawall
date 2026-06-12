@@ -1,0 +1,17 @@
+{
+  "name": "@seawall/keeper",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "comment": "v1 ISLAND. Pins @mysten/sui v1 (pyth-sui-js needs it). MUST NOT depend on @seawall/model — the freeze path cannot depend on the ML model (load-bearing for the trust pitch).",
+  "dependencies": {
+    "@mysten/sui": "^1.45.2",
+    "@pythnetwork/pyth-sui-js": "3.0.0",
+    "@seawall/shared": "workspace:*"
+  }
+}

@@ -1,4 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"]
+  "include": ["src"],
+  "comment": "src/scratch is throwaway, gitignored backtest-exploration runners (run via tsx, never shipped); excluded from typecheck so pre-existing literal-type noise there can't gate the build.",
+  "exclude": ["src/scratch"]
 }

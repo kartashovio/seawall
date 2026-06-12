@@ -35,7 +35,7 @@ The backtest runs on the first four. Depth (`imb`, `spread`) only exists live; i
 
 ## Model
 
-- EWMA: mean λ=0.97, covariance λ_c=0.94, ridge δ=0.15.
+- EWMA: mean λ=0.99, covariance λ_c=0.99, ridge δ=0.15 (single λ pair, live == backtest).
 - Mahalanobis distance d² → χ²-CDF → 0–100.
 - Per-feature contribution: `c_i = (x_i − μ_i)·z_i`, `Σ c_i = d²`. Shows what drove the score.
 - This is the Kritzman-Li turbulence index (covariance is RiskMetrics). What's new is the application, not the math.
