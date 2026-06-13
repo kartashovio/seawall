@@ -86,6 +86,7 @@ export async function submitOnce(
   if (res.effects?.status?.status !== "success") {
     throw new Error(`submit execute failed: ${JSON.stringify(res.effects?.status)}`);
   }
+  await client.waitForTransaction({ digest: res.digest }); // so the next readPolicy is fresh
   const ev = res.events ?? [];
   const re = ev.find((e) => e.type.endsWith("::guardian::RiskEvaluated"));
   const clamps = ev
