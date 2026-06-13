@@ -142,6 +142,38 @@ async function buildPokePtb(
   return tx;
 }
 
+// Same-PTB Pyth + a vault `borrow` (the inline floor runs guardian::poke itself).
+// Vault type args are <Quote, Base> = [DBUSDC, SUI] — the OPPOSITE order from
+// poke<Base,Quote>; the inner poke order is inferred from the pool type.
+async function buildBorrowPtb(
+  client: SuiClient,
+  pkg: string,
+  vaultId: string,
+  policyId: string,
+  poolId: string,
+  feed: string,
+  amountQuoteMinor: bigint,
+): Promise<Transaction> {
+  const conn = new SuiPriceServiceConnection(HERMES_BETA_URL);
+  const data = await conn.getPriceFeedsUpdateData([feed]);
+  const pyth = new SuiPythClient(client, TESTNET_SNAPSHOT.pythState, TESTNET_SNAPSHOT.wormholeState);
+  const tx = new Transaction();
+  const pioIds = await pyth.updatePriceFeeds(tx, data, [feed]);
+  tx.moveCall({
+    target: `${pkg}::demo_vault::borrow`,
+    typeArguments: [DBUSDC_TYPE, SUI_TYPE], // <Quote, Base>
+    arguments: [
+      tx.object(vaultId),
+      tx.object(policyId),
+      tx.object(pioIds[0]),
+      tx.object(poolId),
+      tx.object(CLOCK),
+      tx.pure.u128(amountQuoteMinor),
+    ],
+  });
+  return tx;
+}
+
 async function main(): Promise<void> {
   const cfg = loadConfig();
   const pkg = cfg.packageId as string;
@@ -202,12 +234,61 @@ async function main(): Promise<void> {
   console.log(`\n[GATE 2b] mis-bound poke devInspect = ${JSON.stringify(r2b.effects?.status)}`);
   console.log(`[GATE 2b] EWrongPool abort = ${wrongPool ? "✅ blocked (pool-id assert fires live)" : "❌ NOT blocked"}`);
 
-  // [6] persist
+  // [6] create + fund the demo vault (the consumer), then prove the Layer-1
+  // inline floor end-to-end on the deployed package.
+  const txV = new Transaction();
+  txV.moveCall({
+    target: `${pkg}::demo_vault::create_vault`,
+    typeArguments: [DBUSDC_TYPE, SUI_TYPE], // <Quote, Base>
+    arguments: [txV.object(real.policyId)],
+  });
+  const rv = await client.signAndExecuteTransaction({
+    signer,
+    transaction: txV,
+    options: { showObjectChanges: true },
+  });
+  const vaultObj = (rv.objectChanges ?? []).find(
+    (c) => c.type === "created" && (c as any).objectType?.includes("::demo_vault::DemoVault"),
+  ) as { objectId: string } | undefined;
+  if (!vaultObj) throw new Error("DemoVault not found in objectChanges");
+  const vaultId = vaultObj.objectId;
+  console.log(`[deploy] vaultId = ${vaultId}`);
+
+  // deposit 0.1 SUI collateral (split from the gas coin)
+  const txD = new Transaction();
+  const [coll] = txD.splitCoins(txD.gas, [txD.pure.u64(100_000_000)]);
+  txD.moveCall({
+    target: `${pkg}::demo_vault::deposit_collateral`,
+    typeArguments: [DBUSDC_TYPE, SUI_TYPE],
+    arguments: [txD.object(vaultId), coll],
+  });
+  const rd = await client.signAndExecuteTransaction({ signer, transaction: txD, options: { showEffects: true } });
+  await client.waitForTransaction({ digest: rd.digest });
+  console.log(`[deploy] deposited 0.1 SUI collateral: ${rd.effects?.status?.status}`);
+
+  // GATE 3 — borrow 0.01 DBUSDC through the inline floor (devInspect success).
+  const tx3 = await buildBorrowPtb(client, pkg, vaultId, real.policyId, poolId, feed, 10_000n);
+  const r3 = await client.devInspectTransactionBlock({ sender: agent, transactionBlock: tx3 });
+  const ok3 = r3.effects?.status?.status === "success";
+  const va = (r3.events ?? []).find((e) => e.type.endsWith("::demo_vault::VaultAction"));
+  console.log(`\n[GATE 3] inline-floor borrow devInspect = ${JSON.stringify(r3.effects?.status)}`);
+  console.log(`[GATE 3] VaultAction = ${JSON.stringify(va?.parsedJson)} ${ok3 ? "✅ borrow ran poke+enforced live" : "❌"}`);
+
+  // GATE 3b — over-borrow (100 DBUSDC vs 0.1 SUI) MUST abort ELtvExceeded (demo_vault code 3).
+  const tx3b = await buildBorrowPtb(client, pkg, vaultId, real.policyId, poolId, feed, 100_000_000n);
+  const r3b = await client.devInspectTransactionBlock({ sender: agent, transactionBlock: tx3b });
+  const e3b = r3b.effects?.status?.error ?? "";
+  const ltvBlocked = r3b.effects?.status?.status === "failure" && /demo_vault/.test(e3b) && /, 3\)/.test(e3b);
+  console.log(`\n[GATE 3b] over-borrow devInspect = ${JSON.stringify(r3b.effects?.status)}`);
+  console.log(`[GATE 3b] ELtvExceeded abort = ${ltvBlocked ? "✅ inline floor enforces LTV live" : "❌ NOT blocked"}`);
+
+  // [7] persist
   const out = {
     ...cfg,
     policyId: real.policyId,
     governanceCapId: real.governanceCapId,
     misboundPolicyId: misbound.policyId,
+    vaultId,
     poolId,
     feedId: feed,
     dbusdcType: DBUSDC_TYPE,
@@ -218,8 +299,8 @@ async function main(): Promise<void> {
   writeFileSync(CONFIG_PATH, JSON.stringify(out, null, 2) + "\n");
   console.log(`\n[deploy] wrote ${CONFIG_PATH}`);
 
-  const pass = ok2 && anchorOk && wrongPool;
-  console.log(`\n[deploy] RESULT: ${pass ? "✅ GATE 2 + GATE 2b PASS" : "❌ FAIL"}`);
+  const pass = ok2 && anchorOk && wrongPool && ok3 && ltvBlocked;
+  console.log(`\n[deploy] RESULT: ${pass ? "✅ GATE 2 + 2b + 3 + 3b PASS" : "❌ FAIL"}`);
   if (!pass) process.exitCode = 1;
 }
 

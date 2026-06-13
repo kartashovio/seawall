@@ -279,6 +279,9 @@ emit RiskEvaluated{ advisory_score, div_own:d.div, signal:d.signal, paused,
 
 ## Step 3 — Demo lending vault + Layer-1 inline floor (`borrow` + `withdraw_collateral`)
 
+> ## ✅ STEP 3 DONE (2026-06-13) — `demo_vault` live; Layer-1 inline floor proven end-to-end on testnet
+> `demo_vault.move` shipped (`DemoVault<phantom Quote, phantom Base>`; `borrow`/`withdraw_collateral` run the SAME params-less `guardian::poke` the keeper calls → re-derive divergence + write is_frozen/current → enforce, fail-CLOSED; `deposit`/`repay` ungated). 75 Move tests (10 new vault: calm both-hooks, EPolicyMismatch, EFrozen ×div+×book, ELtvExceeded ×borrow+×withdraw, EBorrowCapExceeded, deposit/repay-ungated-while-frozen, collateral-value anchor) + 60 TS, typecheck clean. **Redeployed (package `0x2635919f…653ad`, +demo_vault), created+funded a vault, and proved on the DEPLOYED package:** GATE 3 ✅ — same-PTB `updatePriceFeeds → borrow()` devInspect = success (the inline floor ran `poke` reading live Pyth+DeepBook, enforced LTV, emitted `VaultAction`); GATE 3b ✅ — over-borrow → `ELtvExceeded` (demo_vault code 3) in `enforce_solvency`. IDs in `config/testnet.json` (`DemoVault 0xf9b3b69e…`). Added `base_decimals`/`quote_decimals` getters to guardian (additive, the plan's "getters if missing"). ~0.4 SUI spent total, 0.61 left. **NEXT = Step 4** (off-chain ML agent → `submit`). Note: each new module → new package id; `config/testnet.json` is canonical.
+
 **Goal.** `DemoVault<phantom Quote, Base>` + the always-on, agent-independent inline path: on `borrow`/`withdraw_collateral`, call the params-less **`poke(&mut policy,…): DivResult`** — the SAME entry the keeper calls (D5); it re-derives divergence in-tx and WRITES `is_frozen`/`current`, then the vault **aborts** (fail-CLOSED) on `is_frozen` (div≥T OR book-not-ok) / LTV-or-cap violation. Works with a dead agent AND a dead keeper (every borrow self-evaluates).
 
 **Sub-tasks.**

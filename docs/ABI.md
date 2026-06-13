@@ -180,3 +180,36 @@ TS twin: `@seawall/shared` `divergence.ts`; shared fixture
 4. **Per param:** `target = min(clamp(agent), clamp(own))`; `target < current` → instant tighten; `target > current` → only the gated drip (one relax gate evaluated up-front for BOTH params: `!paused ∧ now−last_breach ≥ window ∧ now−last_relax ≥ cooldown ∧ fresh reading calm`); step = `span·relax_step_frac_bps/10000`, capped at target and baseline.
 5. **Events:** ask ≠ applied → `RequestRejected` (ask was looser than pre-call current) else `RequestClamped`.
 6. **Bookkeeping:** breach reading bumps `last_breach_ms`; `last_check_ms := now` always (D4); `last_change_ms` only on change; `epoch += 1`; emit `RiskEvaluated` always.
+
+## Module `guardian::demo_vault` (the demo consumer — Step 3)
+
+⚠️ **Type-arg order is `<Quote, Base>` = `[DBUSDC_TYPE, SUI_TYPE]`** — the OPPOSITE
+of `poke<Base,Quote>`. Inside `borrow`/`withdraw`, the inner `poke` order is
+inferred from `pool: &Pool<Base,Quote>`, so PTB callers only pass the vault order.
+
+```move
+public struct DemoVault<phantom Quote, phantom Base> has key { id, policy_id: ID, collateral: Balance<Base>, debt_quote_minor: u128 }
+public struct VaultAction has copy, drop { vault_id, action: u8 /*0 dep/1 borrow/2 withdraw/3 repay*/, amount: u128, debt_after: u128, collateral_after: u64, ts_ms: u64 }
+
+public fun create_vault<Quote, Base>(policy: &GuardianPolicy, ctx)            // shares the vault, bound to object::id(policy)
+public fun deposit_collateral<Quote, Base>(vault: &mut, c: Coin<Base>)         // UNGATED (toward-safe)
+public fun repay<Quote, Base>(vault: &mut, amount: u128)                       // UNGATED (clamps at 0)
+// GATED — same-PTB Pyth: caller posts updatePriceFeeds then calls these with the fresh pio.
+// Both run guardian::poke(&mut policy, pio, pool, clock) (Layer-1 inline floor, D5) then enforce.
+public fun borrow<Quote, Base>(vault: &mut, policy: &mut GuardianPolicy, pio: &PriceInfoObject, pool: &Pool<Base,Quote>, clock, amount_quote_minor: u128)
+public fun withdraw_collateral<Quote, Base>(vault: &mut, policy: &mut GuardianPolicy, pio, pool, clock, amount_base_minor: u64, ctx): Coin<Base>
+public fun collateral_value_in_quote(coll_base_minor: u64, pyth_px_1e9: u128, base_dec, quote_dec): u128  // pure; coll value in Quote minor
+public fun debt / collateral / policy_id (vault: &DemoVault)
+```
+
+Abort codes (module `demo_vault`): `EPolicyMismatch=1`, `EFrozen=2`, `ELtvExceeded=3`, `EBorrowCapExceeded=4`.
+Solvency gate is cross-multiply (no division): `debt·BPS_DENOM ≤ {max_ltv|borrow_cap}_current_bps · coll_value`. Freeze (is_paused) checked first → fail-CLOSED. Demo simplifications: debt is a counter (no Coin<Quote> mint); `borrow_cap` is a second per-position LTV-style bound (prod = protocol-wide outstanding cap); `liquidate` is NOT gated (D6).
+
+## Deployed (testnet) — `config/testnet.json` is canonical
+
+IDs change on every redeploy (each new module → new package id). Current
+(2026-06-13): package `0x2635919f…653ad`, `GuardianPolicy 0xd6497edc…`,
+`GovernanceCap 0x9a72b115…`, `DemoVault 0xf9b3b69e…`, mis-bound policy
+`0x4b09d173…`. Gates: GATE 2 (same-PTB `poke` success, anchor `div_own≈0.29%`) ✅,
+GATE 2b (`EWrongPool`) ✅, GATE 3 (inline-floor `borrow` runs poke+enforces) ✅,
+GATE 3b (over-borrow → `ELtvExceeded`) ✅.

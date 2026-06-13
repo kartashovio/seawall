@@ -710,6 +710,10 @@ public fun expected_pool_id(policy: &GuardianPolicy): ID { policy.expected_pool_
 
 public fun max_age_secs(policy: &GuardianPolicy): u64 { policy.max_age_secs }
 
+public fun base_decimals(policy: &GuardianPolicy): u8 { policy.base_decimals }
+
+public fun quote_decimals(policy: &GuardianPolicy): u8 { policy.quote_decimals }
+
 public fun conf_frac_max(policy: &GuardianPolicy): u128 { policy.conf_frac_max }
 
 public fun threshold_t(policy: &GuardianPolicy): u128 { policy.threshold_t }

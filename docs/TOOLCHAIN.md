@@ -131,18 +131,25 @@ an *older* published version, so we **vendor** the v19 source at
 **Deploy-day:** re-check the pool's allowed version (it migrates) and re-pin
 `published-at`.
 
-### Deployed (testnet, 2026-06-13) — `config/testnet.json`
+### Deployed (testnet) — `config/testnet.json` is canonical
+
+⚠️ The package id changes on every redeploy (each new module → new package). The
+file `config/testnet.json` is the single source of truth; the values below are a
+snapshot (current as of Step 3, 2026-06-13):
 
 | | id |
 |---|---|
-| `guardian` package | `0x30fcf67d6dd7cb11e6ee0f85655ba9712c227418ade755c041d5df7533db4307` |
-| `GuardianPolicy` (shared) | `0x7eabcfeb…dca75d` |
-| `GovernanceCap` (owned) | `0xe06793f5…fd8680` |
-| mis-bound policy (GATE-2b fixture) | `0x3a148618…8b388b` |
+| `guardian` package | `0x2635919faff8a149b59389bec81fb059a2461b6b94c27fab3ac66581bde653ad` |
+| `GuardianPolicy` (shared) | `0xd6497edc…0a44b6` |
+| `GovernanceCap` (owned) | `0x9a72b115…388e41` |
+| `DemoVault` (shared, demo consumer) | `0xf9b3b69e…dc4a79d` |
+| mis-bound policy (GATE-2b fixture) | `0x4b09d173…7cfb3fa3` |
 
-GATE 1 (TS↔Move divergence parity) ✅ via `divergence_tests.move`; GATE 2 (same-PTB
-`poke` devInspect = success, live anchor `div_own ≈ 0.05%`) ✅; GATE 2b (mis-bound
-`poke` → `EWrongPool`) ✅.
+Gates (all green, against the deployed package): GATE 1 (TS↔Move divergence
+parity via `divergence_tests.move`); GATE 2 (same-PTB `poke` devInspect = success,
+live anchor `div_own ≈ 0.05–0.3%`); GATE 2b (mis-bound `poke` → `EWrongPool`);
+GATE 3 (vault inline-floor `borrow` runs `poke` + enforces, `VaultAction` emitted);
+GATE 3b (over-borrow → `ELtvExceeded`).
 
 ## Move package (`packages/guardian`)
 

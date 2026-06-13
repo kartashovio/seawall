@@ -1,15 +1,16 @@
 {
-  "packageId": "0x30fcf67d6dd7cb11e6ee0f85655ba9712c227418ade755c041d5df7533db4307",
-  "upgradeCapId": "0x08941a865f9c41d4737a70346505c115aa36d4c52f80af0a8fe1a584e2ed32ab",
+  "packageId": "0x2635919faff8a149b59389bec81fb059a2461b6b94c27fab3ac66581bde653ad",
+  "upgradeCapId": "0x46738643954046a82f32dda81b7bdc0cefbecd7166785f8da576860fd9328376",
   "registeredAgent": "0x818e43cdca009f9800e936784e13e43dc89076eecc9ac48add459036d56a9130",
-  "publishDigest": "42St9noSTz8Xki4fiumPSoYtunaEse4LzBzeRSvM5MKF",
-  "policyId": "0x7eabcfebff8dc6d8c4a4bd81344cf2638c35fc4e78dc554b2ac94e7332dca75d",
-  "governanceCapId": "0xe06793f56192918c4bbc03c1f17b98a25999e86fa19d0e092ee63c7a16fd8680",
-  "misboundPolicyId": "0x3a148618ef941d2eb059c0304cc4b9e031ffd53eef1b19efdcda3338ff8b388b",
+  "publishDigest": "BAHJ5CCctZqpcgquujkXmCWZB4X2SPnDaiTgZUifTWWA",
+  "policyId": "0xd6497edc5a130bb32c57d92b447f7a83588ca83df51ce8fde0ecf549640a44b6",
+  "governanceCapId": "0x9a72b115e1c10ae48af10395fca7007eae1369f9a1c5e6527841bf7add388e41",
+  "misboundPolicyId": "0x4b09d173032a698cb8a8579fde7d2b25d120cc92c55bb9d40a35df837cfb3fa3",
+  "vaultId": "0xf9b3b69e3fd7f6b85533cfb2464aac3837a4c33d1f2cbf59b9f8539eadc4a79d",
   "poolId": "0x1c19362ca52b8ffd7a33cee805a67d40f31e6ba303753fd3a4cfdfacea7163a5",
   "feedId": "0x50c67b3fd225db8912a424dd4baed60ffdde625ed2feaaf283724f9608fea266",
   "dbusdcType": "0xf7152c05930480cd740d7311b5b8b45c6f488e3a53a11c3f74a6fac36a52e0d7::DBUSDC::DBUSDC",
   "pythState": "0x243759059f4c3111179da5878c12f68d612c21a8d54d85edc86164bb18be1c7c",
   "wormholeState": "0x31358d198147da50db32eda2562951d53973a0c0ad5ed738e9b17d88b213d790",
-  "deployedAt": "2026-06-13T06:14:37.465Z"
+  "deployedAt": "2026-06-13T12:15:04.338Z"
 }
