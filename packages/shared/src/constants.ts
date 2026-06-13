@@ -71,6 +71,13 @@ export const MAX_EXPO_MAG = 18;
 // Cadences (ms).
 export const KEEPER_TICK_MS = 300_000; //     5 min keeper loop
 export const AGENT_HEARTBEAT_MS = 300_000; // 5 min agent heartbeat
+// Off-chain agent cadences (no on-chain twin). The DETECTOR advances on a 60s
+// grid (matches the 1-min warmup/calibration history so EWMA + velocity carry
+// over); the agent may POLL sources faster for SSE liveness. RESUBMIT_COOLDOWN
+// throttles back-to-back tighten submits (anti-spam on the tighter condition,
+// NOT the send condition itself).
+export const AGENT_GRID_MS = 60_000; //       1 min detector grid (== warmup bar)
+export const RESUBMIT_COOLDOWN_MS = 60_000; // min gap between tighten submits
 export const RELAX_COOLDOWN_MS = 600_000; //  10 min min gap between relax steps (on-chain)
 export const ALL_CLEAR_WINDOW_MS = 600_000; // 10 min quiet span before relax begins
 
