@@ -172,16 +172,17 @@ Pinned once in TS (`@seawall/shared`) and Move (`guardian::constants`), bound by
 6. **Entries + `apply_`:** `submit<Base,Quote>(policy, pio, pool, clock, req: ParamRequest, advisory_score: u8, ctx)` asserts `ctx.sender() == registered_agent`; `poke<Base,Quote>(policy, pio, pool, clock)` permissionless; both → `apply_(... Option<ParamRequest> ...)`.
 7. **Tests:** `divergence_tests` (V0–V4 from shared `vectors.json`) + `enforcement_tests` (looser→`RequestRejected`/unchanged; over-tighten→`RequestClamped` to floor; `div≥T`+benign req→`paused=true`; RELAX blocked in-window + unfreeze-then-calm-poke→no relax; wrong-policy cap→`expected_failure`).
 
-**`GuardianPolicy` (ABI FREEZE):**
+**`GuardianPolicy` (ABI FROZEN 2026-06-13 — canonical map in `docs/ABI.md`):**
 ```move
 public struct GuardianPolicy has key {
     id: UID,
     owner: address,
     registered_agent: address,        // submit() sender-gate
-    feed_id: vector<u8>,              // 32 RAW bytes (NOT hex string — minor #10); asserted in submit/poke
+    feed_id: vector<u8>,              // 32 RAW bytes (NOT hex string — minor #10); asserted every read
+    expected_pool_id: ID,             // canonical DeepBook pool; asserted every read (trust-min linchpin, review fix)
     max_ltv_floor_bps: u16, max_ltv_baseline_bps: u16, max_ltv_current_bps: u16,
     borrow_cap_floor_bps: u16, borrow_cap_baseline_bps: u16, borrow_cap_current_bps: u16,
-    threshold_t: u128, d_caution: u128, max_age_secs: u64, conf_frac_max: u128,
+    threshold_t: u128, d_caution: u128, conf_frac_max: u128, max_age_secs: u64,  // 3 @1e9 u128s grouped (canonical)
     base_decimals: u8, quote_decimals: u8,
     paused: bool,
     last_breach_ms: u64, last_relax_ms: u64,
@@ -190,6 +191,15 @@ public struct GuardianPolicy has key {
     pause_cap: PauseCap, param_cap: ParamCap,
 }
 ```
+> **Step-1 adversarial-review (2026-06-13) fixes folded in:** `expected_pool_id`
+> added (BLOCKER — permissionless `poke<Base,Quote>` previously let a caller pass
+> a fake-calm/empty junk pool → fail-OPEN freeze-suppression or freeze-DoS; now
+> `read_divergence` asserts `object::id(pool)==expected_pool_id` first). Also:
+> `expo_mag<=18` bound in BOTH langs (u8-cast/pow safety + abort-parity);
+> `create_policy` bounds (decimals<=18, thresholds<=PRICE_SCALE, relax step>=1);
+> `governance_unfreeze` true no-op when not paused; `RequestRejected`/`Clamped`
+> classified by the raw ask. Field order `conf_frac_max`/`max_age_secs` settled
+> to the code's grouped order (the older sketch above had them swapped).
 
 **`apply_` body (integers only):**
 ```
@@ -243,10 +253,11 @@ emit RiskEvaluated{ advisory_score, div_own:d.div, signal:d.signal, paused,
 3. **TS side first:** `pnpm test packages/shared` green (Step 1 owns `divergence.ts`; this step consumes it). TS `mulDiv(x,y,z)=(x*y)/z` multiply-then-divide, pure BigInt, no `Number()`.
 4. **Move parity** `packages/guardian/tests/divergence_parity_test.move` — call `compute_divergence` with the **exact** `vectors.json` integers; assert V0=`0`, V1=`764_000_000`, V3=`50_000_000`, V3b boundary, V2 sentinel, V4. **GATE 1.**
 5. **Deploy:** `sui move build`; `sui client publish --json` → capture `packageId`.
-6. **`create_policy` PTB:** corridor `5500/7500`, `4000/10000`; `feed_id` = **32 raw bytes** of the beta id (hex-decode, NOT the hex string — minor #10); `registered_agent` = agent address; `threshold_t=50_000_000`, `d_caution=10_000_000`, `conf_frac_max=10_000_000`, `max_age_secs=60`; relax knobs; `base/quote_decimals=9/6`. Capture `policyId`, `governanceCapId`.
+6. **`create_policy` PTB:** corridor `5500/7500`, `4000/10000`; `feed_id` = **32 raw bytes** of the beta id (hex-decode, NOT the hex string — minor #10); **`expected_pool_id` = the live SUI_DBUSDC pool object id (resolve from the SDK, never freeze — the trust-min linchpin; asserted on every read)**; `registered_agent` = agent address; `threshold_t=50_000_000`, `d_caution=10_000_000`, `conf_frac_max=10_000_000`, `max_age_secs=60`; relax knobs; `base/quote_decimals=9/6`. Capture `policyId`, `governanceCapId`.
 7. **Write `config/testnet.json`** (`packageId`, `policyId`, `governanceCapId`, `vaultId` empty until Step 3); commit + `Move.lock`. Leave Pyth/Wormhole/pool/feed to runtime resolution.
 8. **Smoke (GATE 2):** adapt the de-risk spike — hermes-beta `getPriceFeedsUpdateData([beta])` → `SuiPythClient.updatePriceFeeds(tx, data, [beta])` → `tx.moveCall(${packageId}::guardian::poke, typeArguments:[SUI, DBUSDC], arguments:[policyId, pio[0], poolId, '0x6'])` → `devInspectTransactionBlock` → `status: success`, no `EWrongFeed`.
 9. **Live anchor:** log normalized DeepBook ref ≈ `760–768_000_000` (≈$0.76) against a live hermes-beta ~$0.74 quote — the decimal sign is *physically* right, not just self-consistently green.
+10. **Pool-binding negative proof (GATE 2b — the blocker-fix integration test):** `poke` with a DIFFERENT pool object (any non-canonical `&Pool`) must devInspect-FAIL with `EWrongPool` (divergence code 4). This is the on-chain witness that the unit-tested pool binding actually fires through the object path (the unit suite can't construct a `&Pool`).
 
 **CRITICAL — resolve the Pyth State ID live (correctness #1).** The RESULTS.md snapshot `0xd3e79c…ddc0` and RECON's `0x243759…1c7c` disagree; one is the package, one is the State. **Do NOT trust either hardcoded value.** Resolve `pythStateId`/`wormholeStateId` from `@pythnetwork/pyth-sui-js` (or Pyth's testnet `contracts.json`) at startup and **prove via the GATE-2 devInspect** that `updatePriceFeeds` succeeds before treating any ID as canonical. This is the single most likely silent deploy-day failure.
 

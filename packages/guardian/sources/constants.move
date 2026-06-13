@@ -31,6 +31,10 @@ const CONF_FRAC_MAX: u128 = 10_000_000;    // 1.0% — oracle-health / loss-of-s
 // --- oracle + book read params ---
 const MAX_AGE_SECS: u64 = 60;              // Pyth get_price_no_older_than (must-fix #7, SECONDS)
 const TICKS: u64 = 1;                      // get_level2_ticks_from_mid(1, clock); either side empty => BOOK_NOT_OK => freeze
+// Max accepted Pyth expo magnitude (real feeds ~|8|). Bounds the math in BOTH
+// langs so `expo_mag as u8` / pow(10, expo) can't truncate/overflow on-chain
+// where the unbounded-BigInt TS reference would not (parity, must-fix #7).
+const MAX_EXPO_MAG: u64 = 18;
 
 // --- cadences (ms, u64) ---
 const KEEPER_TICK_MS: u64 = 300_000;       // 5 min keeper loop
@@ -73,6 +77,7 @@ public fun t_freeze(): u128 { T_FREEZE }
 public fun conf_frac_max(): u128 { CONF_FRAC_MAX }
 public fun max_age_secs(): u64 { MAX_AGE_SECS }
 public fun ticks(): u64 { TICKS }
+public fun max_expo_mag(): u64 { MAX_EXPO_MAG }
 public fun keeper_tick_ms(): u64 { KEEPER_TICK_MS }
 public fun agent_heartbeat_ms(): u64 { AGENT_HEARTBEAT_MS }
 public fun relax_cooldown_ms(): u64 { RELAX_COOLDOWN_MS }

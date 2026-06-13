@@ -62,6 +62,12 @@ export const CONF_FRAC_MAX = 10_000_000n; // 1.0% — oracle-health / loss-of-si
 export const MAX_AGE_SECS = 60; // Pyth get_price_no_older_than, SECONDS (must-fix #7)
 export const TICKS = 1; //          get_level2_ticks_from_mid(1, clock)
 
+// Max Pyth expo magnitude accepted by compute_divergence. Real feeds sit at
+// ~|8|; this is the safety bound used in BOTH the TS and Move math so they
+// abort IDENTICALLY on an absurd expo (Move would otherwise silently truncate
+// `expo_mag as u8` and overflow pow(10, >=39)). Parity-critical -> on the table.
+export const MAX_EXPO_MAG = 18;
+
 // Cadences (ms).
 export const KEEPER_TICK_MS = 300_000; //     5 min keeper loop
 export const AGENT_HEARTBEAT_MS = 300_000; // 5 min agent heartbeat

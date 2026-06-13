@@ -22,6 +22,7 @@ import {
   LAMBDA_MEAN,
   LAMBDA_COV,
   MAX_AGE_SECS,
+  MAX_EXPO_MAG,
   TICKS,
   KEEPER_TICK_MS,
   AGENT_HEARTBEAT_MS,
@@ -57,6 +58,7 @@ describe("constants parity (TS <-> Move)", () => {
   // true for the WHOLE table (Step-0 review, medium finding).
   it("pins every remaining on-chain row to its exact literal (full table machine-bound)", () => {
     expect(MAX_AGE_SECS).toBe(60);
+    expect(MAX_EXPO_MAG).toBe(18);
     expect(TICKS).toBe(1);
     expect(KEEPER_TICK_MS).toBe(300_000);
     expect(AGENT_HEARTBEAT_MS).toBe(300_000);

@@ -1,0 +1,136 @@
+{
+  "comment": [
+    "CANONICAL divergence test vectors — the single fixture binding the TS reference",
+    "(@seawall/shared src/divergence.ts) and the Move implementation",
+    "(guardian/sources/divergence.move) bit-for-bit. Move cannot read JSON, so",
+    "guardian/tests/divergence_tests.move pins THE SAME literals with a pointer",
+    "back to this file — change a number here, change it there, or tests fail.",
+    "All u64/u128 values are decimal STRINGS (JSON has no bigint).",
+    "Formula (BUILD_PLAN D7): pyth1e9 = mulDiv(priceMag, 1e9, 10^expoMag);",
+    "dbk1e9 = midRaw * 10^(base-quote) [base>=quote] else midRaw / 10^(quote-base);",
+    "midRaw = (bid+ask)/2 floor, both sides non-empty; div = mulDiv(|pyth-dbk|, 1e9, pyth);",
+    "conf1e9 = mulDiv(confMag, 1e9, 10^expoMag); confFrac = mulDiv(conf1e9, 1e9, pyth1e9);",
+    "empty/one-sided book => signal=1 (BOOK_NOT_OK), div=0 (the freeze leg catches signal).",
+    "All division is FLOOR (std::u128::mul_div upcasts to u256; TS uses pure BigInt)."
+  ],
+  "vectors": [
+    {
+      "name": "V0_equal_prices_zero_div",
+      "priceMag": "76400000", "expoIsNeg": true, "expoMag": "8", "confMag": "76400",
+      "bidBest": "760000", "askBest": "768000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "0", "pythPx1e9": "764000000", "confFrac": "1000000", "signal": 0 }
+    },
+    {
+      "name": "V2_one_sided_book_not_ok",
+      "priceMag": "76400000", "expoIsNeg": true, "expoMag": "8", "confMag": "76400",
+      "bidBest": "0", "askBest": "768000", "bidEmpty": true, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "0", "pythPx1e9": "764000000", "confFrac": "1000000", "signal": 1 }
+    },
+    {
+      "name": "V2b_both_empty_book_not_ok",
+      "priceMag": "76400000", "expoIsNeg": true, "expoMag": "8", "confMag": "76400",
+      "bidBest": "0", "askBest": "0", "bidEmpty": true, "askEmpty": true,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "0", "pythPx1e9": "764000000", "confFrac": "1000000", "signal": 1 }
+    },
+    {
+      "name": "V3_freeze_boundary_exact_5pct",
+      "priceMag": "100000000", "expoIsNeg": true, "expoMag": "8", "confMag": "100000",
+      "bidBest": "948000", "askBest": "952000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "50000000", "pythPx1e9": "1000000000", "confFrac": "1000000", "signal": 0 }
+    },
+    {
+      "name": "V3b_floor_truncation_discriminator",
+      "priceMag": "1000000001", "expoIsNeg": true, "expoMag": "9", "confMag": "1000000",
+      "bidBest": "948000", "askBest": "952000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "50000000", "pythPx1e9": "1000000001", "confFrac": "999999", "signal": 0 }
+    },
+    {
+      "name": "V4_conf_exactly_at_max_not_breach",
+      "priceMag": "76400000", "expoIsNeg": true, "expoMag": "8", "confMag": "764000",
+      "bidBest": "760000", "askBest": "768000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "0", "pythPx1e9": "764000000", "confFrac": "10000000", "signal": 0 }
+    },
+    {
+      "name": "V5_mid_floor_truncation",
+      "priceMag": "76400000", "expoIsNeg": true, "expoMag": "8", "confMag": "76400",
+      "bidBest": "760000", "askBest": "768001", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "0", "pythPx1e9": "764000000", "confFrac": "1000000", "signal": 0 }
+    },
+    {
+      "name": "V6_two_percent_caution_tier1",
+      "priceMag": "100000000", "expoIsNeg": true, "expoMag": "8", "confMag": "100000",
+      "bidBest": "978000", "askBest": "982000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "20000000", "pythPx1e9": "1000000000", "confFrac": "1000000", "signal": 0 }
+    },
+    {
+      "name": "V7_book_above_oracle_abs_diff_branch",
+      "comment": "dbk > pyth: exercises the |p-d| branch a real upward de-peg produces (every other vector has dbk<=pyth). Also a fresh floor discriminator: 50000000*1e9/950000000 = 52631578.94 -> 52631578.",
+      "priceMag": "95000000", "expoIsNeg": true, "expoMag": "8", "confMag": "95000",
+      "bidBest": "998000", "askBest": "1002000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": { "div": "52631578", "pythPx1e9": "950000000", "confFrac": "1000000", "signal": 0 }
+    }
+  ],
+  "midVectors": [
+    {
+      "name": "M1_sign_anchor_base_ge_quote_x1000",
+      "bidBest": "760000", "askBest": "768000", "baseDecimals": 9, "quoteDecimals": 6,
+      "expect": "764000000"
+    },
+    {
+      "name": "M2_inverse_quote_gt_base_div1000",
+      "bidBest": "760000", "askBest": "768000", "baseDecimals": 6, "quoteDecimals": 9,
+      "expect": "764"
+    },
+    {
+      "name": "M3_equal_decimals_identity",
+      "bidBest": "760000", "askBest": "768000", "baseDecimals": 9, "quoteDecimals": 9,
+      "expect": "764000"
+    },
+    {
+      "name": "M4_quote_gt_base_floor_discriminator",
+      "comment": "midRaw=(760000+769998)/2=764999; /10^(9-6)=/1000 -> 764 (floor, NOT round-half which would give 765). Discriminates floor vs round on the divide leg.",
+      "bidBest": "760000", "askBest": "769998", "baseDecimals": 6, "quoteDecimals": 9,
+      "expect": "764"
+    }
+  ],
+  "errorVectors": [
+    {
+      "name": "E1_expo_not_negative_rejected",
+      "priceMag": "76400000", "expoIsNeg": false, "expoMag": "8", "confMag": "76400",
+      "bidBest": "760000", "askBest": "768000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "throws": "EXPO_NOT_NEGATIVE"
+    },
+    {
+      "name": "E2_zero_price_rejected",
+      "priceMag": "0", "expoIsNeg": true, "expoMag": "8", "confMag": "76400",
+      "bidBest": "760000", "askBest": "768000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "throws": "ZERO_PRICE"
+    },
+    {
+      "name": "E3_price_floors_to_zero_rejected",
+      "priceMag": "5", "expoIsNeg": true, "expoMag": "18", "confMag": "1",
+      "bidBest": "760000", "askBest": "768000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "throws": "ZERO_PRICE"
+    },
+    {
+      "name": "E4_expo_too_large_rejected",
+      "comment": "expoMag 19 > MAX_EXPO_MAG(18). Move would silently truncate `expo_mag as u8` and/or overflow pow(10,>=39); bound it in BOTH langs so they abort identically (parity, must-fix #7 spirit).",
+      "priceMag": "76400000", "expoIsNeg": true, "expoMag": "19", "confMag": "76400",
+      "bidBest": "760000", "askBest": "768000", "bidEmpty": false, "askEmpty": false,
+      "baseDecimals": 9, "quoteDecimals": 6,
+      "throws": "EXPO_TOO_LARGE"
+    }
+  ]
+}
