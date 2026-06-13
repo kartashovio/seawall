@@ -245,6 +245,9 @@ emit RiskEvaluated{ advisory_score, div_own:d.div, signal:d.signal, paused,
 
 ## Step 2 — TS↔Move parity for `div_own`/coin_decimal + testnet deploy + capture IDs
 
+> ## ✅ STEP 2 DONE (2026-06-13) — package `0x30fcf67d…db4307` live on testnet
+> GATE 1 (parity) ✅ — `divergence_tests.move` pins the exact `vectors.json` literals (V0–V7/M1–M4/E1–E4), TS suite green. GATE 2 ✅ — same-PTB `updatePriceFeeds → poke()` devInspect = **success** against the deployed package; **live anchor `div_own ≈ 0.05%`** (Pyth↔DeepBook agree → ×10³ coin-decimal sign physically right). GATE 2b ✅ — mis-bound `poke` → **`EWrongPool`** (the Step-1 blocker fix proven on-chain). IDs in `config/testnet.json`; `GuardianPolicy 0x7eabcfeb…`, `GovernanceCap 0xe06793f5…`. **Two deployment gotchas hit + fixed (see `docs/TOOLCHAIN.md`):** (1) Pyth has TWO testnet deployments — must post to State `0x243759…` (package `0xabf837e9`, what the Move build compiles against), NOT the de-risk snapshot's `0xd3e79c` (→ pio TypeMismatch); `ids.ts` corrected. (2) the live `SUI_DBUSDC` pool disabled DeepBook's latest upgrade `0x74cd5657` that Sui auto-links — **vendored** v19 deepbook at `packages/guardian/vendor/deepbook` with `published-at = 0x22be4cad` (the pool-allowed version) to pin the linkage. Deploy/create/gate driver: `packages/agent/scripts/deploy.ts` (loads the deployer key at runtime via `sui keytool export`, never hardcoded). ~0.27 SUI spent; 0.82 left.
+
 **Goal.** Prove the Move `compute_divergence` is **bit-for-bit** identical to the TS `@seawall/shared` reference on shared vectors (incl. the sign-corrected coin-decimal factor), then **deploy to testnet**, run `create_policy`, capture every ID into `config/testnet.json`, and confirm a same-PTB `updatePriceFeeds → poke()` devInspect succeeds against the *deployed* package.
 
 **Sub-tasks.**

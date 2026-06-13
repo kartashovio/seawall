@@ -94,6 +94,56 @@ exchange SDK objects (the v1 agent posts a Pyth PTB; the v2 dashboard reads even
 Re-run the smokes any time: `pnpm -C packages/agent exec tsx src/chain-smoke.ts`
 and `pnpm -C packages/dashboard exec tsx scripts/chain-smoke.ts`.
 
+## ⚠️ Deployment gotchas — both bit us live, both fixed (verified 2026-06-13, Step 2)
+
+The package compiled green for days but **`poke` aborted on-chain** for two
+independent dependency-aliasing reasons. Both are re-verify-on-deploy-day traps.
+
+### 1. Pyth: testnet has TWO deployments — match the State to the package you compiled
+
+`updatePriceFeeds(state)` returns a `PriceInfoObject` whose **type** is keyed by
+that deployment's ORIGINAL Pyth package. `poke(&PriceInfoObject)` then fails with
+`CommandArgumentError { kind: TypeMismatch }` unless the pio's package == the Pyth
+package the guardian was **compiled** against.
+
+| | Move build compiles against | Must post updates to State |
+|---|---|---|
+| **Canonical (Pyth docs, "Beta channel") ✅** | package `0xabf837e9` (the `sui-contract-testnet` Pyth dep's `published-at`) | **State `0x243759…1c7c`**, Wormhole `0x31358d…`, pio `0x1ebb29…` |
+| Non-canonical (de-risk snapshot mistake ❌) | — | State `0xd3e79c…` → pio type `0x431c1cfb::…` → TypeMismatch |
+
+The de-risk RESULTS.md flipped these (called `0x431c1cfb` "live"). **Truth:** the
+Pyth source rev we build against declares `0xabf837e9`, so we MUST use State
+`0x243759`. Resolve from `docs.pyth.network/price-feeds/contract-addresses/sui`
+and prove via the GATE-2 devInspect. `@seawall/shared/ids.ts` is corrected.
+
+### 2. DeepBook: the live pool disabled the version Sui auto-links → vendor + pin
+
+`get_level2_ticks_from_mid` → `load_inner` asserts the pool's `allowed_versions`
+contains `constants::current_version()`, else **abort 11 `EPackageVersionDisabled`**.
+A git dep with `[addresses] deepbook = "0x0"` and no `published-at` makes Sui link
+the **latest** on-chain upgrade (`0x74cd5657`) — but the live `SUI_DBUSDC` pool has
+**not been migrated** to it; it only allows `0x22be4cad` (what `@mysten/deepbook-v3`
+uses, confirmed via `pool::whitelisted` devInspect = success). A git dep can't pin
+an *older* published version, so we **vendor** the v19 source at
+`packages/guardian/vendor/deepbook` with `published-at = 0x22be4cad` (linkage) and
+`[addresses] deepbook = 0xfb28c4cb` (type identity, matches the live pool).
+`get_level2_ticks_from_mid` is signature-identical across these versions.
+**Deploy-day:** re-check the pool's allowed version (it migrates) and re-pin
+`published-at`.
+
+### Deployed (testnet, 2026-06-13) — `config/testnet.json`
+
+| | id |
+|---|---|
+| `guardian` package | `0x30fcf67d6dd7cb11e6ee0f85655ba9712c227418ade755c041d5df7533db4307` |
+| `GuardianPolicy` (shared) | `0x7eabcfeb…dca75d` |
+| `GovernanceCap` (owned) | `0xe06793f5…fd8680` |
+| mis-bound policy (GATE-2b fixture) | `0x3a148618…8b388b` |
+
+GATE 1 (TS↔Move divergence parity) ✅ via `divergence_tests.move`; GATE 2 (same-PTB
+`poke` devInspect = success, live anchor `div_own ≈ 0.05%`) ✅; GATE 2b (mis-bound
+`poke` → `EWrongPool`) ✅.
+
 ## Move package (`packages/guardian`)
 
 `Move.toml` dependency set lifted verbatim from the de-risk probe that compiled

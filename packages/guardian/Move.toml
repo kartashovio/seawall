@@ -11,7 +11,7 @@ edition = "2024.beta"
 # deploy day — the Pyth/Wormhole branches float.
 [dependencies]
 Pyth     = { git = "https://github.com/pyth-network/pyth-crosschain.git", subdir = "target_chains/sui/contracts", rev = "sui-contract-testnet" }
-deepbook = { git = "https://github.com/MystenLabs/deepbookv3.git", subdir = "packages/deepbook", rev = "testnet-v19.0.0" }
+deepbook = { local = "vendor/deepbook" }
 # NOTE: dep KEY must equal the package's own name — sui 1.73 makes a mismatch a
 # HARD error, not a warning (RESULTS.md gotcha #4). `deepbook` is lowercase;
 # Pyth's package name is `Pyth`, so that key is capitalised.

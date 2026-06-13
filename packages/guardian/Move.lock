@@ -41,15 +41,15 @@ manifest_digest = "6996F1AB8CD448FFBA142C085C488FE8A46B485E61E38A1891EFA52B30D9C
 deps = { Sui = "Sui_1" }
 
 [pinned.testnet.deepbook]
-source = { git = "https://github.com/MystenLabs/deepbookv3.git", subdir = "packages/deepbook", rev = "190ab8fd15bca03b20965ab2a7b6911fcdf2bf1f" }
+source = { local = "vendor/deepbook" }
 use_environment = "testnet"
-manifest_digest = "3101923B9428545A4F52FFAD1C4F959F9BFFF84CD09CE4BCC1CB831286999B5A"
+manifest_digest = "060AC3C74EE598A52B1C9D8D9A9A46F8C59AFF1B0F9B28DED4F2300CD1DA5702"
 deps = { std = "MoveStdlib", sui = "Sui", token = "token" }
 
 [pinned.testnet.guardian]
 source = { root = true }
 use_environment = "testnet"
-manifest_digest = "257D1D54A226555E1FD1E5F4E1C5E65D414459E6FD5AE2E1541A4F4D4707481A"
+manifest_digest = "8094669488250F3E9308D3EB15B02CEE79896E75E8761EA70C0A7527E43FE330"
 deps = { Pyth = "Pyth", deepbook = "deepbook", std = "MoveStdlib", sui = "Sui" }
 
 [pinned.testnet.token]
