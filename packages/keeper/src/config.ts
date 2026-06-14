@@ -42,6 +42,22 @@ export function loadOrCreateKeeperKeypair(): Ed25519Keypair {
 /// Exports a CLI-keystore key (used only to one-time fund the keeper from the
 /// deployer — the keeper itself never needs the deployer key).
 export function exportCliKeypair(addr: string): Ed25519Keypair {
-  const out = execSync(`sui keytool export --key-identity ${addr} --json`, { encoding: "utf8" });
-  return Ed25519Keypair.fromSecretKey(decodeSuiPrivateKey(JSON.parse(out).exportedPrivateKey as string).secretKey);
+  // SECURITY: stdout here is the bech32 SECRET. Scrub on any failure so the
+  // captured buffer never reaches a thrown error / journald (see agent config.ts).
+  let out: string;
+  try {
+    out = execSync(`sui keytool export --key-identity ${addr} --json`, {
+      stdio: ["ignore", "pipe", "ignore"],
+      encoding: "utf8",
+    });
+  } catch {
+    throw new Error(`sui keytool export failed for ${addr} (key not in CLI keystore?)`);
+  }
+  try {
+    return Ed25519Keypair.fromSecretKey(decodeSuiPrivateKey(JSON.parse(out).exportedPrivateKey as string).secretKey);
+  } catch {
+    throw new Error(`could not parse exported key for ${addr}`);
+  } finally {
+    out = "";
+  }
 }

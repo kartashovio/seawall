@@ -43,7 +43,25 @@ export function loadConfig(): AgentConfig {
 /// repo). In prod the agent has its own key registered via governance_rotate_agent;
 /// for the demo it reuses the deployer/registered_agent address.
 export function loadAgentKeypair(addr: string): Ed25519Keypair {
-  const out = execSync(`sui keytool export --key-identity ${addr} --json`, { encoding: "utf8" });
-  const { secretKey } = decodeSuiPrivateKey(JSON.parse(out).exportedPrivateKey as string);
-  return Ed25519Keypair.fromSecretKey(secretKey);
+  // SECURITY: `sui keytool export` writes the bech32 SECRET to stdout. Never let
+  // that buffer reach a thrown error (execSync attaches captured stdout/stderr to
+  // e.stdout/e.output → it would land in journald via the FATAL handler). Capture
+  // stdout, scrub on any failure, and re-throw an opaque error.
+  let out: string;
+  try {
+    out = execSync(`sui keytool export --key-identity ${addr} --json`, {
+      stdio: ["ignore", "pipe", "ignore"],
+      encoding: "utf8",
+    });
+  } catch {
+    throw new Error(`sui keytool export failed for agent address ${addr} (key not in CLI keystore?)`);
+  }
+  try {
+    const { secretKey } = decodeSuiPrivateKey(JSON.parse(out).exportedPrivateKey as string);
+    return Ed25519Keypair.fromSecretKey(secretKey);
+  } catch {
+    throw new Error(`could not parse exported key for agent address ${addr}`);
+  } finally {
+    out = "";
+  }
 }
