@@ -108,3 +108,4 @@ a:hover { text-decoration: underline; }
 .info-row { align-self: stretch; }   /* .gauge centers children; let the text rows go full width, left-aligned */
 .role-note { align-self: stretch; }
 .env-pill { margin-left: 10px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.4px; background: rgba(245,185,66,0.16); color: var(--amber); }
+.warmup-note { font-size: 12px; line-height: 1.5; text-align: center; margin: -4px 2px 4px; opacity: 0.85; }

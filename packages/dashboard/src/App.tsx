@@ -75,6 +75,15 @@ export function App() {
         />
       </div>
 
+      {/* Honest cold-start caveat: the EWMA-Mahalanobis baseline + the velocity
+          window (~30 ticks) re-warm from scratch on every (re)start, so for the
+          first ~30 min a score can read elevated before it settles. Stated up
+          front so an early-load viewer reads a high needle as warm-up, not alarm. */}
+      <div className="muted warmup-note">
+        ℹ️ Cold-start caveat: for ~30 min after a (re)start the model is still warming up its rolling
+        baseline and may over-react — scores settle once the velocity window fills.
+      </div>
+
       <div className="grid grid-2">
         <LayerStatus tick={latest} paused={paused} events={events} />
         <GovernancePanel paused={paused} />

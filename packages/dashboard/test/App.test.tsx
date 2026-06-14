@@ -92,6 +92,11 @@ describe("App — enforcedEnv=testnet lights the testnet card + header pill", ()
     expect(html).toContain("TESTNET");
     expect(html).toContain("MAINNET");
   });
+
+  it("shows a cold-start caveat that the model may over-react while warming up", () => {
+    expect(html).toContain("warming up");
+    expect(html).toContain("over-react");
+  });
 });
 
 describe("App — enforcedEnv=mainnet SWAPS the roles with zero code change", () => {
