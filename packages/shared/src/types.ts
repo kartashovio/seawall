@@ -33,6 +33,40 @@ export interface RiskEvent {
   contributions: Record<string, number>;
 }
 
+// On-chain corridor position, basis points (the dashboard reads these off the
+// SSE tick to draw current-vs-[floor,baseline] bars).
+export interface BpsPair {
+  maxLtv: number;
+  borrowCap: number;
+}
+
+// The SSE payload the agent's control-server streams and the dashboard renders.
+// The ONLY contract between the v1 agent island and the v2 dashboard island
+// (they never exchange SDK objects — only this pure-TS shape + the chain).
+export interface AgentTickDTO {
+  ts: number;
+  mode: "calm" | "elevate" | "malicious" | "dead";
+  // calibrated 0-100 scores (overall + the two component drivers)
+  scoreOverall: number;
+  solvency: number;
+  liquidity: number;
+  // model internals (must-have #2 glass-box): raw squared Mahalanobis distance,
+  // feature count k (χ²(k) reference), and each feature's share of d².
+  d2: number;
+  k: number;
+  contributions: Record<string, number>;
+  // what the agent asked vs what's applied on-chain, + the DAO corridor bounds.
+  req: BpsPair;
+  applied: BpsPair;
+  floor: BpsPair;
+  baseline: BpsPair;
+  paused: boolean;
+  sent: boolean;
+  digest?: string;
+  clamped?: number; // # of RequestClamped events this tick (malicious-refused proof)
+  book?: { ok: boolean; mid: number | null; imb: number | null; spread: number | null };
+}
+
 // --- raw market data, normalized at ingest ---
 
 // One OHLCV bar. ts is epoch MILLISECONDS (every adapter normalizes to this).
