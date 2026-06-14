@@ -10,12 +10,14 @@ type Scene = {
   override?: { overall: number; solvency: number; liquidity: number };
 };
 
-const SCENES: { label: string; body: Scene }[] = [
-  { label: "② Slow drift → agent CAUTION", body: { mode: "elevate", override: { overall: 78, solvency: 80, liquidity: 55 } } },
-  { label: "① Fast de-peg → hard tighten", body: { mode: "elevate", override: { overall: 99, solvency: 99, liquidity: 70 } } },
-  { label: "③ Malicious agent (clamped)", body: { mode: "malicious" } },
-  { label: "④ Dead agent (L1 still holds)", body: { mode: "dead" } },
-  { label: "↺ Calm (reset)", body: { mode: "calm" } },
+// NB: array order + mode/override payloads are load-bearing (the agent + e2e
+// depend on them) — only presentation (num glyph, label, accent) is added.
+const SCENES: { num: string; label: string; accent: string; body: Scene }[] = [
+  { num: "②", label: "Slow drift → agent CAUTION", accent: "caution", body: { mode: "elevate", override: { overall: 78, solvency: 80, liquidity: 55 } } },
+  { num: "①", label: "Fast de-peg → hard tighten", accent: "freeze", body: { mode: "elevate", override: { overall: 99, solvency: 99, liquidity: 70 } } },
+  { num: "③", label: "Malicious agent (clamped)", accent: "caution", body: { mode: "malicious" } },
+  { num: "④", label: "Dead agent (L1 still holds)", accent: "neutral", body: { mode: "dead" } },
+  { num: "↺", label: "Calm (reset)", accent: "calm", body: { mode: "calm" } },
 ];
 
 export function AttackPanel({ agentUrl }: { agentUrl: string }) {
@@ -42,10 +44,11 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
       <h2>
         Attack panel <span className="tag">demo control → agent</span>
       </h2>
-      <div className="scene-btns">
+      <div className="scene-strip">
         {SCENES.map((s) => (
-          <button key={s.label} className="btn btn-scene" onClick={() => sendScene(s.body)}>
-            {s.label}
+          <button key={s.label} className={`btn btn-scene scene--${s.accent}`} onClick={() => sendScene(s.body)}>
+            <span className="scene-num">{s.num}</span>
+            <span className="scene-label">{s.label}</span>
           </button>
         ))}
       </div>
@@ -56,8 +59,8 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
         </div>
       )}
       <div className="muted-sm">
-        drives the OFF-CHAIN agent. The contract-only FREEZE (Scene ①) is a separate
-        REAL DeepBook divergence — see scripts/inject-divergence.
+        drives the OFF-CHAIN agent. The contract-only FREEZE (Scene ①) is a separate REAL DeepBook divergence — see
+        scripts/inject-divergence.
       </div>
     </section>
   );

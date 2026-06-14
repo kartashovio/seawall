@@ -1,17 +1,19 @@
 // Must-have #2: the visible AI risk score. A semicircular calibrated-anomaly
-// gauge. The colored bands bind to BANDS (= the on-chain SCORE_LO/HI), so the
-// dial reads the same thresholds the contract clamps to. The score is ADVISORY:
-// 99 is the measurement marker, not the gate (FREEZE is contract-only) — the
-// caption says so out loud.
+// gauge, restyled as a tide reading. The colored bands bind to BANDS (= the
+// on-chain SCORE_LO/HI), so the dial reads the same thresholds the contract
+// clamps to. The score is ADVISORY: 99 is the measurement marker, not the gate
+// (FREEZE is contract-only) — the caption says so out loud.
 //
 // PURE DIAL: this returns ONLY the dial fragment (svg + value + caption) — NO
 // outer <section>/<h2>. The card chrome + env-named title come from <ScoreCard>,
 // which renders this twice (testnet + mainnet) as visual twins. The geometry,
-// BANDS coloring, alert marker, and "99 = marker not gate" caption are unchanged.
+// BANDS coloring, alert marker, and "99 = marker not gate" caption are unchanged;
+// only the cosmetics (recessed track, glowing needle, engraved Fraunces value,
+// the small 99 label) are new.
 import { BANDS } from "../config";
 
 // --- arc geometry ---------------------------------------------------------
-// The .gauge svg is 220x130 (CSS). Draw a 180° dial: score 0 → 180° (far left),
+// The .gauge svg viewBox is 220x130. Draw a 180° dial: score 0 → 180° (far left),
 // score 100 → 0° (far right). SVG y grows downward, so subtract the sine term.
 const CX = 110;
 const CY = 116;
@@ -49,22 +51,16 @@ export function RiskGauge({ score }: { score: number }) {
   const v = clamp(score, 0, 100);
   const color = bandColor(v);
   const needle = polar(scoreToAngle(v), R - STROKE / 2 - 2);
-  const tip = polar(scoreToAngle(v), R + 6);
   const hub = polar(scoreToAngle(v), 10);
   const alertTick = polar(scoreToAngle(BANDS.alert), R);
   const alertTickInner = polar(scoreToAngle(BANDS.alert), R - STROKE - 3);
+  const alertLabel = polar(scoreToAngle(BANDS.alert), R - STROKE - 14);
 
   return (
     <>
       <svg viewBox="0 0 220 130" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
-        {/* full gray track */}
-        <path
-          d={arcPath(0, 100, R)}
-          fill="none"
-          stroke="var(--line)"
-          strokeWidth={STROKE}
-          strokeLinecap="round"
-        />
+        {/* recessed track so the colored bands sit proud */}
+        <path d={arcPath(0, 100, R)} fill="none" stroke="var(--inset)" strokeWidth={STROKE} strokeLinecap="round" />
         {/* colored bands */}
         <path d={arcPath(0, BANDS.lo, R)} fill="none" stroke="var(--teal)" strokeWidth={STROKE} strokeLinecap="round" />
         <path d={arcPath(BANDS.lo, BANDS.hi, R)} fill="none" stroke="var(--amber)" strokeWidth={STROKE} />
@@ -77,9 +73,20 @@ export function RiskGauge({ score }: { score: number }) {
           y2={alertTickInner.y}
           stroke="var(--ink)"
           strokeWidth={1.5}
-          opacity={0.8}
+          opacity={0.85}
         />
-        {/* needle */}
+        <text
+          x={alertLabel.x}
+          y={alertLabel.y}
+          fontSize="9"
+          fontFamily="var(--font-mono)"
+          fill="var(--muted)"
+          textAnchor="middle"
+          dominantBaseline="middle"
+        >
+          {BANDS.alert}
+        </text>
+        {/* needle — glowing */}
         <line
           x1={hub.x}
           y1={hub.y}
@@ -88,8 +95,8 @@ export function RiskGauge({ score }: { score: number }) {
           stroke={color}
           strokeWidth={3}
           strokeLinecap="round"
+          style={{ filter: `drop-shadow(0 0 4px ${color})` }}
         />
-        <line x1={CX} y1={CY} x2={tip.x} y2={tip.y} stroke={color} strokeWidth={0} />
         <circle cx={CX} cy={CY} r={6} fill={color} />
         <circle cx={CX} cy={CY} r={6} fill="none" stroke="var(--panel)" strokeWidth={2} />
       </svg>

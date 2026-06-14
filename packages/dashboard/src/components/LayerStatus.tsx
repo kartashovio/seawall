@@ -1,12 +1,13 @@
-// The 3-layer enforcement panel — the trust-minimization story made visible.
+// The 3-layer enforcement panel — the trust-minimization story made visible as a
+// breakwater: three relay rows strung on one escalation rail (cyan→amber→coral).
 // Pure presentational: each lamp lights straight from props so a judge can read
 // who is allowed to pull which rung. The CAUTION rung (L2, amber) is the agent's
 // domain — but its light only proves the *applied* param ratcheted below baseline
-// (i.e. the contract accepted a clamped request). The FROZEN rung (L3, red) is
+// (i.e. the contract accepted a clamped request). The FROZEN rung (L3, coral) is
 // CONTRACT-ONLY: it lights purely from `paused` and carries NO agent attribution,
 // because the freeze fires on the contract's own re-derived Pyth↔DeepBook
 // divergence (≥ T) or a not-ok book — never on the agent's word. Keeping amber
-// (agent) and red (contract) visually distinct is load-bearing.
+// (agent) and coral (contract) visually distinct is load-bearing.
 import type { AgentTickDTO } from "@seawall/shared";
 import type { GuardianEventRow } from "../abi";
 
@@ -26,8 +27,7 @@ export function LayerStatus({
 
   // Time since the last on-chain action (events are newest-first).
   const last = events[0];
-  const ago =
-    last && last.tsMs > 0 ? `${Math.round((Date.now() - last.tsMs) / 1000)}s ago` : "—";
+  const ago = last && last.tsMs > 0 ? `${Math.round((Date.now() - last.tsMs) / 1000)}s ago` : "—";
 
   return (
     <section className="card layers">
@@ -44,6 +44,7 @@ export function LayerStatus({
             <div className="lt">Inline floor</div>
             <div className="ls">always-on · agent-independent · per-borrow</div>
           </div>
+          <span className="rung">L1</span>
         </div>
 
         {/* L2 — CAUTION params. Agent-ORIGINATED, but the light tracks the on-chain
@@ -54,10 +55,11 @@ export function LayerStatus({
             <div className="lt">CAUTION params</div>
             <div className="ls">agent-originated · clamped to corridor</div>
           </div>
+          <span className="rung">L2</span>
         </div>
 
         {/* L3 — FROZEN hard stop. CONTRACT-ONLY: lights purely from `paused`, fires on
-            the contract's own divergence ≥ T or a not-ok book. Red = contract. The agent
+            the contract's own divergence ≥ T or a not-ok book. Coral = contract. The agent
             has no role in the freeze — deliberately NO agent attribution on this row. */}
         <div className={`lamp l3${paused ? " on" : ""}`}>
           <span className="led" />
@@ -65,14 +67,15 @@ export function LayerStatus({
             <div className="lt">FROZEN (hard stop)</div>
             <div className="ls">contract-only · div≥T or book-not-ok · DAO-unfreeze</div>
           </div>
+          <span className="rung">L3</span>
         </div>
       </div>
 
       <div className="timer">
-        <div>
+        <div className="speed">
           manual freeze: hours · DAO vote: days · Seawall: <b>seconds</b>
         </div>
-        <div style={{ marginTop: 6 }}>last on-chain action: {ago}</div>
+        <div className="ago">last on-chain action: {ago}</div>
       </div>
     </section>
   );

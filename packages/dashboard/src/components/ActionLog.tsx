@@ -2,7 +2,7 @@ import type { GuardianEventRow, GuardianEventKind } from "../abi";
 import { summarize, txUrl } from "../abi";
 
 // Map a guardian event kind → (badge css class, short label). The clamp/reject
-// rows are the trust-min money shot, so they also get an accent left-border.
+// rows are the trust-min money shot, so they also get a loud accent treatment.
 function badge(kind: GuardianEventKind): { cls: string; label: string } {
   switch (kind) {
     case "RiskEvaluated":
@@ -26,12 +26,14 @@ function badge(kind: GuardianEventKind): { cls: string; label: string } {
   }
 }
 
-// Accent the rows that prove "the agent's number is never trusted": clamped
-// (amber) and rejected (red) get a thick left border that makes them pop.
-function accent(kind: GuardianEventKind): React.CSSProperties {
-  if (kind === "RequestClamped") return { borderLeft: "3px solid var(--amber)" };
-  if (kind === "RequestRejected") return { borderLeft: "3px solid var(--red)" };
-  return {};
+// The rows that prove "the agent's number is never trusted": clamped (amber) and
+// rejected (coral) get a loud left border + wash + a one-shot strike flash. Frozen
+// gets a coral edge too.
+function rowClass(kind: GuardianEventKind): string {
+  if (kind === "RequestClamped") return " clamp";
+  if (kind === "RequestRejected") return " reject";
+  if (kind === "Frozen") return " frozen";
+  return "";
 }
 
 export function ActionLog({ events }: { events: GuardianEventRow[] }) {
@@ -40,6 +42,10 @@ export function ActionLog({ events }: { events: GuardianEventRow[] }) {
       <h2>
         On-chain action log <span className="tag tag-contract">queryEvents · must-have #3</span>
       </h2>
+      <div className="log-pin">
+        Watch for <span className="c-agent">CLAMP (amber)</span> and <span className="c-contract">REJECT (coral)</span>:
+        the contract refusing the agent. That's distrust, on-chain.
+      </div>
       {events.length === 0 ? (
         <div className="muted">no guardian events yet — start the agent + keeper.</div>
       ) : (
@@ -47,15 +53,10 @@ export function ActionLog({ events }: { events: GuardianEventRow[] }) {
           {events.map((e, i) => {
             const b = badge(e.kind);
             return (
-              <div className="logrow" key={e.digest + i} style={accent(e.kind)}>
+              <div className={"logrow" + rowClass(e.kind)} key={e.digest + i}>
                 <span className={"k " + b.cls}>{b.label}</span>
                 <span>{summarize(e)}</span>
-                <a
-                  className="digest mono"
-                  href={txUrl(e.digest)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a className="digest mono" href={txUrl(e.digest)} target="_blank" rel="noreferrer">
                   {e.digest.slice(0, 8)}…
                 </a>
               </div>

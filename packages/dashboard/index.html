@@ -4,9 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <title>Seawall — Autonomous Risk Guardian</title>
+    <meta
+      name="description"
+      content="Seawall — a trust-minimized autonomous circuit breaker for Sui lending. An untrusted off-chain ML radar; an on-chain contract that re-derives every breach itself and can only push safer."
+    />
   </head>
   <body>
+    <!-- Fixed atmosphere layers: the abyssal water the dashboard floats on, the
+         instrument grain, the rising divergence-surge, the freeze veil, and the
+         cyan seawall lip the water is held below. Purely decorative (aria-hidden,
+         pointer-events:none in CSS); the surge height + freeze recolor are driven
+         from data by App via the --surge CSS var and the body.frozen class. -->
+    <div class="bg-abyss" aria-hidden="true"></div>
+    <div class="bg-grain" aria-hidden="true"></div>
+    <div class="bg-surge" aria-hidden="true"></div>
+    <div class="freeze-veil" aria-hidden="true"></div>
+    <div class="wall-lip" aria-hidden="true"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
