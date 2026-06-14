@@ -7,6 +7,8 @@ import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClientQuery } fr
 import { Transaction } from "@mysten/sui/transactions";
 import { CFG } from "../config";
 
+const shortId = (id?: string): string => (id ? `${id.slice(0, 8)}…${id.slice(-4)}` : "—");
+
 export function GovernancePanel({ paused }: { paused: boolean }) {
   const account = useCurrentAccount();
   const { mutate: signAndExecute, isPending } = useSignAndExecuteTransaction();
@@ -60,6 +62,27 @@ export function GovernancePanel({ paused }: { paused: boolean }) {
         </span>
       </div>
       {msg && <div className="gov-msg mono">{msg}</div>}
+
+      <div className="gov-meta">
+        <div className="row">
+          <span className="lbl">policy state</span>
+          <span className={paused ? "st st-frozen" : "st st-live"}>{paused ? "FROZEN" : "LIVE · unfrozen"}</span>
+        </div>
+        <div className="row">
+          <span className="lbl">GovernanceCap</span>
+          <a className="mono" href={`${CFG.explorerObj}/${capId ?? ""}`} target="_blank" rel="noreferrer">
+            {shortId(capId)}
+          </a>
+        </div>
+        <div className="row">
+          <span className="lbl">cap holder</span>
+          <span className="mono">{ownsCap ? "you ✓" : shortId(capOwner)}</span>
+        </div>
+      </div>
+      <p className="muted gov-foot">
+        The freeze fires on the contract's own re-derived divergence; the keeper + inline floor keep enforcing even if
+        the agent is dead. Only this owned cap re-opens the market.
+      </p>
     </section>
   );
 }

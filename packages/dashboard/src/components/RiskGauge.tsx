@@ -50,8 +50,10 @@ const bandColor = (s: number): string => {
 export function RiskGauge({ score }: { score: number }) {
   const v = clamp(score, 0, 100);
   const color = bandColor(v);
-  const needle = polar(scoreToAngle(v), R - STROKE / 2 - 2);
-  const hub = polar(scoreToAngle(v), 10);
+  // a short value pointer that sits ON the arc (no long needle crossing the
+  // center readout) — spans from just inside the band to just past its outer edge.
+  const tickInner = polar(scoreToAngle(v), R - STROKE - 2);
+  const tickOuter = polar(scoreToAngle(v), R + 5);
   const alertTick = polar(scoreToAngle(BANDS.alert), R);
   const alertTickInner = polar(scoreToAngle(BANDS.alert), R - STROKE - 3);
   const alertLabel = polar(scoreToAngle(BANDS.alert), R - STROKE - 14);
@@ -59,6 +61,15 @@ export function RiskGauge({ score }: { score: number }) {
   return (
     <>
       <svg viewBox="0 0 220 130" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
+        <defs>
+          {/* soft plate behind the readout so the needle disappears under the
+              number instead of impaling it (fades to transparent at the rim). */}
+          <radialGradient id="gauge-bowl" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#0e1828" stopOpacity="0.96" />
+            <stop offset="55%" stopColor="#0e1828" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#0e1828" stopOpacity="0" />
+          </radialGradient>
+        </defs>
         {/* recessed track so the colored bands sit proud */}
         <path d={arcPath(0, 100, R)} fill="none" stroke="var(--inset)" strokeWidth={STROKE} strokeLinecap="round" />
         {/* colored bands */}
@@ -86,23 +97,24 @@ export function RiskGauge({ score }: { score: number }) {
         >
           {BANDS.alert}
         </text>
-        {/* needle — glowing */}
+        {/* value pointer — a short glowing tick on the arc */}
         <line
-          x1={hub.x}
-          y1={hub.y}
-          x2={needle.x}
-          y2={needle.y}
+          x1={tickInner.x}
+          y1={tickInner.y}
+          x2={tickOuter.x}
+          y2={tickOuter.y}
           stroke={color}
-          strokeWidth={3}
+          strokeWidth={4}
           strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+          style={{ filter: `drop-shadow(0 0 5px ${color})` }}
         />
-        <circle cx={CX} cy={CY} r={6} fill={color} />
-        <circle cx={CX} cy={CY} r={6} fill="none" stroke="var(--panel)" strokeWidth={2} />
+        {/* the engraved tide reading — sits IN the bowl on a soft plate, drawn last
+            so the needle passes cleanly behind the digits. */}
+        <ellipse cx={CX} cy={100} rx={46} ry={25} fill="url(#gauge-bowl)" />
+        <text x={CX} y={101} className="gauge-num" textAnchor="middle" dominantBaseline="middle" fill={color}>
+          {Math.round(v)}
+        </text>
       </svg>
-      <div className="gauge-val" style={{ color }}>
-        {Math.round(v)}
-      </div>
       <div className="gauge-cap">calibrated anomaly score · 99 = measurement marker, not the gate</div>
     </>
   );

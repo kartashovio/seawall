@@ -31,8 +31,11 @@ export function ModelInternals(props: {
   const tripped = d2 >= thr;
   const d2Width = Math.min(100, (d2 / thr) * 50); // χ² sits at the 50% post
 
+  // Display each feature's MAGNITUDE share of d² (|cᵢ| / Σ|c|) → clean 0–100% bars
+  // that sum to 100%. (Raw signed marginal contributions can be negative or exceed
+  // 100% from covariance cross-terms — mathematically real but reads as broken.)
   const entries = Object.entries(contributions);
-  const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
+  const total = entries.reduce((s, [, v]) => s + Math.abs(v), 0) || 1;
 
   const corridorParams = [
     { label: "max LTV", a: applied.maxLtv, f: floor.maxLtv, b: baseline.maxLtv },
@@ -74,7 +77,7 @@ export function ModelInternals(props: {
           <div className="blk-title">Per-feature contribution to d²</div>
           <div className="spectrum">
             {entries.map(([name, val], i) => (
-              <span key={name} style={{ width: `${(val / total) * 100}%`, background: PAL[i % PAL.length] }} title={name} />
+              <span key={name} style={{ width: `${(Math.abs(val) / total) * 100}%`, background: PAL[i % PAL.length] }} title={name} />
             ))}
           </div>
           {entries.length === 0 ? (
@@ -83,7 +86,7 @@ export function ModelInternals(props: {
             </div>
           ) : (
             entries.map(([name, val], i) => {
-              const share = (val / total) * 100;
+              const share = (Math.abs(val) / total) * 100;
               return (
                 <div className="barrow" key={name}>
                   <span className="barlabel">{name}</span>
