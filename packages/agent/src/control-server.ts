@@ -41,6 +41,9 @@ export interface ControlServer {
 
 export function startControlServer(opts: ControlOpts): ControlServer {
   const clients = new Set<ServerResponse>();
+  // Most recent tick, replayed to any NEW /stream subscriber immediately so a
+  // fresh page paints the gauge at once instead of waiting up to one 60s grid.
+  let lastTick: AgentTick | null = null;
 
   const send = (res: ServerResponse, code: number, body: unknown) => {
     res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
@@ -67,6 +70,8 @@ export function startControlServer(opts: ControlOpts): ControlServer {
         "Access-Control-Allow-Origin": "*",
       });
       res.write(": connected\n\n");
+      // Replay the latest tick right away (no wait for the next 60s broadcast).
+      if (lastTick) res.write(`data: ${JSON.stringify(lastTick)}\n\n`);
       clients.add(res);
       // Heartbeat: calm steady-state emits one data frame per 60s; Cloudflare idle-
       // times out a silent connection (~100s) → the live gauge drops. A ~20s comment
@@ -119,6 +124,7 @@ export function startControlServer(opts: ControlOpts): ControlServer {
   });
 
   function broadcast(t: AgentTick): void {
+    lastTick = t;
     const line = `data: ${JSON.stringify(t)}\n\n`;
     for (const c of clients) c.write(line);
   }

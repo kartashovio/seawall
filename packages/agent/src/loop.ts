@@ -174,22 +174,31 @@ export class Engine {
           cex,
         };
       }
-      const r = await submitOnce(this.client, this.signer, this.cfg, mal, 255);
-      this.lastSentMs = nowMs;
-      const a = r.risk ? { maxLtv: r.risk.maxLtvCurrentBps, borrowCap: r.risk.borrowCapCurrentBps } : applied;
-      return {
-        result: {
-          ...this.base(nowMs, "malicious", snap, hot, d2, contributions),
-          req: mal,
-          applied: a,
-          sent: true,
-          digest: r.digest,
-          clamped: r.clamped.length,
-          book: row?.book,
-          divBps,
-        },
-        cex,
-      };
+      try {
+        const r = await submitOnce(this.client, this.signer, this.cfg, mal, 255);
+        this.lastSentMs = nowMs;
+        const a = r.risk ? { maxLtv: r.risk.maxLtvCurrentBps, borrowCap: r.risk.borrowCapCurrentBps } : applied;
+        return {
+          result: {
+            ...this.base(nowMs, "malicious", snap, hot, d2, contributions),
+            req: mal,
+            applied: a,
+            sent: true,
+            digest: r.digest,
+            clamped: r.clamped.length,
+            book: row?.book,
+            divBps,
+          },
+          cex,
+        };
+      } catch (e) {
+        // submit failed (e.g. out of gas) — still emit the score so the gauge lives.
+        console.error(`[submit] malicious-scene submit failed, score-only: ${(e as Error).message}`);
+        return {
+          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false, book: row?.book, divBps },
+          cex,
+        };
+      }
     }
 
     // normal path: compute + ratchet against the on-chain applied baseline
@@ -197,7 +206,7 @@ export class Engine {
     const { req, tighter } = decideRequest(computed, applied);
     // "elevate" is an explicit operator trigger → bypass the anti-spam cooldown
     // (still requires tighter + not paused); calm/autonomous path uses the full gate.
-    const send =
+    let send =
       !snap.paused &&
       (scene.mode === "elevate" ? tighter : shouldSend(tighter, nowMs, this.lastSentMs, this.sendOpts));
 
@@ -205,11 +214,20 @@ export class Engine {
     let outApplied = applied;
     let clamped: number | undefined;
     if (send) {
-      const r = await submitOnce(this.client, this.signer, this.cfg, req, Math.round(cs.overall));
-      this.lastSentMs = nowMs;
-      digest = r.digest;
-      clamped = r.clamped.length;
-      if (r.risk) outApplied = { maxLtv: r.risk.maxLtvCurrentBps, borrowCap: r.risk.borrowCapCurrentBps };
+      try {
+        const r = await submitOnce(this.client, this.signer, this.cfg, req, Math.round(cs.overall));
+        this.lastSentMs = nowMs;
+        digest = r.digest;
+        clamped = r.clamped.length;
+        if (r.risk) outApplied = { maxLtv: r.risk.maxLtvCurrentBps, borrowCap: r.risk.borrowCapCurrentBps };
+      } catch (e) {
+        // The submit tx failed (agent out of gas / RPC hiccup). DISPLAY the score
+        // anyway — on-chain enforcement is independent (permissionless keeper +
+        // inline floor); a tx error must NEVER blank the gauge. lastSentMs is left
+        // unmoved so the next tick retries once the address is funded again.
+        console.error(`[submit] failed, score-only this tick: ${(e as Error).message}`);
+        send = false;
+      }
     }
     return {
       result: {

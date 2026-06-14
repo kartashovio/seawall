@@ -10,6 +10,8 @@ import { AGENT_GRID_MS } from "@seawall/shared";
 import { loadConfig, loadAgentKeypair } from "./config";
 import { verifySubmitAbi } from "./tx";
 import { warmup } from "./warmup";
+import { FeatureBuilder } from "@seawall/model";
+import { LIVE_FEATURE_CONFIG } from "./live";
 import { Engine, type Scene, type AgentTick, type ObservatoryDeps } from "./loop";
 import { DEFAULT_SEND_OPTS } from "./policy-logic";
 import { startControlServer } from "./control-server";
@@ -38,7 +40,11 @@ async function main(): Promise<void> {
     const obsCfg = loadObservatoryConfig();
     const obsWarm = await warmup(cfg, Date.now()); // CEX-consensus proxy, chain-agnostic
     const mainnetClient = new SuiClient({ url: obsCfg.rpcUrl });
-    const obsTriple = { det: obsWarm.det, fb: obsWarm.fb, cal: obsWarm.cal };
+    // Fresh FeatureBuilder for the live leg: warmup primed its velocity window on
+    // the CEX-consensus proxy, and carrying that into the live mainnet read spikes
+    // divvel for the first ~30 ticks (the cold-start over-reaction). Reset the
+    // velocity at the seam — the warm EWMA detector + calibrator are kept.
+    const obsTriple = { det: obsWarm.det, fb: new FeatureBuilder(LIVE_FEATURE_CONFIG), cal: obsWarm.cal };
     observatory = {
       compute: (cex, nowMs) => computeObservatory(mainnetClient, obsCfg, cex, nowMs, obsTriple),
     };
@@ -47,7 +53,10 @@ async function main(): Promise<void> {
     console.warn(`[agent] mainnet observatory unavailable — running enforced-only: ${(e as Error).message}`);
   }
 
-  const engine = new Engine(client, signer, cfg, warm.det, warm.fb, warm.cal, DEFAULT_SEND_OPTS, observatory);
+  // Same velocity-seam reset for the enforced testnet leg: keep the warm detector
+  // + calibrator, start the live velocity window empty (no warmup→live spike).
+  const liveFb = new FeatureBuilder(LIVE_FEATURE_CONFIG);
+  const engine = new Engine(client, signer, cfg, warm.det, liveFb, warm.cal, DEFAULT_SEND_OPTS, observatory);
   let scene: Scene = { mode: "calm" };
   let busy = false;
 
