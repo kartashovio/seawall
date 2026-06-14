@@ -20,6 +20,7 @@ describe("AgentTickDTO.observatory — optional, JSON-round-trippable SSE field"
     baseline: { maxLtv: 7500, borrowCap: 10000 },
     paused: false,
     sent: false,
+    enforcedEnv: "testnet",
   };
 
   it("a DTO with NO observatory field is valid (optional)", () => {

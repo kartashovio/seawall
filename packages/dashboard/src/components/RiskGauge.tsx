@@ -3,6 +3,11 @@
 // dial reads the same thresholds the contract clamps to. The score is ADVISORY:
 // 99 is the measurement marker, not the gate (FREEZE is contract-only) — the
 // caption says so out loud.
+//
+// PURE DIAL: this returns ONLY the dial fragment (svg + value + caption) — NO
+// outer <section>/<h2>. The card chrome + env-named title come from <ScoreCard>,
+// which renders this twice (testnet + mainnet) as visual twins. The geometry,
+// BANDS coloring, alert marker, and "99 = marker not gate" caption are unchanged.
 import { BANDS } from "../config";
 
 // --- arc geometry ---------------------------------------------------------
@@ -50,10 +55,7 @@ export function RiskGauge({ score }: { score: number }) {
   const alertTickInner = polar(scoreToAngle(BANDS.alert), R - STROKE - 3);
 
   return (
-    <section className="card gauge">
-      <h2>
-        AI risk score <span className="tag tag-agent">ML · advisory</span>
-      </h2>
+    <>
       <svg viewBox="0 0 220 130" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
         {/* full gray track */}
         <path
@@ -95,6 +97,6 @@ export function RiskGauge({ score }: { score: number }) {
         {Math.round(v)}
       </div>
       <div className="gauge-cap">calibrated anomaly score · 99 = measurement marker, not the gate</div>
-    </section>
+    </>
   );
 }

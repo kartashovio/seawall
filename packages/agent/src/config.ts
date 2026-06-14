@@ -24,6 +24,10 @@ export interface AgentConfig {
   wormholeState: string;
   registeredAgent: string;
   hermesUrl: string;
+  // Which environment this agent ENFORCES on (submits CAUTION ParamRequests to).
+  // Echoed onto every tick's DTO as a STATUS MIRROR the dashboard reads to light
+  // the active card + header pill — NEVER a control input. Defaults to "testnet".
+  enforcedEnv: "testnet" | "mainnet";
 }
 
 const CONFIG_PATH = join(dirname(fileURLToPath(import.meta.url)), "../../../config/testnet.json");
@@ -36,7 +40,10 @@ export function loadConfig(): AgentConfig {
   if (c.feedId.replace(/^0x/, "") === PYTH_SUI_USD.mainnet.replace(/^0x/, "")) {
     throw new Error("feedId is the MAINNET id — the contract reads the beta feed; refusing to run");
   }
-  return { ...c, hermesUrl: HERMES_BETA_URL } as AgentConfig;
+  // enforcedEnv is a plain, non-secret config echo (the agent enforces on testnet
+  // for the demo); existing config files without the key stay valid via the default.
+  const enforcedEnv: "testnet" | "mainnet" = c.enforcedEnv === "mainnet" ? "mainnet" : "testnet";
+  return { ...c, hermesUrl: HERMES_BETA_URL, enforcedEnv } as AgentConfig;
 }
 
 /// Loads the registered-agent key from the CLI keystore at runtime (never in the

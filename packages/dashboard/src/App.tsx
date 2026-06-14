@@ -2,8 +2,7 @@ import { ConnectButton } from "@mysten/dapp-kit";
 import { useAgentStream } from "./useAgentStream";
 import { useGuardianEvents, usePolicy } from "./useGuardian";
 import { CFG, CORRIDOR } from "./config";
-import { RiskGauge } from "./components/RiskGauge";
-import { ObservatoryTile } from "./components/ObservatoryTile";
+import { ScoreCard } from "./components/ScoreCard";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { GovernancePanel } from "./components/GovernancePanel";
@@ -24,6 +23,14 @@ export function App() {
   const floor = latest?.floor ?? { maxLtv: CORRIDOR.maxLtv.floor, borrowCap: CORRIDOR.borrowCap.floor };
   const baseline = latest?.baseline ?? { maxLtv: CORRIDOR.maxLtv.baseline, borrowCap: CORRIDOR.borrowCap.baseline };
 
+  // Which environment the agent ENFORCES on — a STATUS MIRROR read straight off
+  // the SSE tick (never a dashboard hardcode). Defaults to "testnet" before the
+  // first frame so a stale/early SSE frame can't blank the indicator. The two
+  // score cards + the header pill light purely from (env === enforcedEnv); there
+  // is NO control that re-routes enforcement.
+  const enforcedEnv = latest?.enforcedEnv ?? "testnet";
+  const obs = latest?.observatory;
+
   return (
     <div className="app">
       <header className="header">
@@ -31,7 +38,10 @@ export function App() {
           <img src="/logo.svg" alt="Seawall" />
           <div>
             <h1>Seawall</h1>
-            <div className="sub">Autonomous Risk Guardian · Sui testnet</div>
+            <div className="sub">
+              Autonomous Risk Guardian
+              <span className={`env-pill env-${enforcedEnv}`}>ENFORCING ▸ {enforcedEnv.toUpperCase()}</span>
+            </div>
           </div>
         </div>
         <div className="spacer" />
@@ -47,8 +57,22 @@ export function App() {
       )}
 
       <div className="grid grid-2">
-        <RiskGauge score={latest?.scoreOverall ?? 0} />
-        <ObservatoryTile obs={latest?.observatory} />
+        <ScoreCard
+          env="testnet"
+          enforced={enforcedEnv === "testnet"}
+          score={latest?.scoreOverall ?? 0}
+          divBps={latest?.divBps}
+          book={latest?.book}
+          available={!!latest}
+        />
+        <ScoreCard
+          env="mainnet"
+          enforced={enforcedEnv === "mainnet"}
+          score={obs?.ok ? obs.score : 0}
+          divBps={obs?.divBps}
+          book={obs?.book}
+          available={!!obs}
+        />
       </div>
 
       <div className="grid grid-2">

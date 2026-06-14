@@ -87,6 +87,18 @@ export interface AgentTickDTO {
   digest?: string;
   clamped?: number; // # of RequestClamped events this tick (malicious-refused proof)
   book?: { ok: boolean; mid: number | null; imb: number | null; spread: number | null };
+  // Testnet Pyth↔DeepBook divergence, bps — the SAME ratio form the observatory
+  // uses (1e4·|pyth−mid|/pyth), the symmetry-completer so the testnet score card
+  // shows the same info row as the mainnet one. OPTIONAL: a book loss-of-signal
+  // tick (book.ok===false / dead branch) omits it and the card reads "no signal".
+  // DISPLAY ONLY — read off already-fetched row data; never on the decision path.
+  divBps?: number;
+  // Which environment the agent ENFORCES on (submits CAUTION ParamRequests to).
+  // The dashboard lights the matching card's ENFORCED ribbon + the header pill
+  // from this value. It is a STATUS MIRROR of agent config — NEVER a control
+  // input; nothing in the UI can change it. (A future mainnet-enforcing instance
+  // reports "mainnet" and every indicator re-roles with zero dashboard edits.)
+  enforcedEnv: "testnet" | "mainnet";
   // MAINNET read-only observatory (display only; see ObservatoryBlock). OPTIONAL
   // so a mainnet hiccup simply omits it and the frame stays a legal SSE payload —
   // the enforced testnet tick is fully computed and returned regardless.

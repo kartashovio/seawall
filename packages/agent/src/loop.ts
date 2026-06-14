@@ -80,6 +80,10 @@ export class Engine {
       floor: snap.floor,
       baseline: snap.baseline,
       paused: snap.paused,
+      // Pure identity metadata: a STATUS MIRROR of the agent's config, attached to
+      // every branch via `...this.base(...)`. NEVER read by computeRequest /
+      // decideRequest / shouldSend / submitOnce — the decision path never sees it.
+      enforcedEnv: this.cfg.enforcedEnv,
     };
   }
 
@@ -142,6 +146,22 @@ export class Engine {
     }
     if (scene.mode === "elevate" && scene.override) cs = scene.override;
 
+    // Testnet Pyth↔DeepBook divergence in bps — the symmetry-completer mirroring
+    // the mainnet observatory. DISPLAY ONLY: a pure read over `row` data the
+    // enforced tick already fetched (no new fetch, no observatory coupling), never
+    // passed into computeRequest/decideRequest/shouldSend/submitOnce. Uses the
+    // RATIO form 1e4·|pyth−mid|/pyth — the SAME formula the observatory uses
+    // (observatory.ts:52) so both cards' divergence rows are computed identically.
+    // (features.ts uses a LOG difference; they agree to <0.01 bps at calm levels
+    // but are not bit-identical — the ratio is the honest cross-card match.) A
+    // book loss-of-signal (book.ok===false / dead branch with no row) omits it →
+    // the card reads "no signal", identical to the mainnet card.
+    const pyth = row?.values.pyth;
+    const divBps =
+      row?.book.ok && typeof pyth === "number" && pyth > 0 && row.book.mid != null
+        ? 1e4 * (Math.abs(pyth - row.book.mid) / pyth)
+        : undefined;
+
     if (scene.mode === "malicious") {
       // a compromised agent ignores the corridor + ratchet and asks below floor.
       // The contract must clamp it — the trust-min money shot. Explicit operator
@@ -150,7 +170,7 @@ export class Engine {
       const hot = { overall: 100, solvency: 100, liquidity: 100 };
       if (snap.paused) {
         return {
-          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false },
+          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false, book: row?.book, divBps },
           cex,
         };
       }
@@ -166,6 +186,7 @@ export class Engine {
           digest: r.digest,
           clamped: r.clamped.length,
           book: row?.book,
+          divBps,
         },
         cex,
       };
@@ -199,6 +220,7 @@ export class Engine {
         digest,
         clamped,
         book: row?.book,
+        divBps,
       },
       cex,
     };
