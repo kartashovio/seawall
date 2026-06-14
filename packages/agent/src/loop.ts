@@ -5,10 +5,10 @@
 import type { SuiClient } from "@mysten/sui/client";
 import type { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import type { Detector, FeatureBuilder } from "@seawall/model";
-import type { AgentTickDTO } from "@seawall/shared";
+import type { AgentTickDTO, ObservatoryBlock } from "@seawall/shared";
 import type { AgentConfig } from "./config";
 import type { Calibrator, CalibratedScore } from "./calibrate";
-import { fetchLiveRow, type LiveRow } from "./live";
+import { fetchLiveRow, fetchCexBlock, type LiveRow, type CexBlock } from "./live";
 import { computeRequest, decideRequest, shouldSend, type Bps, type SendOpts } from "./policy-logic";
 import { readPolicy, type PolicySnapshot } from "./onchain";
 import { submitOnce } from "./tx";
@@ -18,6 +18,15 @@ export type SceneMode = "calm" | "elevate" | "malicious" | "dead";
 export interface Scene {
   mode: SceneMode;
   override?: CalibratedScore; // for "elevate": forced calibrated score
+}
+
+// READ-ONLY MAINNET observatory dependency (display-only, NEVER enforced). The
+// Engine calls `compute(cex, nowMs)` AFTER the testnet submit decision and
+// attaches the result ONLY to the returned DTO. Injected (not built inline) so
+// it is trivially stubbable in the safety test and a mainnet failure here cannot
+// touch the enforced path. Omitted ⇒ no observatory block on the tick.
+export interface ObservatoryDeps {
+  compute(cex: CexBlock, nowMs: number): Promise<ObservatoryBlock>;
 }
 
 export type AgentTick = AgentTickDTO;
@@ -35,7 +44,20 @@ export class Engine {
     private readonly fb: FeatureBuilder,
     private readonly cal: Calibrator,
     private readonly sendOpts: SendOpts,
+    // OPTIONAL read-only mainnet observatory. When absent, ticks carry no
+    // observatory block and the enforced path is byte-for-byte unchanged.
+    private readonly obs?: ObservatoryDeps,
   ) {}
+
+  // Computes the read-only mainnet observatory block, reusing the chain-agnostic
+  // CEX block already fetched this tick. STRICTLY display-only: the result is
+  // attached ONLY to the returned DTO by tick() — it is NEVER passed into
+  // computeRequest / decideRequest / shouldSend / submitOnce. Its OWN try/catch
+  // lives in tick() (a mainnet hiccup must never break the enforced tick).
+  private async observatory(cex: CexBlock | undefined, nowMs: number): Promise<ObservatoryBlock | undefined> {
+    if (!this.obs || !cex) return undefined;
+    return this.obs.compute(cex, nowMs);
+  }
 
   // common DTO fields (corridor, internals, identity) shared by every branch.
   private base(
@@ -62,14 +84,44 @@ export class Engine {
   }
 
   async tick(nowMs: number, scene: Scene = { mode: "calm" }): Promise<AgentTick> {
+    // The ENFORCED decision (and the returned DTO) is computed FIRST and in full.
+    // `result` + `cex` are the only things the (later, separate, display-only)
+    // observatory step touches — it never re-enters the enforced logic below.
+    const { result, cex } = await this.enforcedTick(nowMs, scene);
+
+    // READ-ONLY MAINNET observatory — computed STRICTLY AFTER the enforced
+    // decision, in its OWN try/catch, and attached ONLY to the returned DTO. A
+    // mainnet RPC/Hermes hiccup here degrades to an omitted block; it can NEVER
+    // break the enforced tick (already fully computed) or feed it.
+    try {
+      const observatory = await this.observatory(cex, nowMs);
+      if (observatory) result.observatory = observatory;
+    } catch {
+      /* mainnet observatory hiccup → omit the block; enforced tick is intact */
+    }
+    return result;
+  }
+
+  // The full ENFORCED path. Returns the DTO it built PLUS the chain-agnostic CEX
+  // block (fetched once, reused by the observatory). The observatory value never
+  // enters here — this is the only code that decides computeRequest / decideRequest
+  // / shouldSend / submitOnce.
+  private async enforcedTick(nowMs: number, scene: Scene): Promise<{ result: AgentTick; cex?: CexBlock }> {
     const snap = await readPolicy(this.client, this.cfg.policyId);
     const applied = snap.applied;
 
     if (scene.mode === "dead") {
       // a dead agent emits nothing on-chain; the L1 floor still protects.
       const cs = { overall: 0, solvency: 0, liquidity: 0 };
-      return { ...this.base(nowMs, "dead", snap, cs, 0, {}), req: applied, applied, sent: false };
+      return {
+        result: { ...this.base(nowMs, "dead", snap, cs, 0, {}), req: applied, applied, sent: false },
+      };
     }
+
+    // Fetch the chain-agnostic CEX block ONCE per tick (only when an observatory
+    // is present — keeps the no-observatory path's fetch shape unchanged) so it
+    // can be reused by BOTH the testnet row and the observatory.
+    const cex = this.obs ? await fetchCexBlock() : undefined;
 
     // live reading + detector (always advance the EWMA, even in calm)
     let row: LiveRow | undefined;
@@ -77,7 +129,7 @@ export class Engine {
     let d2 = 0;
     let contributions: Record<string, number> = {};
     try {
-      row = await fetchLiveRow(this.client, this.cfg, nowMs);
+      row = await fetchLiveRow(this.client, this.cfg, nowMs, cex);
       const fv = this.fb.push(row);
       if (fv) {
         const sr = this.det.update(fv);
@@ -97,19 +149,25 @@ export class Engine {
       const mal: Bps = { maxLtv: 1000, borrowCap: 1000 };
       const hot = { overall: 100, solvency: 100, liquidity: 100 };
       if (snap.paused) {
-        return { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false };
+        return {
+          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false },
+          cex,
+        };
       }
       const r = await submitOnce(this.client, this.signer, this.cfg, mal, 255);
       this.lastSentMs = nowMs;
       const a = r.risk ? { maxLtv: r.risk.maxLtvCurrentBps, borrowCap: r.risk.borrowCapCurrentBps } : applied;
       return {
-        ...this.base(nowMs, "malicious", snap, hot, d2, contributions),
-        req: mal,
-        applied: a,
-        sent: true,
-        digest: r.digest,
-        clamped: r.clamped.length,
-        book: row?.book,
+        result: {
+          ...this.base(nowMs, "malicious", snap, hot, d2, contributions),
+          req: mal,
+          applied: a,
+          sent: true,
+          digest: r.digest,
+          clamped: r.clamped.length,
+          book: row?.book,
+        },
+        cex,
       };
     }
 
@@ -133,13 +191,16 @@ export class Engine {
       if (r.risk) outApplied = { maxLtv: r.risk.maxLtvCurrentBps, borrowCap: r.risk.borrowCapCurrentBps };
     }
     return {
-      ...this.base(nowMs, scene.mode, snap, cs, d2, contributions),
-      req,
-      applied: outApplied,
-      sent: send,
-      digest,
-      clamped,
-      book: row?.book,
+      result: {
+        ...this.base(nowMs, scene.mode, snap, cs, d2, contributions),
+        req,
+        applied: outApplied,
+        sent: send,
+        digest,
+        clamped,
+        book: row?.book,
+      },
+      cex,
     };
   }
 }

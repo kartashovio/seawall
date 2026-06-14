@@ -10,9 +10,11 @@ import { AGENT_GRID_MS } from "@seawall/shared";
 import { loadConfig, loadAgentKeypair } from "./config";
 import { verifySubmitAbi } from "./tx";
 import { warmup } from "./warmup";
-import { Engine, type Scene, type AgentTick } from "./loop";
+import { Engine, type Scene, type AgentTick, type ObservatoryDeps } from "./loop";
 import { DEFAULT_SEND_OPTS } from "./policy-logic";
 import { startControlServer } from "./control-server";
+import { loadObservatoryConfig } from "./observatory-config";
+import { computeObservatory } from "./observatory";
 
 const PORT = Number(process.env.AGENT_PORT ?? 8787);
 
@@ -27,7 +29,25 @@ async function main(): Promise<void> {
   const warm = await warmup(cfg, Date.now());
   console.log(`[agent] warmup: ${warm.bars} bars, ${warm.calmSamples} calm d² samples`);
 
-  const engine = new Engine(client, signer, cfg, warm.det, warm.fb, warm.cal, DEFAULT_SEND_OPTS);
+  // READ-ONLY MAINNET observatory (display-only, NEVER enforced). Builds a SECOND,
+  // INDEPENDENT warmup triple (separate EWMA/velocity buffers — never shared, or
+  // one chain poisons the other's baseline) + a mainnet read-only client. Wrapped
+  // so a mainnet warmup failure logs a warning and the agent runs enforced-only.
+  let observatory: ObservatoryDeps | undefined;
+  try {
+    const obsCfg = loadObservatoryConfig();
+    const obsWarm = await warmup(cfg, Date.now()); // CEX-consensus proxy, chain-agnostic
+    const mainnetClient = new SuiClient({ url: obsCfg.rpcUrl });
+    const obsTriple = { det: obsWarm.det, fb: obsWarm.fb, cal: obsWarm.cal };
+    observatory = {
+      compute: (cex, nowMs) => computeObservatory(mainnetClient, obsCfg, cex, nowMs, obsTriple),
+    };
+    console.log(`[agent] mainnet observatory armed (read-only · not enforced): pool=${obsCfg.poolId.slice(0, 12)}`);
+  } catch (e) {
+    console.warn(`[agent] mainnet observatory unavailable — running enforced-only: ${(e as Error).message}`);
+  }
+
+  const engine = new Engine(client, signer, cfg, warm.det, warm.fb, warm.cal, DEFAULT_SEND_OPTS, observatory);
   let scene: Scene = { mode: "calm" };
   let busy = false;
 

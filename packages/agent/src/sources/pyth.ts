@@ -44,16 +44,25 @@ interface HermesResponse {
 
 // --- public entry points ---
 
-// Latest price for a feed from hermes-beta (live testnet feed). feedId may be
-// given with or without the leading 0x; Hermes wants it bare.
-export async function fetchLatest(feedId: string): Promise<PythTick> {
+// Latest price for a feed from a given Hermes host. feedId may be given with or
+// without the leading 0x; Hermes wants it BARE (a stray 0x → 400 "Odd number of
+// digits"). The MAINNET observatory passes the mainnet host here; the enforced
+// agent uses fetchLatest (hermes-beta) below.
+export async function fetchLatestFrom(hermesUrl: string, feedId: string): Promise<PythTick> {
   const id = stripHex(feedId);
-  const url = `${HERMES_BETA_URL}/v2/updates/price/latest?ids[]=${id}`;
+  const url = `${hermesUrl}/v2/updates/price/latest?ids[]=${id}`;
   const body = (await getJson(url)) as HermesResponse;
 
   const entry = body.parsed?.[0];
   if (!entry?.price) throw new Error(`no parsed price for ${id}`);
   return toTick(entry.price);
+}
+
+// Latest price for a feed from hermes-beta (live testnet feed) — the host the
+// enforced agent + contract watch. Delegates to fetchLatestFrom so the host is
+// the only difference; existing callers are byte-identical.
+export async function fetchLatest(feedId: string): Promise<PythTick> {
+  return fetchLatestFrom(HERMES_BETA_URL, feedId);
 }
 
 // Historical ticks for a feed from Benchmarks (mainnet feed), covering

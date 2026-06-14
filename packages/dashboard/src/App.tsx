@@ -3,6 +3,7 @@ import { useAgentStream } from "./useAgentStream";
 import { useGuardianEvents, usePolicy } from "./useGuardian";
 import { CFG, CORRIDOR } from "./config";
 import { RiskGauge } from "./components/RiskGauge";
+import { ObservatoryTile } from "./components/ObservatoryTile";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { GovernancePanel } from "./components/GovernancePanel";
@@ -45,8 +46,12 @@ export function App() {
         <div className="frozen-banner">🧊 MARKET FROZEN — contract-only hard stop. Only the DAO can unfreeze.</div>
       )}
 
-      <div className="grid grid-3">
+      <div className="grid grid-2">
         <RiskGauge score={latest?.scoreOverall ?? 0} />
+        <ObservatoryTile obs={latest?.observatory} />
+      </div>
+
+      <div className="grid grid-2">
         <LayerStatus tick={latest} paused={paused} events={events} />
         <GovernancePanel paused={paused} />
       </div>

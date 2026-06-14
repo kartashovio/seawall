@@ -19,6 +19,17 @@ export interface LiveRow {
   pythConf: number;
 }
 
+// The chain-agnostic venue block (CEX spot + BTC market proxy). These inputs do
+// NOT depend on which chain we're scoring, so the engine fetches them ONCE per
+// tick and reuses them for BOTH the enforced testnet row AND the read-only
+// mainnet observatory row (don't fetch the same data twice).
+export interface CexBlock {
+  coinbase?: number;
+  okx?: number;
+  bybit?: number;
+  btc?: number;
+}
+
 async function getJson(url: string): Promise<any> {
   const res = await fetch(url, { headers: { "User-Agent": "seawall-agent/0.0", Accept: "application/json" } });
   if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
@@ -48,24 +59,43 @@ const safe = async (p: Promise<number>): Promise<number | undefined> => {
   }
 };
 
-export async function fetchLiveRow(client: SuiClient, cfg: AgentConfig, nowMs: number): Promise<LiveRow> {
-  const [pythTick, book, coinbase, okx, bybit, btc] = await Promise.all([
-    fetchLatest(cfg.feedId),
-    readBook(client, cfg.poolId, cfg.dbusdcType, cfg.registeredAgent),
+// The chain-agnostic CEX/BTC tickers, fetched once. Extracted so the engine can
+// fetch this block a single time per tick and thread it into BOTH the testnet row
+// and the mainnet observatory (owner's "don't fetch the same data twice").
+export async function fetchCexBlock(): Promise<CexBlock> {
+  const [coinbase, okx, bybit, btc] = await Promise.all([
     safe(coinbaseTicker("SUI-USD")),
     safe(okxTicker("SUI-USDT")),
     safe(bybitTicker("SUIUSDT")),
     safe(bybitTicker("BTCUSDT")),
+  ]);
+  return { coinbase, okx, bybit, btc };
+}
+
+// Assemble one live testnet feature row. The per-chain legs (pyth + DeepBook) are
+// always fetched here; the chain-agnostic CEX block is fetched internally UNLESS
+// the caller injects one (so the engine can fetch CEX once and reuse it for the
+// observatory). Existing callers pass no `cex` and behave identically.
+export async function fetchLiveRow(
+  client: SuiClient,
+  cfg: AgentConfig,
+  nowMs: number,
+  cex?: CexBlock,
+): Promise<LiveRow> {
+  const [pythTick, book, cexBlock] = await Promise.all([
+    fetchLatest(cfg.feedId),
+    readBook(client, cfg.poolId, cfg.dbusdcType, cfg.registeredAgent),
+    cex ? Promise.resolve(cex) : fetchCexBlock(),
   ]);
   return {
     ts: nowMs,
     values: {
       pyth: pythTick.price,
       dbk: book.ok ? (book.mid as number) : undefined, // loss of signal → undefined, never fake-0
-      coinbase,
-      okx,
-      bybit,
-      btc,
+      coinbase: cexBlock.coinbase,
+      okx: cexBlock.okx,
+      bybit: cexBlock.bybit,
+      btc: cexBlock.btc,
     },
     book,
     pythConf: pythTick.conf,

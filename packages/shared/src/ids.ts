@@ -35,3 +35,18 @@ export const TESTNET_SNAPSHOT = {
   dbusdcType:
     "0xf7152c05930480cd740d7311b5b8b45c6f488e3a53a11c3f74a6fac36a52e0d7::DBUSDC::DBUSDC",
 } as const;
+
+// MAINNET ids — for the read-only observatory ONLY (display-only, never enforced).
+// Verified live this session: the level2 read works via devInspect (no key/gas),
+// and mainnet dbk mid $0.7593 ≈ mainnet Pyth $0.7592. Same "resolve-live, snapshot
+// only" caveat as TESTNET_SNAPSHOT. SUI=9 / USDC=6 → DEC_FACTOR 10^3 = 1000,
+// identical to testnet SUI/DBUSDC, so the divergence/mid decimal math is reused
+// UNCHANGED. The observatory does NOT post on-chain, so no mainnet Pyth State /
+// Wormhole / PriceInfoObject is needed here.
+export const MAINNET_SNAPSHOT = {
+  // resolve-live; snapshot only
+  deepbookPackage: "0x0e735f8c93a95722efd73521aca7a7652c0bb71ed1daf41b26dfd7d1ff71f748",
+  suiUsdcPool: "0xe05dafb5133bcffb8d59f4e12465dc0e9faeaa05e3e342a08fe135800e3e4407", // Base SUI / Quote USDC
+  usdcType:
+    "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
+} as const;

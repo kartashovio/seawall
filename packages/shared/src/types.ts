@@ -40,6 +40,28 @@ export interface BpsPair {
   borrowCap: number;
 }
 
+// MAINNET read-only observatory — DISPLAY ONLY, never on any enforcement path.
+// A SECOND risk score computed from the LIVE MAINNET market (mainnet Pyth SUI/USD
+// vs mainnet SUI/USDC DeepBook mid) using the SAME unchanged EWMA-Mahalanobis
+// model. A deep real market reads CALM (~1 bps divergence), proving the model is
+// correct and the thin-testnet-pool jumpiness is a pool artifact. It is computed
+// AFTER the testnet submit decision and attached ONLY to the returned DTO; its
+// score/features/divBps NEVER reach computeRequest/decideRequest/shouldSend/
+// submitOnce. NOTE: the `contributions` for disp/mktvol legitimately MATCH the
+// enforced row (the CEX/BTC inputs are chain-agnostic) — that is EXPECTED, not a
+// bug; only div/divvel differ (per-chain Pyth↔book).
+export interface ObservatoryBlock {
+  ok: boolean; // false = mainnet read failed / loss-of-signal (book not ok)
+  score: number; // calibrated 0-100 overall (display only)
+  solvency: number;
+  liquidity: number;
+  d2: number; // raw squared Mahalanobis distance
+  k: number; // feature count (χ²(k) reference)
+  contributions: Record<string, number>;
+  divBps: number; // |mainnetPrice - mainnetMid| / mainnetPrice * 1e4, bps
+  book: { mid: number | null; spread: number | null; imb: number | null; ok: boolean };
+}
+
 // The SSE payload the agent's control-server streams and the dashboard renders.
 // The ONLY contract between the v1 agent island and the v2 dashboard island
 // (they never exchange SDK objects — only this pure-TS shape + the chain).
@@ -65,6 +87,10 @@ export interface AgentTickDTO {
   digest?: string;
   clamped?: number; // # of RequestClamped events this tick (malicious-refused proof)
   book?: { ok: boolean; mid: number | null; imb: number | null; spread: number | null };
+  // MAINNET read-only observatory (display only; see ObservatoryBlock). OPTIONAL
+  // so a mainnet hiccup simply omits it and the frame stays a legal SSE payload —
+  // the enforced testnet tick is fully computed and returned regardless.
+  observatory?: ObservatoryBlock;
 }
 
 // --- raw market data, normalized at ingest ---

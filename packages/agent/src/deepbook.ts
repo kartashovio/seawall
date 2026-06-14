@@ -31,10 +31,15 @@ export async function readBook(
   quoteType: string,
   sender: string,
   ticks = 10,
+  // Which deployed deepbook package owns the pool. Defaults to the testnet
+  // package (the only caller before the read-only mainnet observatory, which
+  // passes MAINNET_SNAPSHOT.deepbookPackage). Decode + mid math are identical
+  // across chains (SUI/USDC decimals match SUI/DBUSDC).
+  deepbookPackage: string = TESTNET_SNAPSHOT.deepbookPackage,
 ): Promise<BookSnapshot> {
   const tx = new Transaction();
   tx.moveCall({
-    target: `${TESTNET_SNAPSHOT.deepbookPackage}::pool::get_level2_ticks_from_mid`,
+    target: `${deepbookPackage}::pool::get_level2_ticks_from_mid`,
     typeArguments: [SUI_TYPE, quoteType], // <Base, Quote>
     arguments: [tx.object(poolId), tx.pure.u64(ticks), tx.object(CLOCK)],
   });

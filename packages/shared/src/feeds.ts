@@ -16,3 +16,8 @@ export const PYTH_SUI_USD = {
 
 export const HERMES_BETA_URL = "https://hermes-beta.pyth.network";
 export const PYTH_BENCHMARKS_URL = "https://benchmarks.pyth.network";
+
+// Mainnet Hermes — serves the LIVE mainnet feed (PYTH_SUI_USD.mainnet). Used ONLY
+// by the read-only MAINNET observatory (display-only, never on the enforced path).
+// Not hermes-beta (404s the mainnet id) and not Benchmarks (history, not live).
+export const HERMES_MAINNET_URL = "https://hermes.pyth.network";
