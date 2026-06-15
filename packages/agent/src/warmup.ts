@@ -78,5 +78,8 @@ export async function warmup(_cfg: AgentConfig, nowMs: number, hours = 3): Promi
       liq.push(r.groupD2.liquidity ?? 0);
     }
   }
-  return { det, fb, cal: new Calibrator(all, solv, liq), bars, calmSamples: all.length };
+  // The calibrator is now self-calibrating off the χ²(k) tail (no warmup d²
+  // reference array) — the warmup replay still primes the EWMA cov; the all/solv/
+  // liq arrays remain only for the calmSamples liveness log.
+  return { det, fb, cal: Calibrator.forFeatures(det.features), bars, calmSamples: all.length };
 }

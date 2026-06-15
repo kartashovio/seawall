@@ -41,7 +41,10 @@ function warmTriple() {
     const r = det.update(fv);
     if (r.score > 0) { all.push(r.d2); solv.push(r.groupD2.solvency ?? 0); liq.push(r.groupD2.liquidity ?? 0); }
   }
-  return { det, fb, cal: new Calibrator(all, solv, liq) };
+  void all;
+  void solv;
+  void liq;
+  return { det, fb, cal: Calibrator.forFeatures(det.features) };
 }
 
 const cex = { coinbase: 0.76, okx: 0.7602, bybit: 0.7598, btc: 65000 };

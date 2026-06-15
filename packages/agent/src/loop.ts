@@ -6,6 +6,7 @@ import type { SuiClient } from "@mysten/sui/client";
 import type { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import type { Detector, FeatureBuilder } from "@seawall/model";
 import type { AgentTickDTO, ObservatoryBlock } from "@seawall/shared";
+import { SCORE_LO } from "@seawall/shared";
 import type { AgentConfig } from "./config";
 import type { Calibrator, CalibratedScore } from "./calibrate";
 import { fetchLiveRow, fetchCexBlock, type LiveRow, type CexBlock } from "./live";
@@ -35,6 +36,11 @@ export class Engine {
   // start the heartbeat clock at construction so a calm boot doesn't immediately
   // fire a heartbeat submit (calm steady-state ⇒ 0 tx until a real signal or +5min).
   private lastSentMs = Date.now();
+  // EWMA-smoothed score (α≈0.4, ~3-tick memory) — damps single-tick percentile
+  // spikes on the gauge AND the gate, so calm noise can't ratchet params to floor.
+  private smoothed?: CalibratedScore;
+  // consecutive ticks solv/liq ≥ SCORE_LO (2-tick hysteresis on the tighten gate).
+  private overGate = 0;
 
   constructor(
     private readonly client: SuiClient,
@@ -87,6 +93,19 @@ export class Engine {
     };
   }
 
+  // EWMA smoothing of the calibrated score — one number shared by the gauge + gate.
+  private smooth(cs: CalibratedScore): CalibratedScore {
+    const a = 0.4;
+    const prev = this.smoothed ?? cs;
+    const e = (n: number, p: number): number => a * n + (1 - a) * p;
+    this.smoothed = {
+      overall: e(cs.overall, prev.overall),
+      solvency: e(cs.solvency, prev.solvency),
+      liquidity: e(cs.liquidity, prev.liquidity),
+    };
+    return this.smoothed;
+  }
+
   async tick(nowMs: number, scene: Scene = { mode: "calm" }): Promise<AgentTick> {
     // The ENFORCED decision (and the returned DTO) is computed FIRST and in full.
     // `result` + `cex` are the only things the (later, separate, display-only)
@@ -137,7 +156,7 @@ export class Engine {
       const fv = this.fb.push(row);
       if (fv) {
         const sr = this.det.update(fv);
-        cs = this.cal.calibrate(sr);
+        cs = this.smooth(this.cal.calibrate(sr));
         d2 = sr.d2;
         contributions = sr.contributions;
       }
@@ -202,7 +221,13 @@ export class Engine {
     }
 
     // normal path: compute + ratchet against the on-chain applied baseline
-    const computed = computeRequest(cs.solvency, cs.liquidity);
+    // 2-tick hysteresis: calm percentile-noise must NOT ratchet params to the
+    // floor. Only let the score drive a tighten after solv/liq have sat ≥ SCORE_LO
+    // for two consecutive ticks. The elevate demo bypasses (instant hero beat).
+    const hot = cs.solvency >= SCORE_LO || cs.liquidity >= SCORE_LO;
+    this.overGate = hot ? this.overGate + 1 : 0;
+    const allowTighten = scene.mode === "elevate" || this.overGate >= 2;
+    const computed = allowTighten ? computeRequest(cs.solvency, cs.liquidity) : applied;
     const { req, tighter } = decideRequest(computed, applied);
     // "elevate" is an explicit operator trigger → bypass the anti-spam cooldown
     // (still requires tighter + not paused); calm/autonomous path uses the full gate.
