@@ -60,7 +60,7 @@ All IDs live in [`config/testnet.json`](config/testnet.json). Demo video: _(YouT
 ## ST1 must-haves
 
 1. **Live price feed** — Pyth SUI/USD (hermes-beta) posted same-PTB into `submit`/`poke`/`borrow`.
-2. **Visible AI risk score + criteria** — the gauge + glass-box model internals (d²/χ² + per-feature contributions); see [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).
+2. **Visible AI risk score + criteria** — the gauge + glass-box model internals (d²/χ² + per-feature contributions); the model in [`docs/ml-methodology.md`](docs/ml-methodology.md), the measured criteria + backtests in [`docs/ml-backtest.md`](docs/ml-backtest.md).
 3. **≥1 autonomous on-chain action via a Move policy object** — the agent's `submit` *originates* a CAUTION tighten on `GuardianPolicy`, no human; the contract-only freeze is the second.
 4. **Human override** — `governance_unfreeze` via the owned `&GovernanceCap`, DAO-only.
 
@@ -68,7 +68,7 @@ All IDs live in [`config/testnet.json`](config/testnet.json). Demo video: _(YouT
 
 ```bash
 pnpm install
-pnpm test                         # 79 TS unit tests
+pnpm test                         # 138 TS tests
 pnpm move:test                    # 75 Move tests
 pnpm move:build
 
