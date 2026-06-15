@@ -1,118 +1,87 @@
-// Must-have #2: the visible AI risk score. A semicircular calibrated-anomaly
-// gauge, restyled as a tide reading. The colored bands bind to BANDS (= the
-// on-chain SCORE_LO/HI), so the dial reads the same thresholds the contract
-// clamps to. The score is ADVISORY: 99 is the measurement marker, not the gate
-// (FREEZE is contract-only) — the caption says so out loud.
+// Must-have #2: the visible AI risk score, as an open-bottom radial RING (no
+// needle, no tick rail). The sweep length is the value; the hue is the band. The
+// colored bands BIND to BANDS (= on-chain SCORE_LO/HI/ALERT) via --teal/--amber/
+// --red, so the dial reads the same thresholds the contract clamps to. The score
+// is ADVISORY: 99 is the measurement marker, not the gate — the caption says so.
 //
-// PURE DIAL: this returns ONLY the dial fragment (svg + value + caption) — NO
-// outer <section>/<h2>. The card chrome + env-named title come from <ScoreCard>,
-// which renders this twice (testnet + mainnet) as visual twins. The geometry,
-// BANDS coloring, alert marker, and "99 = marker not gate" caption are unchanged;
-// only the cosmetics (recessed track, glowing needle, engraved Fraunces value,
-// the small 99 label) are new.
+// PURE FRAGMENT: returns only the dial (svg + caption) — NO <section>/<h2>, no
+// handlers, no cursor:pointer. <ScoreCard> renders it twice (testnet + mainnet)
+// as visual twins; the non-interactivity test must pass.
 import { BANDS } from "../config";
 
-// --- arc geometry ---------------------------------------------------------
-// The .gauge svg viewBox is 220x130. Draw a 180° dial: score 0 → 180° (far left),
-// score 100 → 0° (far right). SVG y grows downward, so subtract the sine term.
-const CX = 110;
-const CY = 116;
-const R = 92;
-const STROKE = 16;
+// --- ring geometry: a 270° open-bottom arc (gap centered at the bottom) -------
+const CX = 100;
+const CY = 100;
+const R = 82;
+const SW = 12;
+const C = 2 * Math.PI * R; // full circumference
+const ARC = C * 0.75; // 270° visible
 
 const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
+const lenOf = (s: number): number => (clamp(s, 0, 100) / 100) * ARC;
 
-// score (0..100) → angle in degrees, measured CCW from the +x axis.
-const scoreToAngle = (s: number): number => 180 - (clamp(s, 0, 100) / 100) * 180;
+const bandColor = (s: number): string => (s < BANDS.lo ? "var(--teal)" : s < BANDS.hi ? "var(--amber)" : "var(--red)");
 
-// polar (angle in degrees) → cartesian on the gauge radius.
-const polar = (angleDeg: number, radius: number): { x: number; y: number } => {
-  const a = (angleDeg * Math.PI) / 180;
-  return { x: CX + radius * Math.cos(a), y: CY - radius * Math.sin(a) };
-};
+// dash props for one arc segment from→to (the <circle> is wrapped in rotate(135)).
+const seg = (from: number, to: number): { strokeDasharray: string; strokeDashoffset: string } => ({
+  strokeDasharray: `${(lenOf(to) - lenOf(from)).toFixed(2)} ${C.toFixed(2)}`,
+  strokeDashoffset: (-lenOf(from)).toFixed(2),
+});
 
-// SVG arc path between two SCORES along the dial radius (always sweeping the
-// upper semicircle from the higher-angle start to the lower-angle end).
-const arcPath = (fromScore: number, toScore: number, radius: number): string => {
-  const start = polar(scoreToAngle(fromScore), radius);
-  const end = polar(scoreToAngle(toScore), radius);
-  const largeArc = 0; // each band is < 180°
-  const sweep = 1; // clockwise in screen space (left → right)
-  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
-};
-
-const bandColor = (s: number): string => {
-  if (s < BANDS.lo) return "var(--teal)";
-  if (s < BANDS.hi) return "var(--amber)";
-  return "var(--red)";
+// absolute polar point for a value `at` (θ = 135° + at/100·270°, clockwise, y-down).
+const markPt = (at: number, rad: number): { x: number; y: number } => {
+  const th = ((135 + (clamp(at, 0, 100) / 100) * 270) * Math.PI) / 180;
+  return { x: CX + rad * Math.cos(th), y: CY + rad * Math.sin(th) };
 };
 
 export function RiskGauge({ score }: { score: number }) {
   const v = clamp(score, 0, 100);
   const color = bandColor(v);
-  // a short value pointer that sits ON the arc (no long needle crossing the
-  // center readout) — spans from just inside the band to just past its outer edge.
-  const tickInner = polar(scoreToAngle(v), R - STROKE - 2);
-  const tickOuter = polar(scoreToAngle(v), R + 5);
-  const alertTick = polar(scoreToAngle(BANDS.alert), R);
-  const alertTickInner = polar(scoreToAngle(BANDS.alert), R - STROKE - 3);
-  const alertLabel = polar(scoreToAngle(BANDS.alert), R - STROKE - 14);
+  const markers = [BANDS.lo, BANDS.hi, BANDS.alert]; // 60 / 95 / 99
 
   return (
     <>
-      <svg viewBox="0 0 220 130" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
-        <defs>
-          {/* soft plate behind the readout so the needle disappears under the
-              number instead of impaling it (fades to transparent at the rim). */}
-          <radialGradient id="gauge-bowl" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#0e1828" stopOpacity="0.96" />
-            <stop offset="55%" stopColor="#0e1828" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#0e1828" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        {/* recessed track so the colored bands sit proud */}
-        <path d={arcPath(0, 100, R)} fill="none" stroke="var(--inset)" strokeWidth={STROKE} strokeLinecap="round" />
-        {/* colored bands */}
-        <path d={arcPath(0, BANDS.lo, R)} fill="none" stroke="var(--teal)" strokeWidth={STROKE} strokeLinecap="round" />
-        <path d={arcPath(BANDS.lo, BANDS.hi, R)} fill="none" stroke="var(--amber)" strokeWidth={STROKE} />
-        <path d={arcPath(BANDS.hi, 100, R)} fill="none" stroke="var(--red)" strokeWidth={STROKE} strokeLinecap="round" />
-        {/* alert marker (99) — measurement reference, not the gate */}
-        <line
-          x1={alertTick.x}
-          y1={alertTick.y}
-          x2={alertTickInner.x}
-          y2={alertTickInner.y}
-          stroke="var(--ink)"
-          strokeWidth={1.5}
-          opacity={0.85}
-        />
-        <text
-          x={alertLabel.x}
-          y={alertLabel.y}
-          fontSize="9"
-          fontFamily="var(--font-mono)"
-          fill="var(--muted)"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
-          {BANDS.alert}
-        </text>
-        {/* value pointer — a short glowing tick on the arc */}
-        <line
-          x1={tickInner.x}
-          y1={tickInner.y}
-          x2={tickOuter.x}
-          y2={tickOuter.y}
-          stroke={color}
-          strokeWidth={4}
-          strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 5px ${color})` }}
-        />
-        {/* the engraved tide reading — sits IN the bowl on a soft plate, drawn last
-            so the needle passes cleanly behind the digits. */}
-        <ellipse cx={CX} cy={100} rx={46} ry={25} fill="url(#gauge-bowl)" />
-        <text x={CX} y={101} className="gauge-num" textAnchor="middle" dominantBaseline="middle" fill={color}>
+      <svg viewBox="0 0 200 200" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
+        <g transform="rotate(135 100 100)">
+          {/* track */}
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--g-track)" strokeWidth={SW} strokeLinecap="round" {...seg(0, 100)} />
+          {/* faint band tints so the 60/95 zones read even at a low score */}
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--teal)" strokeWidth={SW} opacity={0.16} {...seg(0, BANDS.lo)} />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--amber)" strokeWidth={SW} opacity={0.16} {...seg(BANDS.lo, BANDS.hi)} />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--red)" strokeWidth={SW} opacity={0.16} {...seg(BANDS.hi, 100)} />
+          {/* the live value arc */}
+          <circle
+            cx={CX}
+            cy={CY}
+            r={R}
+            fill="none"
+            stroke={color}
+            strokeWidth={SW}
+            strokeLinecap="round"
+            {...seg(0, v)}
+            style={{ transition: "stroke-dasharray .65s cubic-bezier(.22,.61,.36,1), stroke .4s ease" }}
+          />
+        </g>
+        {/* threshold markers + labels (outside the rotated group) */}
+        {markers.map((m) => {
+          const a = markPt(m, R + SW / 2 + 1);
+          const b = markPt(m, R + SW / 2 + 5);
+          const l = markPt(m, R + SW / 2 + 13);
+          return (
+            <g key={m}>
+              <line x1={a.x.toFixed(1)} y1={a.y.toFixed(1)} x2={b.x.toFixed(1)} y2={b.y.toFixed(1)} stroke="var(--muted-deep)" strokeWidth={1.2} />
+              <text x={l.x.toFixed(1)} y={l.y.toFixed(1)} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--muted)" textAnchor="middle" dominantBaseline="middle">
+                {m}
+              </text>
+            </g>
+          );
+        })}
+        {/* centered readout */}
+        <text x={CX} y={CY - 2} className="gauge-num" fill="var(--ink)" textAnchor="middle" dominantBaseline="middle">
           {Math.round(v)}
+        </text>
+        <text x={CX} y={CY + 24} fontSize="11" fontFamily="var(--font-mono)" fill="var(--muted)" textAnchor="middle" dominantBaseline="middle">
+          / 100
         </text>
       </svg>
       <div className="gauge-cap">calibrated anomaly score · 99 = measurement marker, not the gate</div>

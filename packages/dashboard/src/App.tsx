@@ -6,14 +6,13 @@ import { CFG, CORRIDOR } from "./config";
 import { ScoreCard } from "./components/ScoreCard";
 import { Sparkline } from "./components/Sparkline";
 import { PostureBanner } from "./components/PostureBanner";
+import { ArchitectureDiagram } from "./components/ArchitectureDiagram";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { GovernancePanel } from "./components/GovernancePanel";
 import { AttackPanel } from "./components/AttackPanel";
 import { LayerStatus } from "./components/LayerStatus";
 import { FooterLedger } from "./components/FooterLedger";
-
-const clamp = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
 
 export function App() {
   const { latest, history, connected } = useAgentStream();
@@ -29,28 +28,20 @@ export function App() {
   const floor = latest?.floor ?? { maxLtv: CORRIDOR.maxLtv.floor, borrowCap: CORRIDOR.borrowCap.floor };
   const baseline = latest?.baseline ?? { maxLtv: CORRIDOR.maxLtv.baseline, borrowCap: CORRIDOR.borrowCap.baseline };
 
-  // Which environment the agent ENFORCES on — a STATUS MIRROR read straight off
-  // the SSE tick (never a dashboard hardcode). Defaults to "testnet" before the
-  // first frame so a stale/early SSE frame can't blank the indicator. The two
-  // score cards + the header pill light purely from (env === enforcedEnv); there
-  // is NO control that re-routes enforcement.
+  // Which environment the agent ENFORCES on — a STATUS MIRROR read off the SSE tick
+  // (never a dashboard hardcode). Defaults to "testnet" before the first frame. The
+  // two cards + the header pill light purely from (env === enforcedEnv); there is NO
+  // control that re-routes enforcement.
   const enforcedEnv = latest?.enforcedEnv ?? "testnet";
   const obs = latest?.observatory;
 
-  // Time since the last on-chain action (events newest-first) — shared by the
-  // posture banner + the wall's timer.
+  // Time since the last on-chain action (events newest-first) — posture + the wall.
   const lastTs = events[0]?.tsMs ?? 0;
   const ago = lastTs > 0 ? `${Math.round((Date.now() - lastTs) / 1000)}s ago` : "—";
 
-  // PRESENTATIONAL atmosphere only: drive the surge height from the live
-  // divergence and recolor the whole frame on a freeze. Both run in effects (never
-  // during render) so the static-markup unit tests stay DOM-free, and neither
-  // touches the data/decision path — purely cosmetic mirrors of (divBps, paused).
-  const divBps = latest?.divBps ?? obs?.divBps ?? 0;
-  useEffect(() => {
-    const surge = paused ? 0.98 : clamp(0.06 + divBps / 130, 0.06, 0.95);
-    document.documentElement.style.setProperty("--surge", String(surge));
-  }, [divBps, paused]);
+  // PRESENTATIONAL only: tint the frame on a freeze (no atmosphere layers). Runs in
+  // an effect (never during render) so the static-markup tests stay DOM-free, and it
+  // never touches the data/decision path — a cosmetic mirror of `paused`.
   useEffect(() => {
     document.body.classList.toggle("frozen", paused);
     return () => document.body.classList.remove("frozen");
@@ -78,7 +69,7 @@ export function App() {
         <ConnectButton />
       </header>
 
-      {/* A — posture verdict (replaces the standalone frozen-banner) */}
+      {/* A — posture verdict */}
       <PostureBanner paused={paused} applied={applied} baseline={baseline} ago={ago} />
 
       {/* B — thesis strip: states the claim once, teaches the color legend */}
@@ -91,6 +82,17 @@ export function App() {
         — <span className="c-dao">only the DAO can unfreeze</span>.{" "}
         <span className="tagline">Its number is never trusted.</span>
       </div>
+
+      {/* NEW — architecture: the thesis drawn, before the live data reads as it in motion */}
+      <section className="band band--arch">
+        <div className="band-head">
+          <span className="kicker">Architecture</span>
+          <span className="lede">how an untrusted radar, the contract, and the DAO actually wire together</span>
+        </div>
+        <div className="arch-frame">
+          <ArchitectureDiagram />
+        </div>
+      </section>
 
       {/* C — the two seas */}
       <section className="band">
@@ -120,10 +122,7 @@ export function App() {
         </div>
         <Sparkline history={history} />
 
-        {/* Honest cold-start caveat: the EWMA-Mahalanobis baseline + the velocity
-            window (~30 ticks) re-warm on every (re)start, so for the first ~30 min
-            a score can read elevated before it settles — stated up front so an
-            early-load viewer reads a high needle as warm-up, not alarm. */}
+        {/* Honest cold-start caveat. */}
         <div className="muted warmup-note">
           ℹ️ Cold-start caveat: for ~30 min after a (re)start the model is still warming up its rolling baseline and may
           over-react — scores settle once the velocity window fills.
@@ -131,7 +130,7 @@ export function App() {
       </section>
 
       {/* D — the wall */}
-      <section className="band wall">
+      <section className="band">
         <div className="band-head">
           <span className="kicker">The wall</span>
           <span className="lede">three rungs of one ladder — trust decides who can pull which</span>
@@ -140,7 +139,7 @@ export function App() {
       </section>
 
       {/* E — the instruments */}
-      <section className="band instruments">
+      <section className="band">
         <div className="band-head">
           <span className="kicker">The instruments</span>
           <span className="lede">glass-box — exactly what the radar measured, and the cage it cannot widen</span>
@@ -170,7 +169,7 @@ export function App() {
       </section>
 
       {/* G — the drill */}
-      <section className="band drill">
+      <section className="band">
         <div className="band-head">
           <span className="kicker">The drill</span>
           <span className="lede">run the 4-scene demo — then try to break it</span>
