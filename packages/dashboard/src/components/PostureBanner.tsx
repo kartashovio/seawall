@@ -1,8 +1,8 @@
-// The synthesized verdict — one word + one sentence that reads the system's
-// current posture off props App already holds (no new data): FROZEN > CAUTION
-// ACTIVE > NORMAL. Replaces the old standalone frozen-banner. FROZEN is the only
-// state that says "the contract… itself" + "No agent input" (FREEZE is never
-// agent-attributed); NORMAL never says "safe" — it says the wall is holding.
+// The one-glance verdict: a state chip + a plain-language line that reads the
+// system's posture off props App already holds (no new data). FROZEN > CAUTION >
+// NORMAL. FROZEN is the only state that says "the contract… itself" + "no agent
+// say" (the freeze is never agent-attributed); NORMAL never claims "safe" — it
+// says the wall is holding. Copy is deliberately plain (the ml-docs voice).
 import type { BpsPair } from "@seawall/shared";
 
 export function PostureBanner({
@@ -18,16 +18,20 @@ export function PostureBanner({
 }) {
   const caution = applied.maxLtv < baseline.maxLtv || applied.borrowCap < baseline.borrowCap;
   const state = paused ? "frozen" : caution ? "caution" : "normal";
-  const word = paused ? "FROZEN" : caution ? "CAUTION ACTIVE" : "NORMAL";
+  const word = paused ? "FROZEN" : caution ? "CAUTION" : "NORMAL";
+  const headline = paused ? "Market paused" : caution ? "Tightened — only safer" : "Calm seas";
   const sentence = paused
-    ? "Hard stop. The contract re-derived a Pyth↔DeepBook breach itself and paused the market. No agent input — only the DAO can unfreeze."
+    ? "The contract found a real Pyth↔DeepBook break in its own on-chain reading and stopped the market. The agent had no say in this — only the DAO can lift it."
     : caution
-      ? "The radar flagged a rising surge. The contract accepted a clamped tighten — params ratcheted toward floor, only-safer. The agent's number was re-checked, not trusted."
-      : "Calm seas. The wall is holding at full corridor — the agent is watching, the contract has nothing to act on.";
+      ? "The radar flagged stress, so the contract pulled the lending knobs tighter, within the DAO's bounds. It re-checked the agent's number against its own on-chain data first — it never takes it on faith."
+      : "The wall is at full strength. The radar is watching and the contract has nothing it needs to act on.";
 
   return (
     <div className={`posture is-${state}`} role="status">
-      <span className="pword">{word}</span>
+      <div className="posture-state">
+        <span className="pword">{word}</span>
+        <span className="pheadline">{headline}</span>
+      </div>
       <span className="psentence">{sentence}</span>
       <span className="pago">
         last on-chain action
