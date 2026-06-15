@@ -18,7 +18,7 @@ The named pieces, without the reasoning (the "why" is further down):
 - A covariance matrix, so the model sees how the features move together, not one at a time.
 - The squared Mahalanobis distance, which collapses "how far is the whole picture from normal" into a single number.
 - Covariance shrinkage (a fixed ridge) to keep the matrix stable and invertible.
-- A chi-squared reference plus an empirical percentile to turn that distance into the 0-100 score.
+- Turning that distance into a 0-100 score: live, the chi-squared CDF of the distance with a calm dead-zone, so a calm market reads ~0 by construction; in the backtest, the empirical percentile against that episode's calm window. The two agree at the tail.
 - A two-tick debounce on the alert.
 
 ## Data and lookback
@@ -27,15 +27,15 @@ Everything the model uses is recent and rolling. Nothing is trained on years of 
 
 - Its sense of "normal" comes from roughly the last 100 minutes of market (the EWMA decay is 0.99 on 1-minute bars, which is about that much memory).
 - The velocity features compare now against about 30 minutes ago.
-- The threshold is calibrated against a recent calm stretch, a few quiet hours.
+- The score self-calibrates off that rolling covariance. Live, the chi-squared tail with a fixed dead-zone needs no stored calm threshold; the backtest fits a percentile against a recent calm stretch, a few quiet hours.
 
-Live, the model backfills that recent window once at startup, then runs on the live stream tick by tick. It does not re-download long history to operate.
+Live, the model backfills that recent window once at startup, then runs on the live stream tick by tick. It does not re-download long history to operate. For roughly the first 45 minutes after a (re)start it is still warming up — the velocity window filling first (the score reads 0), then the covariance re-centering on the live feed — and during that window the agent withholds autonomous tightening, so a cold-start reading can never move a parameter.
 
 ## The criteria
 
 We watch one token at a time. Bitcoin is used only as an index of the overall market mood; every other feature is computed on the token we are actually analyzing. For this hackathon we built and calibrated the model for SUI, to get as close as we could to a working MVP in the time available.
 
-The default run uses four features from the watched token; a market-aware run adds a fifth (`mktvol`, the Bitcoin one). Live, two on-chain order-book features (`imb`, `spread`) can extend the vector further. Everything downstream is identical at any size.
+The live run uses five features: four from the watched token plus `mktvol`, the Bitcoin one — so the vector is `k = 5` (the model's bare default is just the four token features, used only by the no-market backtest branch). Two on-chain order-book features (`imb`, `spread`) are defined for a future depth extension but are not wired into the live vector yet. Everything downstream is identical at any size.
 
 | Feature | What it measures | Source | Group -> parameter |
 |---------|------------------|--------|--------------------|
@@ -46,7 +46,7 @@ The default run uses four features from the watched token; a market-aware run ad
 | `mktvol` | the market's (BTC) volatility, accelerating | BTC, Binance / CEX | liquidity -> `borrow_cap` (as attribution) |
 | `imb`, `spread` | order-book skew + spread | DeepBook L2 / CEX depth | liquidity (live only) |
 
-The formulas are short. `div = 1e4·|ln(p_pyth) − ln(p_cex_median)|` in bps. `divvel = div_t − div_{t−w}`. `disp = 1e4·stdev_i(ln p_i)` over 1m mids across venues, in bps. `volvel = (rv_t − rv_{t−w})/(rv_{t−w}+ε)` with `rv_t = EWMA_30(r²)`, `r = Δln p`, `w ≈ 30`. `mktvol` is the same `volvel`, computed on the BTC proxy instead of the token.
+The formulas are short. `div = 1e4·|ln(p_pyth) − ln(p_cex_median)|` in bps. `divvel = div_t − div_{t−w}`. `disp = 1e4·stdev_i(ln p_i)` over 1m mids across venues, in bps. `volvel = ln((rv_t+ε)/(rv_{t−w}+ε))` with `rv_t = EWMA_30(r²)`, `r = Δln p`, `w ≈ 30` — a log-ratio of realized variance now versus about 30 minutes ago. `mktvol` is the same `volvel`, computed on the BTC proxy instead of the token.
 
 Every feature is engineered unit-free and roughly stationary so the covariance stays well-conditioned. The `imb`/`spread` depth features are live-only, because free historical order-book depth does not exist; they are covered with the backtest material.
 
@@ -72,9 +72,9 @@ Two limits on `mktvol`. It tells you which kind of stress, but it does not hold 
 
 ## Score to action
 
-The distance `d²` becomes a 0-100 score by its percentile. Under a Gaussian null `d² ~ χ²(k)`, so the textbook score would be the chi-squared CDF. Real features are heavy-tailed, so the empirical `d²` drifts off chi-squared, and the reported score is instead the percentile against the calm window. Score = p means "more extreme than p% of calm-market configurations", with chi-squared kept only as the nominal reference.
+The distance `d²` becomes a 0-100 score in one of two ways, and the difference matters. **Live — and on the read-only mainnet observatory — the score is the chi-squared CDF of `d²` with a calm dead-zone.** Under a Gaussian null `d² ~ χ²(k)`, so the live score is `100·max(0, (χ²cdf(d², k) − 0.90) / 0.10)`: the calm body, the lowest 90% of the χ²(k) mass, maps to **0**, and the score only lifts in the tail. Because the covariance is the self-adapting EWMA baseline, a genuinely calm market re-centers `d²` near `χ²(k) ≈ k` and the gauge reads **~0 by construction**, with no stored calm reference to drift out of date. **The backtest, by contrast, scores `d²` as its empirical percentile against that episode's own calm window** — a heavy-tail-robust fit that stays consistent within one replay. The two line up at the tail: a live χ²-score of 90 is the same place as a backtest percentile of 99. (The same unchanged model also runs on a deep mainnet market through an independent read-only leg; that leg reads ~calm, which is what "reads ~0 on a calm market" looks like in the wild.)
 
-An alert fires when the score is at or above 99 for two consecutive ticks. The debounce throws away single-tick noise.
+Before the score drives anything it is EWMA-smoothed (α = 0.4, about a three-tick memory), the same smoothing on both legs, so a single noisy tick cannot move the gauge or the parameters while a sustained move still passes through in two to three ticks. An alert — the backtest's measurement marker for timing detection and counting false alarms, **not** the parameter gate — fires when the score holds in the top 1% of the calm window (percentile 99) for two consecutive ticks; that same tail is a live χ²-score of about 90, by the equivalence just above (not a live score of 99, which would be a stricter 99.9th-percentile point). That debounce, the smoothing, and the warm-up gate are what throw away single-tick noise.
 
 The score then maps to a fraction `f ∈ [0,1]` of each corridor, with `target = floor + f(score)·(baseline − floor)`:
 
@@ -104,7 +104,7 @@ Prior art, named honestly. Mahalanobis-of-returns is the Kritzman-Li Financial T
 
 The covariance and the Mahalanobis distance are the point. A per-feature threshold (a stack of `if` statements) only sees one number at a time; it cannot catch the case where things that usually agree pull apart while each one stays in its own normal range. The joint view can.
 
-The EWMA plus the empirical calibration give a "normal" that tracks the current market and a threshold you can check rather than trust: about 1% of calm minutes cross it by construction, not by hope. A plain chi-squared threshold would over-fire on real, heavy-tailed features.
+The EWMA gives a "normal" that tracks the current market, and the calibration turns it into a score you can check rather than trust. In the backtest, about 1% of calm minutes cross the 99th-percentile alert by construction, not by hope. Live, the chi-squared dead-zone earns the same quiet from the other side: it reads ~0 on a calm market off a covariance that has already absorbed the calm, so it never needs a frozen calm threshold that could rot as the market drifts.
 
 The component split gives two knobs from two risk axes, each calibrated on its own sub-distance, so the model can tighten leverage and borrow capacity for different reasons.
 
