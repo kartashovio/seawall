@@ -20,15 +20,19 @@ import type { ObservatoryBlock } from "@seawall/shared";
 import { fetchLatestFrom } from "./sources/pyth";
 import { readBook } from "./deepbook";
 import type { CexBlock } from "./live";
-import type { Calibrator } from "./calibrate";
+import type { Calibrator, CalibratedScore } from "./calibrate";
+import { smoothScore } from "./calibrate";
 import type { ObservatoryConfig } from "./observatory-config";
 
 // The observatory's OWN stateful triple (separate EWMA/velocity buffers from the
-// testnet one — sharing would let one chain poison the other's baseline).
+// testnet one — sharing would let one chain poison the other's baseline). It also
+// carries its OWN score-smoothing state so the mainnet score is smoothed IDENTICALLY
+// to the enforced leg (same model, same calibration, same α) yet stays independent.
 export interface ObsTriple {
   det: Detector;
   fb: FeatureBuilder;
   cal: Calibrator;
+  smoothed?: CalibratedScore;
 }
 
 const TICKS = 10;
@@ -69,7 +73,10 @@ export async function computeObservatory(
   const fv = triple.fb.push(row);
   if (fv) {
     const sr = triple.det.update(fv);
-    const cs = triple.cal.calibrate(sr);
+    // Same calibrator + same smoothing as the enforced leg; only triple.smoothed
+    // (this leg's own state) carries over, so the two scores stay independent.
+    triple.smoothed = smoothScore(triple.smoothed, triple.cal.calibrate(sr));
+    const cs = triple.smoothed;
     score = cs.overall;
     solvency = cs.solvency;
     liquidity = cs.liquidity;

@@ -6,6 +6,7 @@ import {
   buildFeatures,
   paramFromScore,
   Detector,
+  GROUP_FEATURES,
   type Series,
 } from "@seawall/model";
 import { MAX_LTV, BORROW_CAP } from "@seawall/shared";
@@ -160,6 +161,23 @@ export async function runBacktest(cfg: EventConfig): Promise<BacktestResult> {
   }
   const pk = scored.reduce((m, s) => (s.d2 > m.d2 ? s : m), scored[0]);
   const at = scored.find((s) => s.ts === tAlert) ?? null;
+  // Driver = the GROUP of the top-CONTRIBUTING feature (consistent with
+  // topContributions). The old solvency>=liquidity sub-score tie-break labelled
+  // "solvency" whenever both sub-scores saturate at 100 — even when the dominant
+  // feature (e.g. disp, a liquidity feature) says otherwise, an internally
+  // contradictory readout. Fall back to the sub-score only if contributions are empty.
+  const topFeat = at
+    ? Object.entries(at.contributions).sort((a, b) => b[1] - a[1])[0]?.[0]
+    : undefined;
+  const driver = topFeat
+    ? GROUP_FEATURES.solvency.includes(topFeat)
+      ? "solvency"
+      : "liquidity"
+    : at
+      ? at.solvency >= at.liquidity
+        ? "solvency"
+        : "liquidity"
+      : null;
 
   return {
     label: cfg.label,
@@ -171,7 +189,7 @@ export async function runBacktest(cfg: EventConfig): Promise<BacktestResult> {
     visibleDrop: tVisible,
     leadMinutes: tAlert && tVisible ? (tVisible - tAlert) / 60000 : null,
     peakD2: { ts: pk.ts, d2: pk.d2 },
-    driverAtAlert: at ? (at.solvency >= at.liquidity ? "solvency" : "liquidity") : null,
+    driverAtAlert: driver,
     paramsAtAlert: at
       ? {
           maxLtv: paramFromScore(at.solvency, MAX_LTV),
@@ -194,7 +212,7 @@ export function printResult(r: BacktestResult): void {
   console.log(`\n=== ${r.label} ===`);
   console.log(`  ticks            : ${r.ticks}`);
   console.log(`  first alert (>=99): ${r.firstAlert ? iso(r.firstAlert) : "none"}`);
-  console.log(`  visible -5% bar  : ${r.visibleDrop ? iso(r.visibleDrop) : "none"}`);
+  console.log(`  visible -drop bar : ${r.visibleDrop ? iso(r.visibleDrop) : "none"}`);
   if (r.leadMinutes !== null) console.log(`  lead time        : ${r.leadMinutes.toFixed(0)} min`);
   console.log(`  peak d2          : ${r.peakD2.d2.toFixed(0)} at ${iso(r.peakD2.ts)}`);
   console.log(`  driver at alert  : ${r.driverAtAlert} ${r.topContributions.join(" ")}`);

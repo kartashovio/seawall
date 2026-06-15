@@ -28,6 +28,13 @@ export const SCORE_MID = 80;
 export const SCORE_HI = 95;
 export const LOGISTIC_GAMMA = 0.15;
 
+// EWMA smoothing applied to the calibrated score before it drives the gauge + the
+// tighten gate (~3-tick memory). Damps single-tick spikes so calm noise can't
+// thrash. Applied IDENTICALLY to BOTH legs (enforced testnet + read-only mainnet
+// observatory) — same model, same calibration, same smoothing — each with its OWN
+// independent state (one chain's score never touches the other's).
+export const SCORE_SMOOTH_ALPHA = 0.4;
+
 // Measurement marker (score >= ALERT_SCORE for two ticks) used to time detection
 // in backtests — NOT the send gate. SUBMIT_SCORE is the agent's anti-spam
 // throttle on top of the tighten-or-heartbeat send condition (NOT the condition).

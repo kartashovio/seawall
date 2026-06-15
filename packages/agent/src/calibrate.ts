@@ -8,12 +8,31 @@
 // and the advisory_score event field. The score stays DIRECTIONLESS (a turbulence
 // magnitude, not a price-direction forecast) and off the on-chain decision path.
 import type { ScoreResult } from "@seawall/shared";
+import { SCORE_SMOOTH_ALPHA } from "@seawall/shared";
 import { chi2cdf, GROUP_FEATURES } from "@seawall/model";
 
 export interface CalibratedScore {
   overall: number;
   solvency: number;
   liquidity: number;
+}
+
+/// EWMA-smooth a calibrated score against its previous value (one number per
+/// component). SHARED by both legs (the enforced loop + the mainnet observatory) so
+/// the smoothing is literally identical — only the `prev` state differs (each leg
+/// keeps its OWN, so they stay independent). `prev` undefined ⇒ pass `next` through.
+export function smoothScore(
+  prev: CalibratedScore | undefined,
+  next: CalibratedScore,
+  alpha: number = SCORE_SMOOTH_ALPHA,
+): CalibratedScore {
+  if (!prev) return next;
+  const e = (n: number, p: number): number => alpha * n + (1 - alpha) * p;
+  return {
+    overall: e(next.overall, prev.overall),
+    solvency: e(next.solvency, prev.solvency),
+    liquidity: e(next.liquidity, prev.liquidity),
+  };
 }
 
 /// Empirical percentile of x against a sorted reference (0–100). Retained +

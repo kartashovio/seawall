@@ -9,6 +9,7 @@ import type { AgentTickDTO, ObservatoryBlock } from "@seawall/shared";
 import { SCORE_LO, WARMUP_READY_MS } from "@seawall/shared";
 import type { AgentConfig } from "./config";
 import type { Calibrator, CalibratedScore } from "./calibrate";
+import { smoothScore } from "./calibrate";
 import { fetchLiveRow, fetchCexBlock, type LiveRow, type CexBlock } from "./live";
 import { computeRequest, decideRequest, shouldSend, type Bps, type SendOpts } from "./policy-logic";
 import { readPolicy, type PolicySnapshot } from "./onchain";
@@ -104,15 +105,10 @@ export class Engine {
   }
 
   // EWMA smoothing of the calibrated score — one number shared by the gauge + gate.
+  // Uses the SHARED smoothScore (identical to the observatory leg); only this
+  // Engine's own `this.smoothed` state differs, keeping the two legs independent.
   private smooth(cs: CalibratedScore): CalibratedScore {
-    const a = 0.4;
-    const prev = this.smoothed ?? cs;
-    const e = (n: number, p: number): number => a * n + (1 - a) * p;
-    this.smoothed = {
-      overall: e(cs.overall, prev.overall),
-      solvency: e(cs.solvency, prev.solvency),
-      liquidity: e(cs.liquidity, prev.liquidity),
-    };
+    this.smoothed = smoothScore(this.smoothed, cs);
     return this.smoothed;
   }
 
