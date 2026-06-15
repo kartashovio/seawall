@@ -81,6 +81,18 @@ export const RESUBMIT_COOLDOWN_MS = 60_000; // min gap between tighten submits
 export const RELAX_COOLDOWN_MS = 600_000; //  10 min min gap between relax steps (on-chain)
 export const ALL_CLEAR_WINDOW_MS = 600_000; // 10 min quiet span before relax begins
 
+// Model warm-up window. After a (re)start the live FeatureBuilder spends ~31 min
+// filling its velocity window (score pinned at 0 — no false alarm), THEN the EWMA
+// covariance re-centers on the live Pyth↔DeepBook domain in a few more minutes.
+// MEASURED on the prod agent journal: exactly 31 zero ticks, then live scoring
+// engages; mainnet (deep pool, div≈warmup scale) settles to ~0 within minutes,
+// testnet stays pool-jumpy by nature. 45 min covers the velocity window + the cov
+// settle with margin. The dashboard shows a calibrating/calibrated badge and the
+// agent WITHHOLDS autonomous tightening until ready (a cold-start spike must not
+// ratchet params); scripted demo scenes (elevate) bypass it. Wall-clock since the
+// live loop started — a restart resets it.
+export const WARMUP_READY_MS = 45 * 60_000; // 45 min continuous live operation
+
 // One drip step toward baseline = a FRACTION of each corridor's span, in bps
 // (10000 = 100%). DECIDED 2026-06-12: per-corridor %-of-span, matching the
 // architecture's "~10%/10min" — NOT a flat absolute step (which would reopen

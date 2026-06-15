@@ -5,6 +5,7 @@ import { useGuardianEvents, usePolicy } from "./useGuardian";
 import { CFG, CORRIDOR } from "./config";
 import { ScoreCard } from "./components/ScoreCard";
 import { Sparkline } from "./components/Sparkline";
+import { WarmupStatus } from "./components/WarmupStatus";
 import { PostureBanner } from "./components/PostureBanner";
 import { ArchitectureDiagram } from "./components/ArchitectureDiagram";
 import { ModelInternals } from "./components/ModelInternals";
@@ -101,6 +102,7 @@ export function App() {
           <span className="lede">
             one unchanged model, two markets — the enforced testnet score + a read-only mainnet reference
           </span>
+          <WarmupStatus warmup={latest?.warmup} variant="chip" />
         </div>
         <div className="seas">
           <ScoreCard
@@ -122,11 +124,8 @@ export function App() {
         </div>
         <Sparkline history={history} />
 
-        {/* Honest cold-start caveat. */}
-        <div className="muted warmup-note">
-          Cold-start caveat — for ~30 min after a (re)start the model is still warming up its rolling baseline and may
-          over-react — scores settle once the velocity window fills.
-        </div>
+        {/* Honest cold-start status — live warm-up progress (~45 min, measured). */}
+        <WarmupStatus warmup={latest?.warmup} variant="strip" />
       </section>
 
       {/* D — the wall */}

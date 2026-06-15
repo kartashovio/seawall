@@ -705,6 +705,113 @@ body.frozen .posture {
   color: var(--muted);
 }
 
+/* Model warm-up indicator — header chip + strip below the two seas */
+.warm-chip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 var(--fs-xs) / 1 var(--font-mono);
+  letter-spacing: 0.03em;
+  padding: 5px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.warm-chip--cal {
+  color: var(--amber-dim);
+  background: var(--amber-wash);
+  border: 1px solid var(--amber-line);
+}
+.warm-chip--ready {
+  color: var(--cyan-dim);
+  background: var(--cyan-wash);
+  border: 1px solid var(--cyan-line);
+}
+.warm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+.warm-chip--cal .warm-dot,
+.warm-strip--cal .warm-dot {
+  background: var(--amber);
+  animation: warm-pulse 1.7s ease-in-out infinite;
+}
+.warm-chip--ready .warm-dot,
+.warm-strip--ready .warm-dot {
+  background: var(--cyan);
+}
+@keyframes warm-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.32;
+  }
+}
+
+.warm-strip {
+  margin: 22px 2px 2px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+.warm-strip--cal {
+  background: var(--amber-wash);
+  border: 1px solid var(--amber-line);
+}
+.warm-strip--ready {
+  background: var(--cyan-wash);
+  border: 1px solid var(--cyan-line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-dim);
+}
+.warm-strip--ready .warm-strip-text b {
+  color: var(--cyan-dim);
+}
+.warm-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.warm-strip-label {
+  font: 600 var(--fs-kicker) / 1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+}
+.warm-strip-pct {
+  margin-left: auto;
+  font: 500 var(--fs-sm) / 1 var(--font-mono);
+  color: var(--amber-dim);
+}
+.warm-strip-of {
+  color: var(--muted);
+}
+.warm-bar {
+  margin: 11px 0 10px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--amber-wash);
+  overflow: hidden;
+}
+.warm-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--amber-glow), var(--amber));
+  transition: width 0.6s ease;
+}
+.warm-strip-note {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
 /* ============================================================================
    D — THE WALL (3-layer enforcement)
    ========================================================================== */

@@ -34,10 +34,18 @@ has the final say and never trusts the number.
 3. **d² = (x−μ)ᵀ Σ⁻¹ (x−μ)** via Cholesky; the per-feature contributions `xᵢ·(Σ⁻¹(x−μ))ᵢ`
    sum to d² exactly — that's the dashboard's contribution bars (you can see *which*
    feature drove the score).
-4. **Score = empirical percentile of d² vs a recent calm window** (χ²(k) is the
-   nominal reference; real features are heavy-tailed, so we calibrate to calm
-   percentiles). 0–100. The dashboard gauge shows this; `99` is a *measurement
-   marker*, not the send gate.
+4. **Score = the χ²(k) CDF of d² with a calm dead-zone** (live + mainnet observatory).
+   d² is referred to its null distribution χ²(k); the bottom 90% (the calm body) maps
+   to **0**, and the score lifts only into the χ²(k) tail — so a calm market reads ~0
+   **by construction**, self-calibrating off the EWMA-adaptive covariance with **no
+   frozen reference to rot**. Heavy tails are handled not by a fitted reference but by
+   (a) the adaptive cov absorbing the calm bulk and (b) the dead-zone reading only the
+   tail — validated by the measured **~1% single-tick calm false-alarm** rate. 0–100.
+   The **backtest** instead maps d² to its empirical percentile within each episode's
+   own calm window (a fresh per-replay reference); the two agree at the tail, where
+   χ²-score ≥ 90 ⇔ percentile ≥ 99, so the published lead times below are unchanged.
+   The dashboard gauge shows the live score; `99` is a *measurement marker*, not the
+   send gate.
 5. **Two axes, two knobs.** solvency `{div,divvel}` → `max_ltv`; liquidity
    `{disp,volvel,mktvol}` → `borrow_cap`. A de-peg (mispriced, not crashing) moves
    only `max_ltv`; a violent crash moves both. `liq_buffer` is deliberately NOT a
@@ -76,11 +84,17 @@ intact rather than trim to flatter the number).
 - **Backtest divergence vs live divergence.** Backtests proxy `div` with
   perp-last-vs-index / oracle-vs-CEX-median (what's historically available); **live,
   `div` keys on Pyth↔DeepBook** — the exact signal the contract re-derives on-chain.
-- **Live calibration caveat (testnet).** The warmup calm baseline is primed on
-  cross-venue history; testnet's thin DBUSDC pool sits ~0.3–0.5% off Pyth (a real,
-  persistent oracle↔CLOB offset the agent *correctly* flags), so the live calm score
-  reads hot on testnet. The model logic (ratchet/gate/clamp) is unaffected; on a deep
-  mainnet pool the calm score sits low. The demo's dramatic beats are scene-injected.
+- **Live warm-up + testnet caveat.** After a (re)start the model needs **~45 min** of
+  continuous live operation to warm up — MEASURED on the prod journal as ~31 min
+  filling the velocity window (score reads 0, no false alarm) then a few minutes for
+  the EWMA covariance to re-center on the live Pyth↔DeepBook domain. The dashboard
+  surfaces a *calibrating/calibrated* badge and the agent **withholds autonomous
+  tightening until warm** (a cold-start transient must not ratchet params; scripted
+  scenes bypass it). Once warm, the deep **mainnet** pool reads calm (score ~0 at
+  ~1–3 bps divergence — verified live); testnet's thin DBUSDC pool sits ~0.3–0.5% off
+  Pyth (a real, persistent oracle↔CLOB offset the agent *correctly* flags), so its
+  live calm score stays jumpy by nature. The model logic (ratchet/gate/clamp) is
+  unaffected. The demo's dramatic beats are scene-injected.
 - **The LLM is an explainer only** — human-readable rationale, never on the
   tx/decision path.
 - **Scope:** the oracle/price-anomaly class only — not key/governance compromise,

@@ -6,7 +6,7 @@ import type { SuiClient } from "@mysten/sui/client";
 import type { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import type { Detector, FeatureBuilder } from "@seawall/model";
 import type { AgentTickDTO, ObservatoryBlock } from "@seawall/shared";
-import { SCORE_LO } from "@seawall/shared";
+import { SCORE_LO, WARMUP_READY_MS } from "@seawall/shared";
 import type { AgentConfig } from "./config";
 import type { Calibrator, CalibratedScore } from "./calibrate";
 import { fetchLiveRow, fetchCexBlock, type LiveRow, type CexBlock } from "./live";
@@ -41,6 +41,11 @@ export class Engine {
   private smoothed?: CalibratedScore;
   // consecutive ticks solv/liq ≥ SCORE_LO (2-tick hysteresis on the tighten gate).
   private overGate = 0;
+  // wall-clock of the first live tick (set once). The model is "warm" WARMUP_READY_MS
+  // later; until then a cold-start cov-transient can spike the score, so the
+  // AUTONOMOUS tighten path is withheld and the DTO reports warmup progress. A
+  // restart resets it (a fresh process ⇒ a fresh Engine ⇒ startedAtMs unset again).
+  private startedAtMs?: number;
 
   constructor(
     private readonly client: SuiClient,
@@ -74,6 +79,10 @@ export class Engine {
     d2: number,
     contributions: Record<string, number>,
   ) {
+    // Warm-up progress (display only): wall-clock since the first live tick vs the
+    // WARMUP_READY_MS threshold. NEVER read by the decision path — the tighten gate
+    // computes its own `warm` from the same clock below.
+    const elapsedMs = Math.max(0, nowMs - (this.startedAtMs ?? nowMs));
     return {
       ts: nowMs,
       mode,
@@ -90,6 +99,7 @@ export class Engine {
       // every branch via `...this.base(...)`. NEVER read by computeRequest /
       // decideRequest / shouldSend / submitOnce — the decision path never sees it.
       enforcedEnv: this.cfg.enforcedEnv,
+      warmup: { elapsedMs, readyMs: WARMUP_READY_MS, ready: elapsedMs >= WARMUP_READY_MS },
     };
   }
 
@@ -107,6 +117,7 @@ export class Engine {
   }
 
   async tick(nowMs: number, scene: Scene = { mode: "calm" }): Promise<AgentTick> {
+    this.startedAtMs ??= nowMs; // stamp the first live tick → warm-up clock origin
     // The ENFORCED decision (and the returned DTO) is computed FIRST and in full.
     // `result` + `cex` are the only things the (later, separate, display-only)
     // observatory step touches — it never re-enters the enforced logic below.
@@ -226,7 +237,12 @@ export class Engine {
     // for two consecutive ticks. The elevate demo bypasses (instant hero beat).
     const hot = cs.solvency >= SCORE_LO || cs.liquidity >= SCORE_LO;
     this.overGate = hot ? this.overGate + 1 : 0;
-    const allowTighten = scene.mode === "elevate" || this.overGate >= 2;
+    // Warm-up burn-in: withhold AUTONOMOUS tightening until the model is warm (the
+    // first ~31 min velocity window + cov re-centering can spike the score on a
+    // cold start — see WARMUP_READY_MS). An explicit operator scene (elevate) is a
+    // deliberate trigger and bypasses it, so the scripted demo beats are instant.
+    const warm = nowMs - (this.startedAtMs ?? nowMs) >= WARMUP_READY_MS;
+    const allowTighten = scene.mode === "elevate" || (this.overGate >= 2 && warm);
     const computed = allowTighten ? computeRequest(cs.solvency, cs.liquidity) : applied;
     const { req, tighter } = decideRequest(computed, applied);
     // "elevate" is an explicit operator trigger → bypass the anti-spam cooldown

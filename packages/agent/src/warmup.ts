@@ -63,23 +63,16 @@ export async function warmup(_cfg: AgentConfig, nowMs: number, hours = 3): Promi
 
   const fb = new FeatureBuilder(LIVE_FEATURE_CONFIG);
   const det = new Detector(LIVE_FEATURE_LIST, { warmup: 60, lambdas: { mean: LAMBDA_MEAN, cov: LAMBDA_COV } });
-  const all: number[] = [];
-  const solv: number[] = [];
-  const liq: number[] = [];
   let bars = 0;
+  let calmSamples = 0; // post-warmup detector outputs — a liveness count only
   for (const row of rows) {
     const fv = fb.push(row);
     if (!fv) continue;
-    const r = det.update(fv);
-    bars++;
-    if (r.score > 0) {
-      all.push(r.d2);
-      solv.push(r.groupD2.solvency ?? 0);
-      liq.push(r.groupD2.liquidity ?? 0);
-    }
+    const r = det.update(fv); // advance the EWMA mean/cov; no d² reference is kept —
+    bars++; //                   the calibrator self-calibrates off the χ²(k) tail.
+    if (r.score > 0) calmSamples++;
   }
-  // The calibrator is now self-calibrating off the χ²(k) tail (no warmup d²
-  // reference array) — the warmup replay still primes the EWMA cov; the all/solv/
-  // liq arrays remain only for the calmSamples liveness log.
-  return { det, fb, cal: Calibrator.forFeatures(det.features), bars, calmSamples: all.length };
+  // The warmup replay primes the EWMA cov on recent calm history; the calibrator is
+  // self-calibrating off the χ²(k) tail (no frozen d² reference to rot).
+  return { det, fb, cal: Calibrator.forFeatures(det.features), bars, calmSamples };
 }

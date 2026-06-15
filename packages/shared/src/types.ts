@@ -99,6 +99,14 @@ export interface AgentTickDTO {
   // input; nothing in the UI can change it. (A future mainnet-enforcing instance
   // reports "mainnet" and every indicator re-roles with zero dashboard edits.)
   enforcedEnv: "testnet" | "mainnet";
+  // Model warm-up status (display only). After a (re)start the live FeatureBuilder
+  // fills its velocity window (~31 min, score pinned at 0), then the EWMA covariance
+  // re-centers on the live domain in a few more minutes. `ready` flips true at
+  // WARMUP_READY_MS of continuous live ticking; until then an early score may not be
+  // reliable (esp. the thin testnet pool) and the agent withholds AUTONOMOUS
+  // tightening. Wall-clock since the live loop started — a restart resets it. The
+  // dashboard renders a calibrating/calibrated badge + progress from this.
+  warmup: { elapsedMs: number; readyMs: number; ready: boolean };
   // MAINNET read-only observatory (display only; see ObservatoryBlock). OPTIONAL
   // so a mainnet hiccup simply omits it and the frame stays a legal SSE payload —
   // the enforced testnet tick is fully computed and returned regardless.
