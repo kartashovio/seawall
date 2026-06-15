@@ -46,6 +46,7 @@ function tick(enforcedEnv: "testnet" | "mainnet"): AgentTickDTO {
     enforcedEnv,
     divBps: 88,
     book: { ok: true, mid: 0.761, imb: 0, spread: 40 },
+    warmup: { elapsedMs: 240_000, readyMs: 2_700_000, ready: false },
     observatory: {
       ok: true,
       score: 3,
@@ -93,9 +94,9 @@ describe("App — enforcedEnv=testnet lights the testnet card + header pill", ()
     expect(html).toContain("MAINNET");
   });
 
-  it("shows a cold-start caveat that the model may over-react while warming up", () => {
-    expect(html).toContain("warming up");
-    expect(html).toContain("over-react");
+  it("shows the warm-up status (calibrating) so an early reading isn't taken as real", () => {
+    expect(html).toContain("calibrating"); // the WarmupStatus chip + strip
+    expect(html).toContain("over-read"); // the honest "may over-read until warm" note
   });
 });
 
