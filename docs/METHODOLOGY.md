@@ -57,24 +57,48 @@ on its own (the dashboard's Scene-2 beat).
 
 ## Measured results (backtest, free/keyless data, 1-min)
 
-Four real crashes replayed minute-by-minute (SUI collateral, BTC as market proxy),
-plus calm windows as false-alarm checks. **In all four, the driving knob floored
-*before* the visible price drop:**
+Five real crashes replayed minute-by-minute (target collateral, BTC as the market
+proxy), plus calm windows as false-alarm checks. **One reproducible metric** (run
+`npx tsx src/backtest.ts all`): the *confirmed alarm* = the calibrated score in the
+top **1%** of that episode's calm window (`≥99`) for **two consecutive ticks**, timed
+against an INDEPENDENTLY-measured −5% / 30-min price drawdown.
 
-| Event | Lead (driving knob floored vs −5% bar) | Driver | Calm FP (single-tick) |
-|---|---|---|---|
-| Oct 10 2025 — SUI liquidation cascade | ~90 min ahead (`borrow_cap`) | liquidity (disp 91%) | 0.98% |
-| Aug 5 2024 — yen carry unwind | ~49 min ahead (`borrow_cap`) | liquidity (disp 69%, BTC ~3.6× calm) | 1.00% |
-| Feb 2–3 2025 — tariff selloff | ~5.3 h ahead (`max_ltv`) | solvency (divvel 57%) | 1.00% |
-| Mar 11 2023 — USDC de-peg (post-SVB) | ~7.5 h ahead (`max_ltv` only; `borrow_cap` held at baseline) | solvency (div 55%) | 1.01% |
+| Event | Shape | Confirmed-alarm lead (`≥99`, 2-tick) | Driver | Calm FP (single-tick) |
+|---|---|---|---|---|
+| Oct 10 2025 — SUI liquidation cascade | systemic, fast | −17 min (coincident) | liquidity (disp 91%) | 0.98% |
+| Aug 5 2024 — yen-carry unwind | systemic, fast | −3 min (coincident) | liquidity (disp 69%) | 1.00% |
+| Feb 2–3 2025 — tariff selloff | macro slow-drift | **+320 min (5.3 h early)** | solvency (divvel 57%) | 1.00% |
+| Mar 11 2023 — USDC de-peg / SVB | depeg slow-drift | **+379 min (6.3 h early)** | solvency (div 55%) | 1.01% |
+| May 22 2025 — Cetus exploit (SUI) | idiosyncratic, fast | −1 min (coincident) | solvency (div 73%) | 1.04% |
 
-**Measured error rate:** the calibrator is tuned to a **~1% single-tick false-alarm
-rate** on calm windows; a 2-tick debounce removes most of those. Honest dents are
-reported in `ml-backtest.md` (e.g. the stricter "99-for-2-ticks" alert lands *at*
-the two vertical flash crashes, not ahead — the protective *parameters* were
-already floored; and the USDC calm window's 10 sustained episodes overlap the real
-early-SVB instability and are arguably early true detections — we left the window
-intact rather than trim to flatter the number).
+**Early vs coincident — and why (stated honestly).** The two **slow-drift** events
+fire **hours before** the visible crash: divergence/dispersion build while price is
+still calm. The three **fast** crashes are **coincident** — a violent simultaneous
+move gives no informational head-start (price falls as fast as the features), so the
+alarm lands *with* the drop. We report the negative leads as-is rather than switch to
+a softer threshold to manufacture a positive number: the graded-CAUTION parameter
+*does* reach floor earlier still (the score crosses the `≥95` tighten band first —
+e.g. +90 min on the cascade), but that band also exceeds ~5% in calm — acceptable for
+a **bounded, reversible** CAUTION nudge, **not** a figure to headline. The hard alarm
+is the `≥99` / 2-tick column above, held to ~1% calm false-alarm.
+
+**Driver discrimination (the measured payoff).** The SAME model routes the response
+by *what* broke: **systemic** crashes (Oct, Aug — SUI falls with BTC) are
+liquidity/dispersion-led → `borrow_cap`; **idiosyncratic / de-peg** events (Feb, USDC,
+Cetus — the asset breaks while BTC is calm, `mktvol`≈0) are divergence-led → `max_ltv`.
+The cleanest split is USDC (a mispricing, not a crash): `max_ltv` to floor while
+`borrow_cap` **held at baseline**. Cetus (SUI −11.6% on the exploit, BTC +0.09%) is the
+SUI-native showcase — both params floor under the violent dump, but the driver is
+unmistakably solvency (div **73%**, the strongest of all five).
+
+**Measured error rate:** ~**1% single-tick** calm false-alarm by construction
+(`ALERT_PCT=99`); the 2-tick debounce removes most. Honest dents: the USDC calm
+window's 10 sustained episodes overlap the real early-SVB instability (arguably early
+true detections — left intact, not trimmed to flatter the number); and **Cetus earns
+its place on discrimination, not magnitude** — its raw d² is modest (the dump hit the
+Cetus DEX, not the CEX basis/dispersion we measure) and its lead is coincident, so we
+pitch it as the correct-knob-routing proof, not a heroic catch. The hours-ahead
+early-warning claim rests on the two slow-drift events (n=2).
 
 ## Honest lines
 
