@@ -75,7 +75,7 @@ export function ModelInternals(props: {
         {/* (2) Closed-form per-feature contribution to d² — the transparency leg. */}
         <div className="blk">
           <div className="blk-title">Per-feature contribution to d²</div>
-          <div className="spectrum">
+          <div className="spectrum" aria-hidden="true">
             {entries.map(([name, val], i) => (
               <span key={name} style={{ width: `${(Math.abs(val) / total) * 100}%`, background: PAL[i % PAL.length] }} title={name} />
             ))}

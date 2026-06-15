@@ -124,7 +124,7 @@ export function App() {
 
         {/* Honest cold-start caveat. */}
         <div className="muted warmup-note">
-          ℹ️ Cold-start caveat: for ~30 min after a (re)start the model is still warming up its rolling baseline and may
+          Cold-start caveat — for ~30 min after a (re)start the model is still warming up its rolling baseline and may
           over-react — scores settle once the velocity window fills.
         </div>
       </section>

@@ -59,20 +59,23 @@ export function RiskGauge({ score }: { score: number }) {
             strokeWidth={SW}
             strokeLinecap="round"
             {...seg(0, v)}
-            style={{ transition: "stroke-dasharray .65s cubic-bezier(.22,.61,.36,1), stroke .4s ease" }}
+            className="gauge-arc"
           />
         </g>
         {/* threshold markers + labels (outside the rotated group) */}
         {markers.map((m) => {
           const a = markPt(m, R + SW / 2 + 1);
           const b = markPt(m, R + SW / 2 + 5);
-          const l = markPt(m, R + SW / 2 + 13);
+          const l = markPt(m, R + SW / 2 + 14);
           return (
             <g key={m}>
               <line x1={a.x.toFixed(1)} y1={a.y.toFixed(1)} x2={b.x.toFixed(1)} y2={b.y.toFixed(1)} stroke="var(--muted-deep)" strokeWidth={1.2} />
-              <text x={l.x.toFixed(1)} y={l.y.toFixed(1)} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--muted)" textAnchor="middle" dominantBaseline="middle">
-                {m}
-              </text>
+              {/* 60 + 95 numbered; 99 keeps only its tick (caption names it) to avoid crowding */}
+              {m !== BANDS.alert && (
+                <text x={l.x.toFixed(1)} y={l.y.toFixed(1)} fontSize="10" fontFamily="var(--font-mono)" fill="var(--ink-dim)" textAnchor="middle" dominantBaseline="middle">
+                  {m}
+                </text>
+              )}
             </g>
           );
         })}

@@ -14,7 +14,7 @@ type Scene = {
 // depend on them) — only presentation (num glyph, label, accent) is added.
 const SCENES: { num: string; label: string; accent: string; body: Scene }[] = [
   { num: "②", label: "Slow drift → agent CAUTION", accent: "caution", body: { mode: "elevate", override: { overall: 78, solvency: 80, liquidity: 55 } } },
-  { num: "①", label: "Fast de-peg → hard tighten", accent: "freeze", body: { mode: "elevate", override: { overall: 99, solvency: 99, liquidity: 70 } } },
+  { num: "①", label: "Fast de-peg → hard tighten", accent: "caution", body: { mode: "elevate", override: { overall: 99, solvency: 99, liquidity: 70 } } },
   { num: "③", label: "Malicious agent (clamped)", accent: "caution", body: { mode: "malicious" } },
   { num: "④", label: "Dead agent (L1 still holds)", accent: "neutral", body: { mode: "dead" } },
   { num: "↺", label: "Calm (reset)", accent: "calm", body: { mode: "calm" } },

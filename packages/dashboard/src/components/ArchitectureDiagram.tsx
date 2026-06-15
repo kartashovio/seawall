@@ -25,15 +25,18 @@ const C = {
   ink: "#0B1B2B",
   inkSoft: "#5A6B7B",
   suiBlue: "#4DA2FF",
+  suiBlueText: "#1f6fc2",
   suiBlueWash: "#EAF4FF",
   agentWash: "#F4F7FA",
   feedWash: "#FFF6E9",
   daoWash: "#F3EEFF",
   daoInk: "#6B4DCB",
   danger: "#E5484D",
+  dangerText: "#c4203f",
   paper: "#FFFFFF",
   hair: "#D8E0E8",
   amber: "#B07A1E",
+  amberText: "#8a5a0e",
   dangerWash: "#FBEAEA",
   bannerWash: "#FFF5F5",
 } as const;
@@ -258,7 +261,7 @@ export function ArchitectureDiagram() {
           strokeWidth={1.5}
           strokeDasharray="6 5"
         />
-        <ZoneTitle x={40} y={62} text="EXTERNAL FEEDS" fill={C.amber} />
+        <ZoneTitle x={40} y={62} text="EXTERNAL FEEDS" fill={C.amberText} />
 
         {/* Z2 Off-chain agent world */}
         <rect
@@ -286,7 +289,7 @@ export function ArchitectureDiagram() {
           strokeWidth={1.5}
           strokeDasharray="6 5"
         />
-        <ZoneTitle x={640} y={62} text="ON-CHAIN · SUI (trust root)" fill={C.suiBlue} />
+        <ZoneTitle x={640} y={62} text="ON-CHAIN · SUI (trust root)" fill={C.suiBlueText} />
 
         {/* Z4 DAO / Human */}
         <rect
@@ -338,7 +341,7 @@ export function ArchitectureDiagram() {
       <Node x={700} y={150} w={300} h={76} label="GuardianPolicy" sub="shared · corridor + caps + state" stroke={C.suiBlue} />
       <Node x={700} y={262} w={300} h={56} label="divergence::read" sub="re-derives div from raw Pyth+book" stroke={C.suiBlue} />
       <Node x={700} y={356} w={300} h={60} label="Vault (consumer)" sub="borrow / withdraw — gated" stroke={C.ink} />
-      <Node x={1080} y={230} w={84} h={110} label="GovernanceCap" sub="owned" stroke={C.daoInk} />
+      <Node x={1072} y={230} w={104} h={110} label="GovernanceCap" sub="owned · separate object" stroke={C.daoInk} />
       <Node x={320} y={432} w={260} h={56} label="Dashboard" sub="gauge · action log" stroke={C.inkSoft} />
 
       {/* ── (c) PRIMARY EDGES ─────────────────────────────────────────────── */}
@@ -403,7 +406,7 @@ export function ArchitectureDiagram() {
         />
         {/* E11 policy → dash (dashed 1.5px soft, long curve back to bottom-left) */}
         <path
-          d="M 700 200 C 640 270, 640 440, 582 458"
+          d="M 700 200 C 640 270, 640 440, 580 458"
           stroke={C.inkSoft}
           strokeWidth={1.5}
           strokeDasharray="5 4"
@@ -412,31 +415,32 @@ export function ArchitectureDiagram() {
       </g>
 
       {/* ── EDGE LABELS (over fills, halo-backed) ──────────────────────────── */}
-      <EdgeLabel x={150} y={62 + 100} text="signed price feed" fill={C.amber} />
-      <EdgeLabel x={150} y={196} text="L2 book + CEX depth" fill={C.amber} />
+      <EdgeLabel x={150} y={62 + 100} text="signed price feed" fill={C.amberText} />
+      {/* E2 label moved onto the path (between feeds zone and agent, off the node) */}
+      <EdgeLabel x={285} y={210} text="L2 book + CEX depth" fill={C.amberText} />
       <EdgeLabel x={450} y={176} text="0–100 score (advisory)" fill={C.ink} />
-      {/* E4 hero label, two-line across the Z2/Z3 seam */}
-      <EdgeLabel x={640} y={150} text="same-PTB: post Pyth +" fill={C.suiBlue} bold />
-      <EdgeLabel x={640} y={164} text="submit ParamRequest (sender-gated)" fill={C.suiBlue} bold />
-      <EdgeLabel x={628} y={300} text="permissionless poke · 5 min" fill={C.suiBlue} />
-      <EdgeLabel x={920} y={244} text="reads price + L2 book ITSELF," fill={C.suiBlue} bold />
-      <EdgeLabel x={920} y={257} text="re-derives divergence" fill={C.suiBlue} bold />
-      <EdgeLabel x={690} y={300} text="inline poke on borrow / withdraw" fill={C.ink} />
+      {/* E4 hero label, two-line lowered onto the off-chain↔on-chain seam */}
+      <EdgeLabel x={640} y={178} text="same-PTB: post Pyth +" fill={C.suiBlueText} bold />
+      <EdgeLabel x={640} y={192} text="submit ParamRequest (sender-gated)" fill={C.suiBlueText} bold />
+      <EdgeLabel x={612} y={330} text="permissionless poke · 5 min" fill={C.suiBlueText} />
+      <EdgeLabel x={920} y={244} text="reads price + L2 book ITSELF," fill={C.suiBlueText} bold />
+      <EdgeLabel x={920} y={257} text="re-derives divergence" fill={C.suiBlueText} bold />
+      <EdgeLabel x={665} y={346} text="inline poke on borrow / withdraw" fill={C.ink} />
       {/* E10 dao label, two-line */}
       <EdgeLabel x={1024} y={150} text="&GovernanceCap:" fill={C.daoInk} bold />
       <EdgeLabel x={1024} y={164} text="unfreeze / set corridor / rotate agent" fill={C.daoInk} bold />
       <EdgeLabel x={636} y={400} text="events → dashboard (queryEvents)" fill={C.inkSoft} />
       {/* E7 / E8 bottom-arc labels */}
-      <EdgeLabel x={400} y={543} text="PriceInfoObject (same PTB)" fill={C.amber} />
-      <EdgeLabel x={400} y={520} text="Pool L2 ticks (on-chain)" fill={C.amber} />
+      <EdgeLabel x={400} y={543} text="PriceInfoObject (same PTB)" fill={C.amberText} />
+      <EdgeLabel x={400} y={520} text="Pool L2 ticks (on-chain)" fill={C.amberText} />
 
       {/* ── (e) TRUST-BOUNDARY banner — horizontal strip over the off↔on seam ─ */}
       <g>
         <rect
           x={300}
-          y={20}
+          y={18}
           width={744}
-          height={24}
+          height={40}
           rx={12}
           fill={C.bannerWash}
           stroke={C.danger}
@@ -444,17 +448,28 @@ export function ArchitectureDiagram() {
         />
         <text
           x={672}
-          y={33}
+          y={32}
           textAnchor="middle"
           dominantBaseline="middle"
           fontFamily={FONT}
           fontSize={11}
           fontWeight={700}
-          fill={C.danger}
+          fill={C.dangerText}
         >
           TRUST BOUNDARY — agent can only push safer (one-way ratchet) · cannot
-          hold the unfreeze cap · freeze is contract-only · score is advisory
-          (event-only)
+          hold the unfreeze cap
+        </text>
+        <text
+          x={672}
+          y={46}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontFamily={FONT}
+          fontSize={11}
+          fontWeight={700}
+          fill={C.dangerText}
+        >
+          freeze is contract-only · score is advisory (event-only)
         </text>
       </g>
 

@@ -43,7 +43,7 @@ export function ActionLog({ events }: { events: GuardianEventRow[] }) {
         On-chain action log <span className="tag tag-contract">queryEvents · must-have #3</span>
       </h2>
       <div className="log-pin">
-        Watch for <span className="c-agent">CLAMP (amber)</span> and <span className="c-contract">REJECT (coral)</span>:
+        Watch for <span className="c-agent">CLAMP (amber)</span> and <span className="c-breach">REJECT (coral)</span>:
         the contract refusing the agent. That's distrust, on-chain.
       </div>
       {events.length === 0 ? (
