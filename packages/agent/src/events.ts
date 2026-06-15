@@ -89,14 +89,20 @@ export const USDC2023: EventConfig = {
 };
 
 // Idiosyncratic, SUI-NATIVE (the discrimination showcase): the May 22 2025 Cetus
-// exploit. SUI dumps ~10% (~$4.16 -> ~$3.71, 10:00-13:00 UTC) while BTC stays flat
-// (~$110-111k, <1% hourly) — a clean single-asset crash with the market calm. So
-// mktvol (BTC vol velocity) stays low and the response should be solvency /
-// divergence-driven (max_ltv), NOT systemic-liquidity (borrow_cap) — the live proof
-// that "the two knobs listen to two different things". Window is honest: calm = the
-// ~32h before the dump (incl. the run-up to $4.17, which only WIDENS the baseline =
-// conservative), detectFrom at the 10:00 exploit onset, same 5%/30min visible-drop
-// threshold as the other SUI events (no per-event tuning).
+// exploit. SUI dumps ~11.6% (~$4.20 -> ~$3.71, ~10:40-13:00 UTC) while BTC stays
+// flat (~$110-111k, +0.09% across the crash) — a clean single-asset crash with the
+// market calm. So mktvol (BTC vol velocity) stays ~0 and the response is solvency /
+// divergence-driven (max_ltv), NOT systemic-liquidity (borrow_cap) — the measured
+// proof that "the two knobs listen to two different things". Window is honest +
+// conservative: calm = the ~32h before the dump (incl. the run-up to $4.20, which
+// only WIDENS the baseline), detectFrom at the 10:00 onset (a ~33h zero-alert gap
+// before the event makes the -1min lead robust to detectFrom placement), same
+// 5%/30min visible-drop as the other SUI events (no per-event tuning).
+// HONEST NOTE: Cetus's VALUE is the driver discrimination, not raw magnitude — the
+// event's raw d² is modest (the dump hit the Cetus DEX, not the CEX basis/dispersion
+// we measure); it alerts via the calm-percentile (sustained top-1% vs calm), and the
+// lead is coincident (-1min), not predictive. The early-warning story lives in the
+// slow-drift events (Feb +320min, USDC +379min).
 export const CETUS2025: EventConfig = {
   label: "May 22 2025 — Cetus exploit (SUI idiosyncratic / BTC market)",
   // May 20 is detector warm-up runway (so the EWMA cov is fully settled before the
