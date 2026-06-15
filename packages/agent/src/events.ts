@@ -88,9 +88,38 @@ export const USDC2023: EventConfig = {
   detectFrom: U(2023, 3, 10, 18, 0),
 };
 
+// Idiosyncratic, SUI-NATIVE (the discrimination showcase): the May 22 2025 Cetus
+// exploit. SUI dumps ~10% (~$4.16 -> ~$3.71, 10:00-13:00 UTC) while BTC stays flat
+// (~$110-111k, <1% hourly) — a clean single-asset crash with the market calm. So
+// mktvol (BTC vol velocity) stays low and the response should be solvency /
+// divergence-driven (max_ltv), NOT systemic-liquidity (borrow_cap) — the live proof
+// that "the two knobs listen to two different things". Window is honest: calm = the
+// ~32h before the dump (incl. the run-up to $4.17, which only WIDENS the baseline =
+// conservative), detectFrom at the 10:00 exploit onset, same 5%/30min visible-drop
+// threshold as the other SUI events (no per-event tuning).
+export const CETUS2025: EventConfig = {
+  label: "May 22 2025 — Cetus exploit (SUI idiosyncratic / BTC market)",
+  // May 20 is detector warm-up runway (so the EWMA cov is fully settled before the
+  // calm window — keeps the cold-start transient out of the calibration/peak).
+  dates: ["2025-05-20", "2025-05-21", "2025-05-22"],
+  windowStartMs: U(2025, 5, 20, 0, 0),
+  windowEndMs: U(2025, 5, 22, 23, 59),
+  futuresSymbol: "SUIUSDT",
+  marketSymbol: "BTCUSDT",
+  cex: { coinbase: "SUI-USD", okx: "SUI-USDT", bybit: "SUIUSDT" },
+  refKey: "last",
+  divA: "last",
+  divB: "index",
+  dispKeys: ["coinbase", "okx", "bybit"],
+  drawdownKey: "last",
+  calm: [U(2025, 5, 21, 2, 0), U(2025, 5, 22, 10, 0)],
+  detectFrom: U(2025, 5, 22, 10, 0),
+};
+
 export const EVENTS: Record<string, EventConfig> = {
   oct10: OCT10,
   aug2024: AUG2024,
   feb2025: FEB2025,
   usdc2023: USDC2023,
+  cetus: CETUS2025,
 };
