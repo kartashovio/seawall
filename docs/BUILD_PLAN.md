@@ -150,9 +150,9 @@ Pinned once in TS (`@seawall/shared`) and Move (`guardian::constants`), bound by
 | `BASE_DECIMALS` / `QUOTE_DECIMALS` | `9` / `6` | u8 | SUI / DBUSDC (must-fix #7) |
 | `DBK_DECIMAL_RULE` | `base≥quote ⇒ raw·10^(base−quote)=×1000` | — | coin-decimal factor; live vector bid=760000/ask=768000→`764_000_000` |
 | `BPS_DENOM` | `10_000` | u16 | LTV math denominator |
-| `SCORE_LO` / `SCORE_HI` / `ALERT_SCORE` | `60` / `95` / `99` | score | gauge bands + score→param dead-band/floor |
+| `SCORE_LO` / `SCORE_HI` / `ALERT_SCORE` | `55` / `80` / `99` | score | gauge bands + score→param dead-band/floor |
 | `SUBMIT_SCORE` | `99` `[CHOSEN]` | score | agent anti-spam throttle (NOT the send condition) |
-| `LAMBDA_MEAN` / `LAMBDA_COV` | `0.99` / `0.99` | — | **single λ pair, used in BOTH live + backtest (minor #11)** |
+| `LAMBDA_MEAN` / `LAMBDA_COV` | `0.99` / `0.996` | — | **mean fast / cov slow (0.996), live == backtest (minor #11 resolved)** |
 
 **DELETED (do not implement in v1):** `MIN_DEPTH` / any notional-depth threshold (D1: "depth-not-ok" is STRUCTURAL — empty/one-sided side → freeze; a 1-tick **two-sided** book is OK); `D_INLINE` (D5: inline ≡ keeper, no separate band).
 **Feed ids (resolve live, never freeze; assert):** beta SUI/USD = `0x50c67b3fd225db8912a424dd4baed60ffdde625ed2feaaf283724f9608fea266` (hermes-beta, live runtime); mainnet = `0x23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744` (Benchmarks, backtest history only). Each 404s on the other host.
@@ -344,7 +344,7 @@ assert!(new_debt * BPS_DENOM <= (guardian::borrow_cap_current_bps(policy) as u12
 
 **SEND gate (architecture-faithful).** Send iff **(A)** `reqBps` strictly tighter than on-chain `current` for either param (`reqBps.maxLtv < current.maxLtv` OR `reqBps.borrowCap < current.borrowCap`) — the spec condition — **OR (B)** `now − lastSentMs ≥ 300_000` (heartbeat). `SUBMIT_SCORE`/`RESUBMIT_COOLDOWN_MS` are **additive anti-spam throttles on (A), NOT the send condition** (document so a reviewer never thinks the score gates the send — fidelity #2). The ~3 s tick is the *detector* cadence; the *send* cadence is decoupled.
 
-**Frameworks.** `@mysten/sui@1.45.2` (`SuiClient`, single v1 copy — `pnpm why` gate), `@pythnetwork/pyth-sui-js@3.0.0`. **Construct `Detector` with explicit `lambdas:{mean:0.99, cov:0.99}` — the SAME λ as the backtest** (minor #11; or change `constants.ts` to `0.99/0.99` and re-run backtests — pick ONE λ, report that one). Reuse model verbatim: `Detector`, `scoreToParams(solvency, liquidity)`, `FeatureBuilder`, `asofJoin`. **Never import `@mysten/deepbook-v3`/`@mysten/dapp-kit`** (drags v2).
+**Frameworks.** `@mysten/sui@1.45.2` (`SuiClient`, single v1 copy — `pnpm why` gate), `@pythnetwork/pyth-sui-js@3.0.0`. **Construct `Detector` with explicit `lambdas:{mean:0.99, cov:0.996}`** — live + backtest now BOTH read `LAMBDA_MEAN`/`LAMBDA_COV` from `@seawall/shared` (minor #11 resolved). Reuse model verbatim: `Detector`, `scoreToParams(solvency, liquidity)`, `FeatureBuilder`, `asofJoin`. **Never import `@mysten/deepbook-v3`/`@mysten/dapp-kit`** (drags v2).
 
 **Files.** EDIT `packages/agent/src/index.ts`. CREATE `config.ts, onchain.ts, sources/live.ts, deepbook.ts, warmup.ts, calibrate.ts, loop.ts, tx.ts, chainEvents.ts, rationale.ts, control-server.ts, util/retry.ts` + `.env.sample`. EDIT `packages/shared/src/constants.ts` (cadence/score consts).
 

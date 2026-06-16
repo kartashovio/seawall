@@ -34,7 +34,7 @@ export interface EventConfig {
   drawdownFrac?: number;
   drawdownWindowMin?: number;
   velWindow?: number;
-  lambda?: number; // EWMA decay for 1m bars (default 0.99)
+  lambda?: number; // EWMA decay for 1m bars; if unset, mean defaults to LAMBDA_MEAN (0.99) and cov to LAMBDA_COV (0.996). If provided, overrides BOTH mean+cov.
 }
 
 export interface BacktestResult {

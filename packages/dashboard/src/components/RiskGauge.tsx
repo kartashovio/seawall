@@ -37,7 +37,7 @@ const markPt = (at: number, rad: number): { x: number; y: number } => {
 export function RiskGauge({ score }: { score: number }) {
   const v = clamp(score, 0, 100);
   const color = bandColor(v);
-  const markers = [BANDS.lo, BANDS.hi, BANDS.alert]; // 60 / 95 / 99
+  const markers = [BANDS.lo, BANDS.hi, BANDS.alert]; // 55 / 80 / 99
 
   return (
     <>
@@ -45,7 +45,7 @@ export function RiskGauge({ score }: { score: number }) {
         <g transform="rotate(135 100 100)">
           {/* track */}
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--g-track)" strokeWidth={SW} strokeLinecap="round" {...seg(0, 100)} />
-          {/* faint band tints so the 60/95 zones read even at a low score */}
+          {/* faint band tints so the 55/80 zones read even at a low score */}
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--teal)" strokeWidth={SW} opacity={0.16} {...seg(0, BANDS.lo)} />
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--amber)" strokeWidth={SW} opacity={0.16} {...seg(BANDS.lo, BANDS.hi)} />
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--red)" strokeWidth={SW} opacity={0.16} {...seg(BANDS.hi, 100)} />

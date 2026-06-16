@@ -25,7 +25,7 @@ The named pieces, without the reasoning (the "why" is further down):
 
 Everything the model uses is recent and rolling. Nothing is trained on years of history.
 
-- Its sense of "normal" comes from roughly the last 100 minutes of market (the EWMA decay is 0.99 on 1-minute bars, which is about that much memory).
+- It tracks the centre fast and its sense of "scale" slow. The running mean follows the last ~100 minutes of market (a fast EWMA decay of 0.99 on 1-minute bars); the covariance — which is what defines "normal scale" — follows the last several hours (a slower decay of 0.996, roughly a 2.9-hour half-life). The slow covariance is deliberate: it means a multi-hour crisis stays anomalous instead of being re-absorbed into "normal" within an hour.
 - The velocity features compare now against about 30 minutes ago.
 - The score self-calibrates off that rolling covariance. Live, the chi-squared tail with a fixed dead-zone needs no stored calm threshold; the backtest fits a percentile against a recent calm stretch, a few quiet hours.
 
@@ -78,11 +78,11 @@ Before the score drives anything it is EWMA-smoothed (α = 0.4, about a three-ti
 
 The score then maps to a fraction `f ∈ [0,1]` of each corridor, with `target = floor + f(score)·(baseline − floor)`:
 
-- below 60: a dead-band, nothing moves
-- 60 to 95: a logistic ramp
-- above 95: it sits at the floor
+- below 55: a dead-band, nothing moves
+- 55 to 80: a logistic ramp
+- above 80: it sits at the floor
 
-So the parameters start tightening from a score of 60 and are fully tightened by 95. They do not wait for the 99 alert. That alert is just a marker we use to time detection and count false alarms; it is not the gate that moves the parameters.
+So the parameters start tightening from a score of 55 and are fully tightened by 80. They do not wait for the 99 alert. That alert is just a marker we use to time detection and count false alarms; it is not the gate that moves the parameters.
 
 Corridors are `max_ltv` [55%, 75%] and `borrow_cap` [40%, 100%], set on-chain by the DAO. Each group is calibrated on its own, so the two parameters move independently. The map is tighten-only: it only ever moves toward the floor, and loosening (RELAX) is the contract's job, on a sustained all-clear.
 

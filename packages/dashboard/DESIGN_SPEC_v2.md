@@ -143,7 +143,7 @@ Full light `:root` block. Three meaning-colors stay **distinct + AA on white**: 
   --grain-opacity: 0;
 }
 ```
-**Mapping (binds everywhere):** `--teal`/`--cyan` = contract & calm (score<60); `--amber` = agent/caution (60≤score<95); `--red`/`--coral` = breach/freeze (≥95); `--dao` = governance. `*-glow` = the vivid swatch tone for LED/arc fills where a non-text mark wants brand-vivid hue.
+**Mapping (binds everywhere):** `--teal`/`--cyan` = contract & calm (score<55); `--amber` = agent/caution (55≤score<80); `--red`/`--coral` = breach/freeze (≥80); `--dao` = governance. `*-glow` = the vivid swatch tone for LED/arc fills where a non-text mark wants brand-vivid hue.
 
 ---
 
@@ -211,15 +211,15 @@ Full light `:root` block. Three meaning-colors stay **distinct + AA on white**: 
 ## 6 · THE RISK GAUGE + SPLIT RISK-HISTORY
 
 ### 6a · Gauge — **CHOSEN: Concept A, the open-bottom radial ring.**
-*Why:* it is the cleanest break from the old semicircular needle dial the owner rejected — a single thin Sui-blue ring whose **sweep length is the value** and **hue is the band**, no needle and no tick rail (just three small 60/95/99 markers). Tide (B) is on-brand but busier (gradients + meniscus + wave + white-number flip); segmented half-arc (C) still reads as "the old dial." The ring is the most minimal, most legible, most "static→live" viz.
+*Why:* it is the cleanest break from the old semicircular needle dial the owner rejected — a single thin Sui-blue ring whose **sweep length is the value** and **hue is the band**, no needle and no tick rail (just three small 55/80/99 markers). Tide (B) is on-brand but busier (gradients + meniscus + wave + white-number flip); segmented half-arc (C) still reads as "the old dial." The ring is the most minimal, most legible, most "static→live" viz.
 
 **Geometry (exact):** `viewBox 0 0 200 200`; `CX=CY=100`, `R=82`, `SW=12`. A **270° open-bottom arc**: dash run starts lower-left (135°) and sweeps clockwise to lower-right; bottom gap centered. `C=2πR=515.22`; `ARC=C*0.75=386.42`. `lenOf(s)=clamp(s,0,100)/100*ARC`. Each segment = one `<circle r=82>` with `strokeDasharray="<len> <C>"`, `strokeDashoffset={-lenOf(from)}`, wrapped in `transform="rotate(135 100 100)"`. `strokeLinecap="round"`.
 
-**Bands bind to `BANDS` (lo=60/hi=95/alert=99)** via the existing `bandColor`, recolored through `--teal/--amber/--red`:
+**Bands bind to `BANDS` (lo=55/hi=80/alert=99)** via the existing `bandColor`, recolored through `--teal/--amber/--red`:
 ```ts
 const bandColor = (s:number) => s < BANDS.lo ? "var(--teal)" : s < BANDS.hi ? "var(--amber)" : "var(--red)";
 ```
-**Layers (back→front):** (1) full-arc track `var(--g-track)`; (2) faint band tints under the value at `opacity 0.16` — `0..60` teal, `60..95` amber, `95..100` red (so the 60/95 zones read even at a low score); (3) the **live value arc** `from=0 to=v`, full opacity, colored by `bandColor(v)`; (4) three butt-capped markers at 60/95/99 just outside the ring with tiny mono labels (`60`,`95`,`99`); (5) centered readout — `.gauge-num` (display, ~46px, `var(--ink)`) + a `/ 100` mono sublabel. Marker angle: `deg = 135 + clamp(at,0,100)/100*270`.
+**Layers (back→front):** (1) full-arc track `var(--g-track)`; (2) faint band tints under the value at `opacity 0.16` — `0..55` teal, `55..80` amber, `80..100` red (so the 55/80 zones read even at a low score); (3) the **live value arc** `from=0 to=v`, full opacity, colored by `bandColor(v)`; (4) three butt-capped markers at 55/80/99 just outside the ring with tiny mono labels (`55`,`80`,`99`); (5) centered readout — `.gauge-num` (display, ~46px, `var(--ink)`) + a `/ 100` mono sublabel. Marker angle: `deg = 135 + clamp(at,0,100)/100*270`.
 
 `role="img"`, `aria-label="risk score N of 100"`. **No needle, no tick scale.** Caption unchanged (honest-caveat invariant): `calibrated anomaly score · 99 = measurement marker, not the gate`. Pure fragment — NO `<section>`/`<h2>`, no handlers, no `cursor:pointer` (ScoreCard renders it twice; non-interactivity test must pass).
 
@@ -240,9 +240,9 @@ const mainnet = h.filter(t => t.observatory?.ok).map(t => t.observatory!.score);
 const dead = (h[h.length-1]?.mode ?? "calm") === "dead";
 const malicious = (h[h.length-1]?.mode ?? "calm") === "malicious";
 ```
-Render as a **side-by-side small-multiple** in `.spark-split` inside one `.card.sparkstrip`. Each mini-chart: `viewBox 0 0 320 72`, `PADX=6 PADTOP=8 PADBOT=8`, `yOf(s)=PADTOP+(1-clamp(s,0,100)/100)*56`, `xOf(i)=PADX+(n<=1?0:i/(n-1)*(W-2*PADX))`. Dashed etch lines at `yOf(60)` (`--amber-line`) and `yOf(95)` (`--coral-line`), `opacity 0.5`. Trace = `polyline` width 1.75, colored by the **last value's band** (`bandColor`), with a 10%-opacity band-colored area polygon and a newest-tick dot. `n<2` → centered mono `warming up…` text. `dead` → muted dashed trace; `malicious` → faint amber wash over the right 20% of the testnet panel only.
+Render as a **side-by-side small-multiple** in `.spark-split` inside one `.card.sparkstrip`. Each mini-chart: `viewBox 0 0 320 72`, `PADX=6 PADTOP=8 PADBOT=8`, `yOf(s)=PADTOP+(1-clamp(s,0,100)/100)*56`, `xOf(i)=PADX+(n<=1?0:i/(n-1)*(W-2*PADX))`. Dashed etch lines at `yOf(55)` (`--amber-line`) and `yOf(80)` (`--coral-line`), `opacity 0.5`. Trace = `polyline` width 1.75, colored by the **last value's band** (`bandColor`), with a 10%-opacity band-colored area polygon and a newest-tick dot. `n<2` → centered mono `warming up…` text. `dead` → muted dashed trace; `malicious` → faint amber wash over the right 20% of the testnet panel only.
 
-Each panel header carries the **literal asserted strings**: left `TESTNET` + badge `ENFORCED · IN USE` (`.tag-agent` amber); right `MAINNET` + badge `READ-ONLY · OBSERVING` (`.tag-readonly` — distinct from amber, keeps agent/contract color separation; mainnet is the only Sui-blue panel). Card head `.lbl` "Risk history" + `.hint` "last N ticks · color = current band (60 / 95 etched)". `preserveAspectRatio="none"`, `vectorEffect="non-scaling-stroke"`. Pure SVG, no handlers.
+Each panel header carries the **literal asserted strings**: left `TESTNET` + badge `ENFORCED · IN USE` (`.tag-agent` amber); right `MAINNET` + badge `READ-ONLY · OBSERVING` (`.tag-readonly` — distinct from amber, keeps agent/contract color separation; mainnet is the only Sui-blue panel). Card head `.lbl` "Risk history" + `.hint` "last N ticks · color = current band (55 / 80 etched)". `preserveAspectRatio="none"`, `vectorEffect="non-scaling-stroke"`. Pure SVG, no handlers.
 ```css
 .spark-split{ display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:28px; }
 @media(max-width:920px){ .spark-split{ grid-template-columns:1fr; } }
@@ -283,7 +283,7 @@ Each panel header carries the **literal asserted strings**: left `TESTNET` + bad
 1. **ScoreCard non-interactive** — markup contains NO `<button`, `<a `, `role="button"`, `role="tab"`, `onclick`, `cursor:pointer`/`cursor: pointer`. CSS keeps `.scorecard{cursor:default}`; the new card/gauge/sparkline CSS introduces no `cursor:pointer` on these surfaces. (`ScoreCard.test.tsx` asserts this for both roles.)
 2. **Role swap by `enforcedEnv`** — purely data-driven; ribbon + title + note swap with `enforced`. No control re-routes enforcement. (`App.test.tsx`.)
 3. **`Sparkline` prop unchanged** = `{ history }`; renders cleanly with `history: []` (the empty/`warming up…` path) since App.test mocks `history:[]`.
-4. **Both scores always render**; gauge bands bind to `BANDS` 60/95/99 via `--teal/--amber/--red` (migration aliases must resolve).
+4. **Both scores always render**; gauge bands bind to `BANDS` 55/80/99 via `--teal/--amber/--red` (migration aliases must resolve).
 5. **Color meaning distinct + FREEZE never agent-attributed** — amber=agent ≠ Sui-blue=contract ≠ red=breach; `PostureBanner.is-frozen`, `LayerStatus` L3, and the freeze tint are red/contract, never amber.
 6. **Every honest caveat preserved** — App cold-start "warming up"/"over-react" note; ScoreCard testnet thin-pool ("jumpy by design"/"intentionally NOT recalibrated") + mainnet "reads calm"/"Never on any enforcement path"; gauge "99 = measurement marker, not the gate"; sparkline "warming up…".
 

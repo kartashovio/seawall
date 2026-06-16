@@ -39,7 +39,7 @@ export const COPY: Record<string, CaseCopy> = {
   },
   oct10: {
     detection:
-      "Coincident (−17 min), too fast for any lead: the agent's CAUTION and the contract FREEZE fire within minutes as the books dislocate — and once frozen it stays frozen (the red zone) until the DAO lifts it.",
+      "Coincident (−6 min), too fast for any lead: the agent's CAUTION and the contract FREEZE fire within minutes as the books dislocate — and once frozen it stays frozen (the red zone) until the DAO lifts it.",
     market:
       "Trump's 100% China-tariff post (①, ~5 pm ET, retaliating for China's rare-earth curbs) lit the fuse — but it became the largest liquidation cascade ever (~$19B, ~87% longs) on STRUCTURE, not the headline: record one-sided leverage into thin weekend books, cross-margin auto-deleveraging, and a venue collateral-pricing failure. On Binance, USDe and wrapped collateral were marked off its OWN thin order book and cratered (USDe to ~$0.65) on that venue alone — while holding ~$1 on-chain and on other exchanges — force-liquidating solvent users. SUI's perp last wicked ~79% and last-vs-index divergence exploded to ~17.5% (peak ~1754 bps).",
     guardian:

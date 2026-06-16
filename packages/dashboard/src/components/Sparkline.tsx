@@ -4,8 +4,8 @@
 //     params the contract ratchets (max LTV + borrow cap) — score up ⇄ knobs down.
 //   • MAINNET (read-only observatory): score only (it enforces nothing → no params)
 //     — but now fully interactive too, so you can read its history on hover.
-// Both: a labelled header, hover tooltip (time + values), score y-axis (0/60/95/
-// 100) with the 60/95 bands ANNOTATED (caution onset / fully tightened), a time
+// Both: a labelled header, hover tooltip (time + values), score y-axis (0/55/80/
+// 100) with the 55/80 bands ANNOTATED (caution onset / fully tightened), a time
 // x-axis, and a shaded "calibrating" region while the model is still warming up.
 // History is seeded from GET /history (up to ~12h) so it isn't limited to the
 // minutes since the page opened.
@@ -141,7 +141,7 @@ function HistoryChart({ history, kind }: { history: AgentTickDTO[]; kind: Kind }
           {[20, 40, 80].map((g) => (
             <line key={g} x1={ML} y1={vY(g)} x2={ML + PW} y2={vY(g)} stroke="var(--line-soft)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
           ))}
-          {/* score band lines (60 caution / 95 fully-tightened) — bound to BANDS */}
+          {/* score band lines (55 caution / 80 fully-tightened) — bound to BANDS */}
           <line x1={ML} y1={vY(BANDS.lo)} x2={ML + PW} y2={vY(BANDS.lo)} stroke="var(--amber-line)" strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
           <line x1={ML} y1={vY(BANDS.hi)} x2={ML + PW} y2={vY(BANDS.hi)} stroke="var(--coral-line)" strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
           {/* band annotations (right gutter) — what the static thresholds mean */}

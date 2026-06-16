@@ -35,16 +35,16 @@ The backtest runs on the first four. Depth (`imb`, `spread`) only exists live; i
 
 ## Model
 
-- EWMA: mean λ=0.99, covariance λ_c=0.99, ridge δ=0.15 (single λ pair, live == backtest).
+- EWMA: mean λ=0.99, covariance λ_c=0.996, ridge δ=0.15 (mean fast / cov slow, live == backtest).
 - Mahalanobis distance d² → χ²-CDF → 0–100.
 - Per-feature contribution: `c_i = (x_i − μ_i)·z_i`, `Σ c_i = d²`. Shows what drove the score.
 - This is the Kritzman-Li turbulence index (covariance is RiskMetrics). What's new is the application, not the math.
 
 score → corridor fraction `f ∈ [0,1]` → max_ltv / borrow_cap:
 
-- score < 60 → leave it
-- 60–95 → logistic (s_mid=80, γ=0.15)
-- score > 95 → corridor floor
+- score < 55 → leave it
+- 55–80 → logistic (s_mid=68, γ=0.15)
+- score > 80 → corridor floor
 
 The corridor `[floor, baseline]` is set by the DAO/protocol. The agent only moves toward floor. `liq_buffer` is left alone (retroactive, could trigger liquidations).
 
