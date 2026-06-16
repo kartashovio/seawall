@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { ConnectButton } from "@mysten/dapp-kit";
 import { useAgentStream } from "./useAgentStream";
 import { useGuardianEvents, usePolicy } from "./useGuardian";
 import { lastKeeperPokeMs } from "./abi";
@@ -48,12 +47,8 @@ export function App() {
   const keeperPokeMs = lastKeeperPokeMs(events);
   const lastCheckMs = policy?.lastCheckMs;
 
-  // Model warming up → the early score isn't trusted yet (shown on both score cards).
+  // Model warming up → the early score isn't trusted yet (shown above both cards).
   const calibrating = latest?.warmup ? !latest.warmup.ready : false;
-
-  // Time since the last on-chain action (events newest-first) — posture + the wall.
-  const lastTs = events[0]?.tsMs ?? 0;
-  const ago = lastTs > 0 ? `${Math.round((Date.now() - lastTs) / 1000)}s ago` : "—";
 
   // PRESENTATIONAL only: tint the frame on a freeze (no atmosphere layers). Runs in
   // an effect (never during render) so the static-markup tests stay DOM-free, and it
@@ -78,7 +73,7 @@ export function App() {
           </div>
         </div>
         <div className="spacer" />
-        <div className="status-cluster">
+        <div className="statusbar" role="status" aria-label="system liveness">
           <span className="muted stat-item">
             <span className={`dot ${connected ? "dot-ok" : "dot-bad"}`} />
             {connected ? "radar live" : "radar offline"}
@@ -86,11 +81,10 @@ export function App() {
           <KeeperStatus keeperPokeMs={keeperPokeMs} />
           <GuardianHealth lastCheckMs={lastCheckMs} />
         </div>
-        <ConnectButton />
       </header>
 
-      {/* A — posture verdict */}
-      <PostureBanner paused={paused} applied={applied} baseline={baseline} ago={ago} />
+      {/* A — hard-stop alarm (only renders when FROZEN) */}
+      <PostureBanner paused={paused} />
 
       {/* B — thesis strip: the claim once, then the three roles as a color legend */}
       <section className="thesis">
@@ -132,8 +126,9 @@ export function App() {
           <span className="lede">
             one unchanged model, two markets — the enforced testnet score + a read-only mainnet reference
           </span>
-          <WarmupStatus warmup={latest?.warmup} variant="chip" />
         </div>
+        {/* Calibration state — ABOVE the two scores (it gates whether they're trusted yet) */}
+        <WarmupStatus warmup={latest?.warmup} variant="strip" />
         <div className="seas">
           <ScoreCard
             env="testnet"
@@ -155,9 +150,6 @@ export function App() {
           />
         </div>
         <Sparkline history={history} />
-
-        {/* Honest cold-start status — live warm-up progress (~45 min, measured). */}
-        <WarmupStatus warmup={latest?.warmup} variant="strip" />
       </section>
 
       {/* D — the wall */}

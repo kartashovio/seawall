@@ -49,9 +49,10 @@ function DivMeter({ divBps, ok }: { divBps?: number; ok: boolean }) {
         <div className="divmeter-mark divmeter-freeze" style={{ left: "100%" }} title={`freeze ${freezeBps} bps (5%)`} />
       </div>
       <div className="divmeter-cap">
-        divergence <b style={{ color: col }}>{divBps.toFixed(1)} bps</b> <span className="divmeter-state">{state}</span> · caution ≥{" "}
-        {cautionBps} · <span className="divmeter-frz">freeze ≥ {freezeBps}</span>
+        Pyth↔DeepBook divergence <b style={{ color: col }}>{divBps.toFixed(1)} bps</b> <span className="divmeter-state">{state}</span> · caution ≥{" "}
+        {cautionBps} · <span className="divmeter-frz">contract-freeze ≥ {freezeBps}</span> bps
       </div>
+      <div className="divmeter-note">The contract halts the market on its own measured divergence — the AI risk score itself never freezes.</div>
     </div>
   );
 }

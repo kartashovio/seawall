@@ -7,7 +7,7 @@
 import type { AgentTickDTO } from "@seawall/shared";
 import { agentTarget, contractTarget, explainParam, type BoundBy } from "../constraints";
 import { DIV, pct } from "../config";
-import { SCORE_LO } from "@seawall/shared";
+import { SCORE_LO, SCORE_HI } from "@seawall/shared";
 
 const BOUND_LABEL: Record<BoundBy, string> = {
   agent: "set by the agent",
@@ -51,6 +51,9 @@ export function ConstraintPanel({ tick }: { tick: AgentTickDTO | null }) {
               {r.key}
               <span className="cns-driver">
                 ← {r.driver} {r.score.toFixed(0)}
+              </span>
+              <span className="cns-driver cns-thresh">
+                tightens at {r.driver} ≥ {SCORE_LO}, floor at {SCORE_HI}
               </span>
             </div>
             <div className="cns-flow">

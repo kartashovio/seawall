@@ -3,7 +3,7 @@
 // the demo proves the override authority lives in the owned object, not the
 // shared policy.
 import { useState } from "react";
-import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClientQuery } from "@mysten/dapp-kit";
+import { ConnectButton, useCurrentAccount, useSignAndExecuteTransaction, useSuiClientQuery } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { CFG } from "../config";
 
@@ -47,6 +47,9 @@ export function GovernancePanel({ paused }: { paused: boolean }) {
         The only way to unfreeze a hard stop. Authority is the owned cap — the agent
         can't reach it; a shared-object call can't bypass it.
       </p>
+      <div className="gov-connect">
+        <ConnectButton />
+      </div>
       <div className="gov-row">
         <button className="btn btn-danger" onClick={unfreeze} disabled={!ownsCap || !paused || isPending}>
           {isPending ? "…" : "Unfreeze (DAO)"}

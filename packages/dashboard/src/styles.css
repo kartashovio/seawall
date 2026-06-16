@@ -371,9 +371,9 @@ a:hover {
   padding: 3px 10px;
   border-radius: 999px;
   letter-spacing: 0.04em;
-  border: 1px solid var(--amber-line);
-  background: var(--amber-wash);
-  color: var(--amber-dim);
+  border: 1px solid var(--line-lit);
+  background: var(--inset);
+  color: var(--ink-dim);
 }
 .env-mainnet {
   border-color: var(--cyan-line);
@@ -402,17 +402,27 @@ a:hover {
 .dot-idle {
   background: var(--muted-deep);
 }
-.status-cluster {
+/* grouped system-liveness bar (radar · keeper · guardian) — one tidy pill-bar */
+.statusbar {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-right: 14px;
+  align-items: stretch;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--ground-2);
+  box-shadow: var(--shadow-card);
 }
 .stat-item {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
   font-size: var(--fs-sm);
+}
+.statusbar .stat-item {
+  padding: 3px 13px;
+}
+.statusbar .stat-item + .stat-item {
+  border-left: 1px solid var(--line-soft);
 }
 @keyframes pulse {
   0%,
@@ -776,6 +786,12 @@ body.frozen .posture {
 .divmeter-frz {
   color: var(--coral-dim);
 }
+.divmeter-note {
+  margin-top: 5px;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--muted-deep);
+}
 
 /* ── "why these limits" — agent ⟂ contract constraint panel ───────────────── */
 .cns-lede {
@@ -816,6 +832,10 @@ body.frozen .posture {
   font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--muted);
+}
+.cns-thresh {
+  color: var(--muted-deep);
+  font-size: 10.5px;
 }
 .cns-flow {
   grid-area: flow;
@@ -970,6 +990,12 @@ body.frozen .posture {
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
+}
+.rc-chart-note {
+  margin: 0 0 7px;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--muted);
 }
 .rc-frame {
   position: relative;
@@ -1490,6 +1516,9 @@ body.frozen .posture {
 .governance p {
   color: var(--ink-dim);
   line-height: 1.6;
+}
+.gov-connect {
+  margin: 6px 0 14px;
 }
 .gov-row {
   display: flex;

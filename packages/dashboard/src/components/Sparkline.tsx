@@ -68,10 +68,17 @@ function HistoryChart({ history, kind }: { history: AgentTickDTO[]; kind: Kind }
   const badgeCls = isTest ? "tag-agent" : "tag-readonly";
 
   const head = (
-    <div className="rc-chart-head">
-      <span className="rc-chart-lbl">{label}</span>
-      <span className={"tag " + badgeCls}>{badge}</span>
-    </div>
+    <>
+      <div className="rc-chart-head">
+        <span className="rc-chart-lbl">{label}</span>
+        <span className={"tag " + badgeCls}>{badge}</span>
+      </div>
+      {!isTest && (
+        <p className="rc-chart-note">
+          In the current phase the project is deployed on testnet; the mainnet AI risk score is reference-only.
+        </p>
+      )}
+    </>
   );
 
   if (n < 2) {
@@ -258,9 +265,8 @@ export function Sparkline({ history }: { history: AgentTickDTO[] }) {
         </div>
       </div>
       <p className="rc-sub">
-        Last <b>{span}</b> (up to 12h). The score band at <b>60</b> is where the contract starts tightening; <b>95</b> is fully
-        tightened (params at floor). On testnet the two lending knobs are drawn too — as the score climbs they ratchet toward
-        their floor, only ever safer. Hover any point to read it.
+        Showing the last <b>{span}</b> (up to 12h). Limits tighten as the score climbs <b>60 → 95</b> — and the two params react
+        differently.
       </p>
       <HistoryChart history={h} kind="testnet" />
       <HistoryChart history={h} kind="mainnet" />

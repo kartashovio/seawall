@@ -171,7 +171,7 @@ function ZoneTitle({
 export function ArchitectureDiagram() {
   return (
     <svg
-      viewBox="0 0 1200 560"
+      viewBox="0 0 1200 600"
       width="100%"
       role="img"
       aria-label="Seawall architecture: off-chain untrusted agent, on-chain trust-root contract, DAO override"
@@ -240,12 +240,16 @@ export function ArchitectureDiagram() {
         x={0.5}
         y={0.5}
         width={1199}
-        height={559}
+        height={599}
         rx={4}
         fill={C.paper}
         stroke={C.hair}
         strokeWidth={1}
       />
+
+      {/* all diagram content shifted DOWN to give the TRUST-BOUNDARY banner its own
+          top band (it used to overlap the zone titles). The banner counter-shifts up. */}
+      <g transform="translate(0, 40)">
 
       {/* ── (a) ZONES ─────────────────────────────────────────────────────── */}
       <g>
@@ -434,8 +438,9 @@ export function ArchitectureDiagram() {
       <EdgeLabel x={400} y={543} text="PriceInfoObject (same PTB)" fill={C.amberText} />
       <EdgeLabel x={400} y={520} text="Pool L2 ticks (on-chain)" fill={C.amberText} />
 
-      {/* ── (e) TRUST-BOUNDARY banner — horizontal strip over the off↔on seam ─ */}
-      <g>
+      {/* ── (e) TRUST-BOUNDARY banner — top header, counter-shifted up so it clears
+              the zone titles (the content group below pushes everything down 40). ─ */}
+      <g transform="translate(0, -34)">
         <rect
           x={300}
           y={18}
@@ -608,6 +613,7 @@ export function ArchitectureDiagram() {
             );
           });
         })()}
+      </g>
       </g>
     </svg>
   );
