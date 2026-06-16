@@ -1842,6 +1842,14 @@ body.frozen .posture {
   background: var(--coral-wash);
   border: 1px solid var(--coral-line);
 }
+.bt-leg-mark {
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+}
+.bt-leg-agent {
+  background: repeating-linear-gradient(180deg, var(--amber-dim) 0 2px, transparent 2px 4px);
+}
 .bt-intro-caveat {
   margin: 14px 0 0;
   padding-top: 12px;

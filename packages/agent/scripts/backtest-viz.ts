@@ -47,21 +47,23 @@ const META: Record<string, { asset: string; cls: "systemic" | "idiosyncratic" | 
 const D = (y: number, mo: number, d: number, h: number, mi: number) => Date.UTC(y, mo - 1, d, h, mi, 0);
 type News = { ts: number; label: string; kind: "trigger" | "escalation" | "reversal"; confidence: "high" | "medium" | "low" };
 const NEWS: Record<string, News[]> = {
+  // Timestamps independently re-verified (OPUS, web sources) — all within tolerance;
+  // these are the more precise central estimates where one was documented.
   feb2025: [
-    { ts: D(2025, 2, 1, 22, 0), label: "Trump signs tariff EOs (CA/MX/CN)", kind: "trigger", confidence: "medium" },
-    { ts: D(2025, 2, 3, 15, 50), label: "Mexico tariffs paused 30d", kind: "reversal", confidence: "medium" },
+    { ts: D(2025, 2, 1, 22, 30), label: "Trump signs tariff EOs (CA/MX/CN)", kind: "trigger", confidence: "medium" },
+    { ts: D(2025, 2, 3, 16, 10), label: "Mexico tariffs paused 30d", kind: "reversal", confidence: "medium" },
   ],
   usdc2023: [
-    { ts: D(2023, 3, 10, 16, 0), label: "CA regulators close SVB", kind: "trigger", confidence: "medium" },
-    { ts: D(2023, 3, 11, 3, 0), label: "Circle: $3.3B USDC stuck at SVB", kind: "escalation", confidence: "high" },
+    { ts: D(2023, 3, 10, 15, 15), label: "CA regulators close SVB", kind: "trigger", confidence: "high" },
+    { ts: D(2023, 3, 11, 3, 11), label: "Circle: $3.3B USDC stuck at SVB", kind: "escalation", confidence: "high" },
     // NB: the Mar-12 22:15Z Fed/FDIC backstop that restored the peg is past this
     // report's data window (ends Mar-11 23:59Z), so it is noted in prose, not marked.
   ],
   oct10: [{ ts: D(2025, 10, 10, 21, 0), label: "Trump: 100% tariff on China", kind: "trigger", confidence: "high" }],
-  aug2024: [{ ts: D(2024, 8, 5, 6, 0), label: "Nikkei -12.4%, carry-unwind climax", kind: "escalation", confidence: "medium" }],
+  aug2024: [{ ts: D(2024, 8, 5, 6, 0), label: "Nikkei -12.4%, carry-unwind climax", kind: "escalation", confidence: "high" }],
   cetus: [
     { ts: D(2025, 5, 22, 10, 30), label: "Cetus exploit begins", kind: "trigger", confidence: "high" },
-    { ts: D(2025, 5, 22, 11, 0), label: "Cetus halts pools", kind: "escalation", confidence: "medium" },
+    { ts: D(2025, 5, 22, 10, 52), label: "Cetus halts pools", kind: "escalation", confidence: "high" },
     { ts: D(2025, 5, 22, 12, 50), label: "Sui validators freeze hacker", kind: "reversal", confidence: "medium" },
   ],
 };
@@ -171,18 +173,13 @@ async function gen(key: string): Promise<void> {
   let windowed = full.filter((p) => p.ts >= lo && p.ts <= hi);
   if (windowed.length < 10) windowed = full;
 
-  // ENFORCEMENT timing + freeze RANGES (from the full windowed series, pre-decimation,
-  // so shading is exact and we don't have to keep every frozen tick in `points`).
+  // ENFORCEMENT timing: when the AGENT first acts (params move off baseline by >2pt),
+  // and when the CONTRACT first FREEZES. The freeze LATCHES — once tripped, only the
+  // DAO can lift it, so every tick from freezeTs onward stays frozen even if raw
+  // divergence later dips. (No DAO unfreeze in a backtest → frozen to the window end.)
   const enforceTs = windowed.find((p) => p.maxLtv < MAX_LTV.baseline - 2 || p.borrowCap < BORROW_CAP.baseline - 2)?.ts ?? null;
   const freezeTs = windowed.find((p) => p.frozen)?.ts ?? null;
-  const freezeRanges: Array<[number, number]> = [];
-  for (let i = 0; i < windowed.length; i++) {
-    if (!windowed[i].frozen) continue;
-    let j = i;
-    while (j + 1 < windowed.length && windowed[j + 1].frozen) j++;
-    freezeRanges.push([windowed[i].ts, windowed[j].ts]);
-    i = j;
-  }
+  if (freezeTs != null) for (const p of windowed) if (p.ts >= freezeTs) p.frozen = true;
 
   // Summary stats over the WINDOWED series (pre-decimation) so the headline numbers
   // + copy are STABLE and accurate regardless of decimation. The extreme ticks are
@@ -234,10 +231,9 @@ async function gen(key: string): Promise<void> {
     calmFalseAlarmRate: report.calmCount ? report.calmSingleAlerts / report.calmCount : 0,
     priceMin: prices.length ? Math.min(...prices) : null,
     priceMax: prices.length ? Math.max(...prices) : null,
-    everFroze: freezeRanges.length > 0,
+    everFroze: freezeTs != null,
     freezeBps: FREEZE_BPS,
     cautionBps: CAUTION_BPS,
-    freezeRanges,
     // only the catalysts that actually fall inside the rendered data range
     newsEvents: (NEWS[key] ?? []).filter((nE) => nE.ts >= points[0].ts && nE.ts <= points[points.length - 1].ts),
     regressionMaxDiff: Number(maxDiff.toFixed(3)),
@@ -259,7 +255,10 @@ async function main(): Promise<void> {
   const keys = arg === "all" ? Object.keys(EVENTS) : [arg];
   for (const k of keys) await gen(k);
   const present = keys.filter((k) => existsSync(join(OUT_DIR, `${k}.json`)));
-  const order = ["feb2025", "usdc2023", "oct10", "aug2024", "cetus"].filter((k) => present.includes(k));
+  // Order = importance + demonstrativeness: the two FREEZES first (oct10 = the
+  // dramatic flash-crash hero, usdc = the on-thesis depeg), then the ML-value case
+  // (feb), then knob discrimination (aug), then the honest scope limit (cetus).
+  const order = ["oct10", "usdc2023", "feb2025", "aug2024", "cetus"].filter((k) => present.includes(k));
   const idx =
     `// AUTO-GENERATED by packages/agent/scripts/backtest-viz.ts — do not edit by hand.\n` +
     order.map((k) => `import ${k} from "./${k}.json";`).join("\n") +

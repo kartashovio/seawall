@@ -19,7 +19,7 @@ export interface CaseCopy {
 export const COPY: Record<string, CaseCopy> = {
   feb2025: {
     detection:
-      "Detection lead, not an action lead: the validated detector first flagged +320 min before the −5% drop, but on the deployed model that early reading is a faint, single-tick blip — no knob moves there. The real enforcement lands ~9 h later, in the deep-crash leg.",
+      "Where the agent ACTS (the 'agent → CAUTION' marker): its real action — ratcheting both knobs down — fires in the deep-crash leg on Feb 3, ~9 h after the validated detector's first faint flag. So the +320 min is a detection lead, not an action lead; the agent moves only once stress is unmistakable.",
     market:
       "Trump signed tariff executive orders on Canada, Mexico and China late Saturday Feb 1 (①); 24/7 crypto sold off through the weekend — SUI bled ~38% as the leg deepened into Feb 3, then partly retraced after Mexico's tariffs were paused (②).",
     guardian:
@@ -29,7 +29,7 @@ export const COPY: Record<string, CaseCopy> = {
   },
   usdc2023: {
     detection:
-      "The detector flagged +379 min before the −5% break, but the decisive action is the contract FREEZE the moment peg-divergence crossed 5% (Mar 11 03:36Z) — that's contract-derived from raw divergence, not a score call.",
+      "The agent nudges the cap early, but the decisive action is the contract FREEZE the moment peg-divergence crossed 5% (Mar 11 03:36Z) — contract-derived from raw divergence, not a score call. Once frozen it STAYS frozen (the red zone) until the DAO lifts it.",
     market:
       "California regulators closed Silicon Valley Bank on Friday Mar 10 (①); that night Circle disclosed $3.3B of USDC reserves were trapped at SVB (②) and USDC broke its dollar peg (to ~$0.86 on Bybit here, deeper elsewhere) while BTC stayed calm — a clean idiosyncratic, solvency-class event.",
     guardian:
@@ -38,16 +38,18 @@ export const COPY: Record<string, CaseCopy> = {
       "The closest analog to the real target threat: a stablecoin losing its peg is exactly the oracle/price-correctness break that mis-liquidates lending markets. The score's early flag is faint — but it doesn't matter here, because the freeze is re-derived from raw divergence the instant it crossed 5%. (The peg recovered after the Fed/FDIC backstopped all SVB deposits on Mar 12 — past this chart's data window.)",
   },
   oct10: {
-    detection: "Coincident (−17 min): a flash crash too fast to lead — the contract freezes in the same block the books dislocate.",
+    detection:
+      "Coincident (−17 min), too fast for any lead: the agent's CAUTION and the contract FREEZE fire within minutes as the books dislocate — and once frozen it stays frozen (the red zone) until the DAO lifts it.",
     market:
-      "Trump posted a 100% tariff threat on China shortly before 5 pm ET Oct 10 (①), detonating a mass-liquidation cascade (~$19B liquidated, one of crypto's largest). SUI's perp last-price wicked down ~79% as books emptied and last-vs-index divergence exploded to ~17.5% (peak in-window ~1754 bps) in seconds.",
+      "Trump posted a 100% tariff threat on China around 5 pm ET Oct 10 (①), detonating a mass-liquidation cascade (~$19B liquidated, one of crypto's largest). SUI's perp last-price wicked down ~79% as books emptied and last-vs-index divergence exploded to ~17.5% (peak in-window ~1754 bps) in seconds.",
     guardian:
       "The moment the contract's own measured divergence blows past 5%, it FREEZES on its own data and the ratchet slams both knobs to the floor (55% / 40%). No human, no DAO vote, no agent permission: one block.",
     read:
       "The fast flash-crash, and the live demo's hero scene. When a feed and the book violently disagree, the in-block freeze is the seatbelt — a manual freeze takes hours and a DAO vote days, neither of which exists in the seconds this took.",
   },
   aug2024: {
-    detection: "Coincident (−3 min): a liquidity-led cap tightening as cross-venue volatility spikes — no lead, no freeze.",
+    detection:
+      "Coincident (−3 min): the agent's CAUTION fires with the crash — a borrow-cap tightening as cross-venue volatility spikes. No lead, no freeze.",
     market:
       "The yen carry-trade unwound — the BoJ hiked on Jul 31 and a weak US jobs report on Aug 2 tripped the Sahm recession rule — and on Aug 5 the Nikkei closed −12.4% amid a global cascade (①). SUI fell ~19% with BTC, a systemic market-wide move.",
     guardian:
@@ -56,7 +58,8 @@ export const COPY: Record<string, CaseCopy> = {
       "Proof the two knobs listen to two different things. Here the model reads a market-wide liquidity event — borrow cap leads, max LTV holds. Same model, the other knob, a graded response rather than a halt.",
   },
   cetus: {
-    detection: "Coincident (−1 min) and modest by design — a single-asset DEX shock the CEX basis barely registers; see the limit below.",
+    detection:
+      "Coincident (−1 min) and modest: the agent eases max LTV as SUI dumps on-chain, but the CEX basis barely registers the DEX-only shock — see the limit below.",
     market:
       "The Cetus DEX exploit drained ~$220–260M from Sui CLMM pools starting ~10:30Z May 22 (①); Cetus halted its pools (②) and SUI dumped ~11% on-chain, before Sui validators voted to freeze ~$162M of the stolen funds (③). BTC stayed flat — a single-asset shock.",
     guardian:
@@ -70,7 +73,7 @@ export const COPY: Record<string, CaseCopy> = {
 // Gallery-level framing, shown once above the cases. States the scope honestly.
 export const GALLERY_INTRO = {
   lead: "Mainnet is calm by design, so the live score sits flat — these are the moments that prove the guardian earns its place.",
-  body: "Each case replays the unchanged live scoring path over a real market crisis — the same detector, calibration, smoothing, and one-way ratchet the dashboard runs today — so the score reads on the same scale you see above (≈0 in calm). The score, the two lending knobs, and the contract-measured divergence are plotted against the asset price, and the REAL news catalysts are marked (numbered ①②③, sourced, UTC), so you can read the model's reaction against what actually happened.",
+  body: "Each case replays the unchanged live scoring path over a real market crisis — the same detector, calibration, smoothing, and one-way ratchet the dashboard runs today — so the score reads on the same scale you see above (≈0 in calm). The score, the two lending knobs, and the contract-measured divergence are plotted against the asset price. Markers show what actually happened (the REAL news catalysts, numbered ①②③, sourced, UTC) AND what the system actually did: when the AGENT acts (its first CAUTION tighten) and when the CONTRACT freezes — after a freeze the chart stays red, because only the DAO can lift it.",
   caveat:
     "Honest scope: the two FREEZES (USDC, Oct-10) are the strongest result — the contract halts on its own re-derived divergence, no score needed. Feb shows the ML adding value (it floors the knobs while divergence stays under the caution line) but reacting at the crisis, not predicting it; Aug and Cetus are coincident, graded catches that demonstrate the solvency-vs-liquidity discrimination. The replayed scores are regression-verified identical to the validated reports. Backtests use free CEX price/divergence history (last-vs-index, or vs the $1 peg) as the oracle↔market proxy; the live system re-derives the same shape from Pyth↔DeepBook on-chain. Public order-book DEPTH isn't archived, so depth features are shown live, not backtested.",
 };

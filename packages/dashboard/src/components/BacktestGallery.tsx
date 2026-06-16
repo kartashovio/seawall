@@ -20,7 +20,8 @@ export function BacktestGallery() {
           <span className="bt-leg"><span className="bt-leg-line bt-leg-cap" /> borrow cap</span>
           <span className="bt-leg"><span className="bt-leg-line bt-leg-div" /> divergence</span>
           <span className="bt-leg"><span className="bt-leg-line bt-leg-price" /> price</span>
-          <span className="bt-leg"><span className="bt-leg-sw bt-leg-freeze" /> contract freeze</span>
+          <span className="bt-leg"><span className="bt-leg-mark bt-leg-agent" /> agent → CAUTION</span>
+          <span className="bt-leg"><span className="bt-leg-sw bt-leg-freeze" /> contract FROZEN (red until DAO)</span>
         </div>
         <p className="bt-intro-caveat">{GALLERY_INTRO.caveat}</p>
       </div>

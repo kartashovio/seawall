@@ -36,7 +36,6 @@ export interface BtCase {
   priceLabel: string;
   points: BtPoint[];
   newsEvents?: BtNews[];
-  freezeRanges?: Array<[number, number]>;
 }
 
 const W = 720;
@@ -85,7 +84,10 @@ export function BacktestChart({ c }: { c: BtCase }) {
   const maxDiv = Math.max(c.freezeBps * 1.2, ...P.map((p) => p.divBps ?? 0));
   const yD = (v: number) => BT + (1 - clamp(v / maxDiv, 0, 1)) * BH;
 
-  const freezes = c.freezeRanges ?? [];
+  // the freeze LATCHES — once tripped only the DAO lifts it — so the frozen zone runs
+  // from freezeTs to the end of the window (everything after is in the red zone).
+  const freezeX = c.freezeTs != null && c.freezeTs >= t0 && c.freezeTs <= t1 ? x(c.freezeTs) : null;
+  const enforceX = c.enforceTs != null && c.enforceTs >= t0 && c.enforceTs <= t1 ? x(c.enforceTs) : null;
   const news = (c.newsEvents ?? []).filter((nv) => nv.ts >= t0 && nv.ts <= t1);
 
   const scorePts = P.map((p): [number, number] => [x(p.ts), yA(p.score)]);
@@ -96,7 +98,6 @@ export function BacktestChart({ c }: { c: BtCase }) {
   const scoreArea = `${ML},${AT + AH} ${poly(scorePts)} ${ML + PW},${AT + AH}`;
   const divArea = divPts.length ? `${divPts[0][0]},${BT + BH} ${poly(divPts)} ${divPts[divPts.length - 1][0]},${BT + BH}` : "";
 
-  const alertX = c.firstAlertTs != null && c.firstAlertTs >= t0 && c.firstAlertTs <= t1 ? x(c.firstAlertTs) : null;
   const dropX = c.visibleDropTs != null && c.visibleDropTs >= t0 && c.visibleDropTs <= t1 ? x(c.visibleDropTs) : null;
 
   const nt = Math.min(6, n);
@@ -124,10 +125,9 @@ export function BacktestChart({ c }: { c: BtCase }) {
           </linearGradient>
         </defs>
 
-        {/* freeze shading across both panels */}
-        {freezes.map(([s, e], i) => (
-          <rect key={i} x={x(s)} y={AT} width={Math.max(1.5, x(e) - x(s))} height={BT + BH - AT} fill="var(--coral-wash)" />
-        ))}
+        {/* latched FROZEN zone: from the freeze to the end — the contract stays paused
+            until the DAO lifts it (no auto-unfreeze), so everything after sits in red */}
+        {freezeX != null && <rect x={freezeX} y={AT} width={ML + PW - freezeX} height={BT + BH - AT} fill="var(--coral-wash)" />}
 
         {/* real-news flags: a vertical line through both panels + a numbered chip */}
         {news.map((nv, i) => {
@@ -183,20 +183,31 @@ export function BacktestChart({ c }: { c: BtCase }) {
           market · {c.priceLabel} (dark) · divergence bps (red, right)
         </text>
 
-        {/* model's first flag (validated detection) + the −5% drop */}
-        {alertX != null && (
+        {/* the AGENT actually acts here: its first CAUTION tighten (params move) */}
+        {enforceX != null && (
           <>
-            <line x1={alertX} y1={AT} x2={alertX} y2={BT + BH} stroke="var(--amber)" strokeWidth="1" strokeDasharray="2 3" opacity="0.85" vectorEffect="non-scaling-stroke" />
-            <text x={alertX} y={AT - 0.5} fontSize="8" fontFamily="var(--font-mono)" fill="var(--amber-dim)" textAnchor="middle">
-              model flags
+            <line x1={enforceX} y1={AT} x2={enforceX} y2={BT + BH} stroke="var(--amber)" strokeWidth="1.3" strokeDasharray="2 3" opacity="0.9" vectorEffect="non-scaling-stroke" />
+            <text x={enforceX} y={AT - 0.5} fontSize="8" fontWeight="600" fontFamily="var(--font-mono)" fill="var(--amber-dim)" textAnchor="middle">
+              agent → CAUTION
             </text>
           </>
         )}
+        {/* the −5% price drop, for context (neutral) */}
         {dropX != null && (
           <>
-            <line x1={dropX} y1={AT} x2={dropX} y2={BT + BH} stroke="var(--coral-dim)" strokeWidth="1" strokeDasharray="2 3" opacity="0.75" vectorEffect="non-scaling-stroke" />
-            <text x={dropX} y={BT + BH + 9} fontSize="8" fontFamily="var(--font-mono)" fill="var(--coral-dim)" textAnchor="middle">
+            <line x1={dropX} y1={AT} x2={dropX} y2={BT + BH} stroke="var(--ink-dim)" strokeWidth="1" strokeDasharray="2 3" opacity="0.55" vectorEffect="non-scaling-stroke" />
+            <text x={dropX} y={BT + BH + 9} fontSize="8" fontFamily="var(--font-mono)" fill="var(--muted)" textAnchor="middle">
               −5% drop
+            </text>
+          </>
+        )}
+        {/* the CONTRACT freezes here — prominent boundary + label; zone behind is red */}
+        {freezeX != null && (
+          <>
+            <line x1={freezeX} y1={AT} x2={freezeX} y2={BT + BH} stroke="var(--coral)" strokeWidth="2.4" vectorEffect="non-scaling-stroke" />
+            <rect x={freezeX} y={AT} width={Math.min(126, ML + PW - freezeX)} height={13} fill="var(--coral)" />
+            <text x={freezeX + 5} y={AT + 9.5} fontSize="8.5" fontWeight="700" fontFamily="var(--font-mono)" fill="#fff">
+              contract FROZEN · DAO must lift
             </text>
           </>
         )}
