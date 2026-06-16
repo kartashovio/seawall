@@ -50,3 +50,15 @@ export function summarize(r: GuardianEventRow): string {
 }
 
 export const txUrl = (digest: string): string => `${CFG.explorerTx}/${digest}`;
+
+/// The KEEPER-liveness source (trust-minimized): the ts of the newest permissionless
+/// poke = the newest RiskEvaluated with had_request===false. An agent `submit` is
+/// had_request===true and so can NEVER masquerade as the keeper here (the fix for the
+/// old last_check_ms pill, which the agent's 5-min heartbeat kept falsely green).
+/// NB: a demo-vault borrow/withdraw also pokes (had_request=false); the keeper is the
+/// only REGULAR 5-min poker, so this is a keeper-style-poke freshness signal.
+export function lastKeeperPokeMs(events: GuardianEventRow[]): number | undefined {
+  return events.find(
+    (e) => e.kind === "RiskEvaluated" && (e.json as { had_request?: boolean }).had_request === false,
+  )?.tsMs;
+}

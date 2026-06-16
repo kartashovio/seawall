@@ -105,7 +105,7 @@ Seawall covers the **oracle / price-anomaly class** only. It does not catch key 
 
 ```bash
 pnpm install
-pnpm test                         # 138 TS tests
+pnpm test                         # 152 TS tests
 pnpm move:test                    # 75 Move tests
 pnpm move:build
 

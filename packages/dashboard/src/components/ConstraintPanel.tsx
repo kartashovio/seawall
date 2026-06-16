@@ -13,7 +13,9 @@ const BOUND_LABEL: Record<BoundBy, string> = {
   agent: "set by the agent",
   contract: "held by the contract’s own divergence reading",
   "agent + contract": "agent and contract agree",
-  ratchet: "ratchet-held tighter than both (relax gated)",
+  // below both current targets = a past tighter state the one-way ratchet holds;
+  // whether it's easing back is the relax line's job (don't assert it here).
+  ratchet: "ratchet-held below both — only the contract eases it back",
 };
 
 export function ConstraintPanel({ tick }: { tick: AgentTickDTO | null }) {
@@ -58,7 +60,7 @@ export function ConstraintPanel({ tick }: { tick: AgentTickDTO | null }) {
               </span>
               <span className="cns-op">vs</span>
               <span className="cns-num">
-                <i>contract floor</i>
+                <i>contract floor (div)</i>
                 {pct(r.e.contractFloor)}%
               </span>
               <span className="cns-op">→</span>
@@ -95,6 +97,12 @@ export function ConstraintPanel({ tick }: { tick: AgentTickDTO | null }) {
           signal). So the divergence floors <i>max&nbsp;LTV</i>, while <i>borrow&nbsp;cap</i> isn't agent-driven here.
         </div>
       )}
+
+      <div className="cns-foot">
+        The contract column mirrors the contract's <b>divergence</b> leg only. The contract also tightens on an oracle-confidence
+        or unusable-book breach (re-derived on-chain) and always wins on every path — so it can be even tighter than shown. The{" "}
+        <i>applied</i> value is always the real on-chain number.
+      </div>
     </section>
   );
 }

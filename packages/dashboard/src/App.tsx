@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { ConnectButton } from "@mysten/dapp-kit";
 import { useAgentStream } from "./useAgentStream";
 import { useGuardianEvents, usePolicy } from "./useGuardian";
+import { lastKeeperPokeMs } from "./abi";
 import { CFG, CORRIDOR } from "./config";
 import { ScoreCard } from "./components/ScoreCard";
 import { Sparkline } from "./components/Sparkline";
@@ -44,9 +45,7 @@ export function App() {
   //    had_request=true, so it can't masquerade as the keeper).
   //  • lastCheckMs — the guardian "healthy" heartbeat: last_check_ms, stamped by the
   //    keeper poke OR the agent submit (kept separate, per its looser meaning).
-  const keeperPokeMs = events.find(
-    (e) => e.kind === "RiskEvaluated" && (e.json as { had_request?: boolean }).had_request === false,
-  )?.tsMs;
+  const keeperPokeMs = lastKeeperPokeMs(events);
   const lastCheckMs = policy?.lastCheckMs;
 
   // Model warming up → the early score isn't trusted yet (shown on both score cards).
