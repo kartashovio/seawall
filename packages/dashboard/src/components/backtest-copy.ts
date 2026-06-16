@@ -41,11 +41,13 @@ export const COPY: Record<string, CaseCopy> = {
     detection:
       "Coincident (−17 min), too fast for any lead: the agent's CAUTION and the contract FREEZE fire within minutes as the books dislocate — and once frozen it stays frozen (the red zone) until the DAO lifts it.",
     market:
-      "Trump posted a 100% tariff threat on China around 5 pm ET Oct 10 (①), detonating a mass-liquidation cascade (~$19B liquidated, one of crypto's largest). SUI's perp last-price wicked down ~79% as books emptied and last-vs-index divergence exploded to ~17.5% (peak in-window ~1754 bps) in seconds.",
+      "Trump's 100% China-tariff post (①, ~5 pm ET, retaliating for China's rare-earth curbs) lit the fuse — but it became the largest liquidation cascade ever (~$19B, ~87% longs) on STRUCTURE, not the headline: record one-sided leverage into thin weekend books, cross-margin auto-deleveraging, and a venue collateral-pricing failure. On Binance, USDe and wrapped collateral were marked off its OWN thin order book and cratered (USDe to ~$0.65) on that venue alone — while holding ~$1 on-chain and on other exchanges — force-liquidating solvent users. SUI's perp last wicked ~79% and last-vs-index divergence exploded to ~17.5% (peak ~1754 bps).",
     guardian:
       "The moment the contract's own measured divergence blows past 5%, it FREEZES on its own data and the ratchet slams both knobs to the floor (55% / 40%). No human, no DAO vote, no agent permission: one block.",
     read:
-      "The fast flash-crash, and the live demo's hero scene. When a feed and the book violently disagree, the in-block freeze is the seatbelt — a manual freeze takes hours and a DAO vote days, neither of which exists in the seconds this took.",
+      "The on-thesis precedent. The Binance leg is exactly Seawall's failure mode: a venue trusting a single, thin, internal price with NO divergence breaker — its collateral mark diverged ~35% from the true cross-venue price and auto-liquidated solvent users (Binance later paid ~$283M in compensation). A breaker that halts on an oracle↔external-market divergence is precisely what that venue lacked.",
+    caveat:
+      "Honest caveats: the broader $19B cascade was primarily macro (the tariff) + record leverage + thin weekend liquidity + cross-margin ADL — the collateral-pricing failure amplified Binance specifically, it did not alone cause the whole cascade. And it was a CEX-internal pricing failure, not an on-chain oracle failure — Pyth/Chainlink stayed accurate and USDe never truly depegged off Binance. So Seawall is the divergence breaker the venue lacked, not a claim that 'the oracle failed.'",
   },
   aug2024: {
     detection:
