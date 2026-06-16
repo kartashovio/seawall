@@ -16,6 +16,7 @@ import { LayerStatus } from "./components/LayerStatus";
 import { FooterLedger } from "./components/FooterLedger";
 import { KeeperStatus, GuardianHealth } from "./components/KeeperStatus";
 import { ConstraintPanel } from "./components/ConstraintPanel";
+import { BacktestGallery } from "./components/BacktestGallery";
 
 export function App() {
   const { latest, history, connected } = useAgentStream();
@@ -150,6 +151,15 @@ export function App() {
           />
         </div>
         <Sparkline history={history} />
+      </section>
+
+      {/* C2 — stress-test gallery: why the guardian matters when the market isn't calm */}
+      <section className="band band--backtest">
+        <div className="band-head">
+          <span className="kicker">Proven on real crises</span>
+          <span className="lede">the same unchanged model replayed through five historical crashes — score, knobs, divergence vs price</span>
+        </div>
+        <BacktestGallery />
       </section>
 
       {/* D — the wall */}

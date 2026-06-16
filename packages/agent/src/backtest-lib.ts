@@ -55,7 +55,10 @@ export interface BacktestResult {
 
 const ALERT_PCT = 99;
 
-async function loadSeries(cfg: EventConfig, grid: number): Promise<Series[]> {
+// Exported (visibility only — body unchanged) so the dashboard backtest-viz
+// generator can load the SAME price series the reports were built from, to
+// layer price + divergence onto the already-validated score/solvency/liquidity.
+export async function loadSeries(cfg: EventConfig, grid: number): Promise<Series[]> {
   const out: Series[] = [];
   if (cfg.futuresSymbol) {
     for (const kind of ["mark", "index", "last"] as const) {

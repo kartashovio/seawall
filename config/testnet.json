@@ -6,6 +6,7 @@
   "policyId": "0xd6497edc5a130bb32c57d92b447f7a83588ca83df51ce8fde0ecf549640a44b6",
   "governanceCapId": "0x9a72b115e1c10ae48af10395fca7007eae1369f9a1c5e6527841bf7add388e41",
   "misboundPolicyId": "0x4b09d173032a698cb8a8579fde7d2b25d120cc92c55bb9d40a35df837cfb3fa3",
+  "freezePolicyId": "0x5c99f856d3840281c711fc665ef44fc2a22070cde24ec3ad833cf2788c9d2f62",
   "vaultId": "0xf9b3b69e3fd7f6b85533cfb2464aac3837a4c33d1f2cbf59b9f8539eadc4a79d",
   "poolId": "0x1c19362ca52b8ffd7a33cee805a67d40f31e6ba303753fd3a4cfdfacea7163a5",
   "feedId": "0x50c67b3fd225db8912a424dd4baed60ffdde625ed2feaaf283724f9608fea266",

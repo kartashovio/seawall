@@ -6,11 +6,19 @@ import { MAX_LTV_BPS, BORROW_CAP_BPS, SCORE_LO, SCORE_HI, ALERT_SCORE, BPS_DENOM
 
 const t = testnet as Record<string, string>;
 
+// `?policy=0x…` URL override (highest priority) so the FREEZE + DAO-unfreeze beat
+// can be shown live by opening seawall.dev/?policy=<frozen demo policy> — no
+// rebuild. Falls back to VITE_POLICY_ID (build-time), then the config default.
+const policyFromUrl =
+  typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("policy") ?? undefined
+    : undefined;
+const validPolicy = policyFromUrl && /^0x[0-9a-fA-F]{6,}$/.test(policyFromUrl) ? policyFromUrl : undefined;
+
 export const CFG = {
   packageId: t.packageId,
-  // VITE_POLICY_ID lets the demo point the gauge/layers/governance at a specific
-  // policy (e.g. the tight-T freeze policy for the FREEZE + DAO-unfreeze scenes).
-  policyId: (import.meta.env.VITE_POLICY_ID as string | undefined) ?? t.policyId,
+  // policy resolution: ?policy= URL → VITE_POLICY_ID → config default.
+  policyId: validPolicy ?? (import.meta.env.VITE_POLICY_ID as string | undefined) ?? t.policyId,
   governanceCapId: t.governanceCapId,
   vaultId: t.vaultId,
   poolId: t.poolId,

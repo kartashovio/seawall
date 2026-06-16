@@ -15,7 +15,7 @@
 // the clean empty state with history:[].
 import { useState } from "react";
 import type { AgentTickDTO } from "@seawall/shared";
-import { BANDS, CORRIDOR, pct } from "../config";
+import { BANDS, CORRIDOR, DIV, pct } from "../config";
 
 // ── geometry (viewBox units; the frame is responsive at a fixed aspect ratio so
 // an HTML tooltip can be positioned by percentage and line up exactly) ──────────
@@ -243,6 +243,132 @@ function HistoryChart({ history, kind }: { history: AgentTickDTO[]; kind: Kind }
   );
 }
 
+// Divergence + contract-only FREEZE strip — x-aligned beneath the score chart so
+// you can read the Pyth↔DeepBook gap the contract measures on its OWN data, and
+// see any freeze (paused) shaded in. The score never freezes — only this measured
+// divergence does, at the 5% line. Auto-scaled so the live (small) gap is legible,
+// with the 1% caution line shown and the 5% freeze line marked above. Display only.
+const SMT = 22; // strip top (label)
+const SMB = 20; // strip bottom (time)
+const SH = 104;
+const SPH = SH - SMT - SMB;
+
+function DivStrip({ history }: { history: AgentTickDTO[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const ticks = history;
+  const n = ticks.length;
+  if (n < 2) return null;
+
+  const divs = ticks.map((t) => (typeof t.divBps === "number" ? t.divBps : null));
+  const obsMax = Math.max(0, ...divs.filter((d): d is number => d != null));
+  // headroom so the live gap is visible; keep the caution line on-scale.
+  const dmax = Math.max(obsMax * 1.25, DIV.cautionBps * 1.4);
+  const sx = (i: number): number => ML + (n <= 1 ? 0 : (i / (n - 1)) * PW);
+  const yD = (v: number): number => SMT + (1 - clamp(v, 0, dmax) / dmax) * SPH;
+  const showFreeze = DIV.freezeBps <= dmax;
+
+  // contiguous frozen ranges (paused) → coral shading
+  const freezes: Array<[number, number]> = [];
+  for (let i = 0; i < n; i++) {
+    if (!ticks[i].paused) continue;
+    let j = i;
+    while (j + 1 < n && ticks[j + 1].paused) j++;
+    freezes.push([i, j]);
+    i = j;
+  }
+
+  // build divergence line segments, breaking on null (loss-of-signal) ticks
+  const segs: Array<Array<[number, number]>> = [];
+  let cur: Array<[number, number]> = [];
+  for (let i = 0; i < n; i++) {
+    if (divs[i] == null) {
+      if (cur.length) segs.push(cur);
+      cur = [];
+    } else {
+      cur.push([sx(i), yD(divs[i] as number)]);
+    }
+  }
+  if (cur.length) segs.push(cur);
+
+  const hi = hover != null && hover >= 0 && hover < n ? hover : null;
+  const onMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const frac = (e.clientX - r.left) / r.width;
+    const dataFrac = (frac * W - ML) / PW;
+    setHover(Math.round(clamp(dataFrac, 0, 1) * (n - 1)));
+  };
+  const tipLeftPct = hi != null ? (sx(hi) / W) * 100 : 0;
+  const flip = tipLeftPct > 58;
+
+  const nt = Math.min(6, n);
+  const xticks = Array.from({ length: nt }, (_, j) => Math.round((j / (nt - 1)) * (n - 1)));
+
+  return (
+    <div className="rc-chart rc-divstrip">
+      <div className="rc-chart-head">
+        <span className="rc-chart-lbl">DIVERGENCE</span>
+        <span className="tag tag-contract">contract-measured · Pyth↔DeepBook</span>
+      </div>
+      <div className="rc-frame rc-frame--strip" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+        <svg viewBox={`0 0 ${W} ${SH}`} role="img" aria-label="divergence over time">
+          {/* freeze shading */}
+          {freezes.map(([a, b], i) => (
+            <rect key={i} x={sx(a)} y={SMT} width={Math.max(1.5, sx(b) - sx(a))} height={SPH} fill="var(--coral-wash)" />
+          ))}
+          {/* caution + (optional) freeze reference lines */}
+          <line x1={ML} y1={yD(DIV.cautionBps)} x2={ML + PW} y2={yD(DIV.cautionBps)} stroke="var(--amber-line)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
+          <text x={ML + PW + 5} y={yD(DIV.cautionBps)} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--amber-dim)" dominantBaseline="middle">
+            {DIV.cautionBps} caution
+          </text>
+          {showFreeze ? (
+            <>
+              <line x1={ML} y1={yD(DIV.freezeBps)} x2={ML + PW} y2={yD(DIV.freezeBps)} stroke="var(--coral-line)" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+              <text x={ML + PW + 5} y={yD(DIV.freezeBps)} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--coral-dim)" dominantBaseline="middle">
+                {DIV.freezeBps} freeze
+              </text>
+            </>
+          ) : (
+            <text x={ML + PW + 5} y={SMT + 4} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--coral-dim)" dominantBaseline="middle">
+              {DIV.freezeBps} freeze ↑
+            </text>
+          )}
+          {/* divergence line */}
+          {segs.map((s, i) => (
+            <polyline key={i} points={polyline(s)} fill="none" stroke="var(--coral)" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          ))}
+          {/* x-axis time */}
+          {xticks.map((i) => (
+            <text key={i} x={sx(i)} y={SH - 6} fontSize="9" fontFamily="var(--font-mono)" fill="var(--muted-deep)" textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>
+              {hhmm(ticks[i].ts)}
+            </text>
+          ))}
+          {/* hover */}
+          {hi != null && divs[hi] != null && (
+            <g>
+              <line x1={sx(hi)} y1={SMT} x2={sx(hi)} y2={SMT + SPH} stroke="var(--ink-dim)" strokeWidth="1" strokeDasharray="2 3" opacity="0.5" vectorEffect="non-scaling-stroke" />
+              <circle cx={sx(hi)} cy={yD(divs[hi] as number)} r="3" fill="var(--coral)" stroke="var(--ground-2)" strokeWidth="1.2" />
+            </g>
+          )}
+        </svg>
+        {hi != null && (
+          <div className={`rc-tip ${flip ? "rc-tip--left" : ""}`} style={{ left: `${tipLeftPct}%` }}>
+            <div className="rc-tip-time">{stamp(ticks[hi].ts)}</div>
+            <div className="rc-tip-row">
+              <span className="rc-sw" style={{ background: "var(--coral)" }} />
+              divergence<b>{divs[hi] != null ? `${(divs[hi] as number).toFixed(1)} bps` : "—"}</b>
+            </div>
+            {ticks[hi].paused && <div className="rc-tip-row" style={{ color: "var(--coral-dim)" }}>contract FROZEN</div>}
+          </div>
+        )}
+      </div>
+      <p className="rc-divstrip-note">
+        The score never freezes — only this <b>contract-measured</b> divergence does, when it crosses <b>{DIV.freezeBps} bps</b> (5%) on
+        the contract's own on-chain reading.
+      </p>
+    </div>
+  );
+}
+
 export function Sparkline({ history }: { history: AgentTickDTO[] }) {
   const h = history.slice(-760);
   const hours = h.length >= 2 ? Math.max(0, (h[h.length - 1].ts - h[0].ts) / 3_600_000) : 0;
@@ -269,6 +395,7 @@ export function Sparkline({ history }: { history: AgentTickDTO[] }) {
         differently.
       </p>
       <HistoryChart history={h} kind="testnet" />
+      <DivStrip history={h} />
       <HistoryChart history={h} kind="mainnet" />
     </section>
   );

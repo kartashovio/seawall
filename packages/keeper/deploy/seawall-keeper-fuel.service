@@ -1,0 +1,8 @@
+[Unit]
+Description=Seawall gas auto-faucet (keeper + agent top-up from the testnet faucet)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash /root/seawall/packages/keeper/scripts/fuel.sh
