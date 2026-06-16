@@ -4,9 +4,9 @@
 //     with the 60 caution / 95 floor reference lines.
 //   • BOTTOM — the market: the asset price (left axis) and the contract-measured
 //     divergence (right axis) with the 1% caution / 5% FREEZE lines.
-// Freeze ranges shade both panels; the alert + crash are marked across both, with
-// the lead bracket between them at the top. Pure SVG + an HTML hover read-out —
-// no library, matching the live risk chart's aesthetic. Display only.
+// REAL news catalysts are drawn as numbered flags (mapped to a list in the case
+// block); the model's first flag (validated detection) and the −5% drop are marked;
+// freeze ranges shade both panels. Pure SVG + an HTML hover read-out, no library.
 import { useState } from "react";
 
 export interface BtPoint {
@@ -18,25 +18,34 @@ export interface BtPoint {
   borrowCap: number;
   frozen: boolean;
 }
+export interface BtNews {
+  ts: number;
+  label: string;
+  kind: "trigger" | "escalation" | "reversal";
+  confidence: "high" | "medium" | "low";
+}
 export interface BtCase {
   key: string;
   freezeBps: number;
   cautionBps: number;
   firstAlertTs: number | null;
   visibleDropTs: number | null;
+  enforceTs?: number | null;
+  freezeTs?: number | null;
   leadMinutes: number | null;
   priceLabel: string;
   points: BtPoint[];
+  newsEvents?: BtNews[];
+  freezeRanges?: Array<[number, number]>;
 }
 
 const W = 720;
 const ML = 42;
 const MR = 48;
 const PW = W - ML - MR;
-// panel A (guardian) and panel B (market), x-aligned
-const AT = 26;
-const AH = 150;
-const BT = 206;
+const AT = 34; // panel A top (room for the news-flag rail)
+const AH = 146;
+const BT = 210;
 const BH = 104;
 const H = BT + BH + 24;
 
@@ -52,6 +61,11 @@ const dayhhmm = (ts: number) => {
   const mon = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
   return `${mon} ${d.getUTCDate()} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}Z`;
 };
+const NEWS_COLOR: Record<BtNews["kind"], string> = {
+  trigger: "var(--coral-dim)",
+  escalation: "var(--amber-dim)",
+  reversal: "var(--cyan-dim)",
+};
 
 export function BacktestChart({ c }: { c: BtCase }) {
   const [hi, setHi] = useState<number | null>(null);
@@ -62,28 +76,17 @@ export function BacktestChart({ c }: { c: BtCase }) {
   const span = Math.max(1, t1 - t0);
 
   const x = (ts: number) => ML + ((ts - t0) / span) * PW;
-  // panel A: 0-100
   const yA = (v: number) => AT + (1 - clamp(v, 0, 100) / 100) * AH;
-  // panel B price (auto-scaled with 6% padding)
   const prices = P.map((p) => p.price).filter((v): v is number => v != null);
   const pMin = prices.length ? Math.min(...prices) : 0;
   const pMax = prices.length ? Math.max(...prices) : 1;
   const pPad = (pMax - pMin) * 0.06 || pMax * 0.02 || 1;
-  const yP = (v: number) => BT + (1 - clamp((v - (pMin - pPad)) / ((pMax + pPad) - (pMin - pPad)), 0, 1)) * BH;
-  // panel B divergence (0 .. a bit above the freeze line / observed max)
+  const yP = (v: number) => BT + (1 - clamp((v - (pMin - pPad)) / (pMax + pPad - (pMin - pPad)), 0, 1)) * BH;
   const maxDiv = Math.max(c.freezeBps * 1.2, ...P.map((p) => p.divBps ?? 0));
   const yD = (v: number) => BT + (1 - clamp(v / maxDiv, 0, 1)) * BH;
 
-  // contiguous frozen ranges → shaded across both panels
-  const freezes: Array<[number, number]> = [];
-  for (let i = 0; i < n; i++) {
-    if (!P[i].frozen) continue;
-    const start = P[i].ts;
-    let j = i;
-    while (j + 1 < n && P[j + 1].frozen) j++;
-    freezes.push([start, P[j].ts]);
-    i = j;
-  }
+  const freezes = c.freezeRanges ?? [];
+  const news = (c.newsEvents ?? []).filter((nv) => nv.ts >= t0 && nv.ts <= t1);
 
   const scorePts = P.map((p): [number, number] => [x(p.ts), yA(p.score)]);
   const ltvPts = P.map((p): [number, number] => [x(p.ts), yA(p.maxLtv)]);
@@ -95,9 +98,6 @@ export function BacktestChart({ c }: { c: BtCase }) {
 
   const alertX = c.firstAlertTs != null && c.firstAlertTs >= t0 && c.firstAlertTs <= t1 ? x(c.firstAlertTs) : null;
   const dropX = c.visibleDropTs != null && c.visibleDropTs >= t0 && c.visibleDropTs <= t1 ? x(c.visibleDropTs) : null;
-  const lead = c.leadMinutes;
-  const leadEarly = lead != null && lead > 20;
-  const leadLabel = lead == null ? "" : leadEarly ? `+${lead}m lead` : `coincident (${lead >= 0 ? "+" : ""}${lead}m)`;
 
   const nt = Math.min(6, n);
   const xticks = Array.from({ length: nt }, (_, j) => Math.round((j / Math.max(1, nt - 1)) * (n - 1)));
@@ -105,19 +105,17 @@ export function BacktestChart({ c }: { c: BtCase }) {
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const frac = (e.clientX - r.left) / r.width;
-    const dataFrac = (frac * W - ML) / PW;
-    setHi(Math.round(clamp(dataFrac, 0, 1) * (n - 1)));
+    setHi(Math.round(clamp((frac * W - ML) / PW, 0, 1) * (n - 1)));
   };
   const cur = hi != null && hi >= 0 && hi < n ? P[hi] : null;
   const tipLeft = cur ? (x(cur.ts) / W) * 100 : 0;
   const flip = tipLeft > 60;
-
   const gid = `bt-score-${c.key}`;
+
   return (
     <div className="bt-frame" onMouseMove={onMove} onMouseLeave={() => setHi(null)}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${c.key} stress test`}>
         <defs>
-          {/* vertical gradient = the live gauge bands: teal < 60, amber < 95, coral ≥ 95 */}
           <linearGradient id={gid} x1="0" y1={yA(100)} x2="0" y2={yA(0)} gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="var(--coral)" />
             <stop offset="5%" stopColor="var(--coral)" />
@@ -131,6 +129,20 @@ export function BacktestChart({ c }: { c: BtCase }) {
           <rect key={i} x={x(s)} y={AT} width={Math.max(1.5, x(e) - x(s))} height={BT + BH - AT} fill="var(--coral-wash)" />
         ))}
 
+        {/* real-news flags: a vertical line through both panels + a numbered chip */}
+        {news.map((nv, i) => {
+          const nx = x(nv.ts);
+          return (
+            <g key={i}>
+              <line x1={nx} y1={20} x2={nx} y2={BT + BH} stroke={NEWS_COLOR[nv.kind]} strokeWidth="1" strokeDasharray="1 3" opacity="0.7" vectorEffect="non-scaling-stroke" />
+              <circle cx={nx} cy={12} r="7" fill={NEWS_COLOR[nv.kind]} />
+              <text x={nx} y={12} fontSize="8.5" fontWeight="700" fontFamily="var(--font-mono)" fill="#fff" textAnchor="middle" dominantBaseline="central">
+                {i + 1}
+              </text>
+            </g>
+          );
+        })}
+
         {/* ── panel A: guardian response (0-100) ── */}
         {[20, 40, 80].map((g) => (
           <line key={g} x1={ML} y1={yA(g)} x2={ML + PW} y2={yA(g)} stroke="var(--line-soft)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
@@ -142,18 +154,15 @@ export function BacktestChart({ c }: { c: BtCase }) {
             {g}
           </text>
         ))}
-        {/* knobs (under the score) */}
         <polyline points={poly(capPts)} fill="none" stroke="var(--cyan-dim)" strokeWidth="1.4" strokeDasharray="5 3" vectorEffect="non-scaling-stroke" opacity="0.9" />
         <polyline points={poly(ltvPts)} fill="none" stroke="var(--amber-dim)" strokeWidth="1.4" strokeDasharray="5 3" vectorEffect="non-scaling-stroke" opacity="0.9" />
-        {/* score hero */}
         <polygon points={scoreArea} fill="var(--coral)" opacity="0.06" />
         <polyline points={poly(scorePts)} fill="none" stroke={`url(#${gid})`} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <text x={ML} y={AT - 9} fontSize="9" fontFamily="var(--font-mono)" fill="var(--muted-deep)">
-          guardian response · score 0–100, max LTV, borrow cap (%)
+        <text x={ML} y={AT - 7} fontSize="9" fontFamily="var(--font-mono)" fill="var(--muted-deep)">
+          guardian · risk score 0–100, max LTV, borrow cap (%)
         </text>
 
         {/* ── panel B: market + divergence ── */}
-        {/* divergence axis (right): caution + freeze lines */}
         <line x1={ML} y1={yD(c.cautionBps)} x2={ML + PW} y2={yD(c.cautionBps)} stroke="var(--amber-line)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
         <line x1={ML} y1={yD(c.freezeBps)} x2={ML + PW} y2={yD(c.freezeBps)} stroke="var(--coral-line)" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
         <text x={ML + PW + 4} y={yD(c.freezeBps)} fontSize="8" fontFamily="var(--font-mono)" fill="var(--coral-dim)" dominantBaseline="middle">
@@ -162,10 +171,8 @@ export function BacktestChart({ c }: { c: BtCase }) {
         <text x={ML + PW + 4} y={yD(c.cautionBps)} fontSize="8" fontFamily="var(--font-mono)" fill="var(--amber-dim)" dominantBaseline="middle">
           {c.cautionBps}
         </text>
-        {/* divergence area + line */}
         {divArea && <polygon points={divArea} fill="var(--coral)" opacity="0.07" />}
         <polyline points={poly(divPts)} fill="none" stroke="var(--coral)" strokeWidth="1.6" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-        {/* price line (left axis) */}
         <polyline points={poly(pricePts)} fill="none" stroke="var(--ink-dim)" strokeWidth="1.8" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         {[pMax, (pMax + pMin) / 2, pMin].map((g, i) => (
           <text key={i} x={ML - 5} y={yP(g)} fontSize="8" fontFamily="var(--font-mono)" fill="var(--ink-dim)" textAnchor="end" dominantBaseline="middle">
@@ -176,12 +183,12 @@ export function BacktestChart({ c }: { c: BtCase }) {
           market · {c.priceLabel} (dark) · divergence bps (red, right)
         </text>
 
-        {/* alert + crash markers across both panels */}
+        {/* model's first flag (validated detection) + the −5% drop */}
         {alertX != null && (
           <>
-            <line x1={alertX} y1={AT} x2={alertX} y2={BT + BH} stroke="var(--amber)" strokeWidth="1" strokeDasharray="2 3" opacity="0.8" vectorEffect="non-scaling-stroke" />
-            <text x={alertX} y={AT - 1} fontSize="8" fontFamily="var(--font-mono)" fill="var(--amber-dim)" textAnchor="middle">
-              alert
+            <line x1={alertX} y1={AT} x2={alertX} y2={BT + BH} stroke="var(--amber)" strokeWidth="1" strokeDasharray="2 3" opacity="0.85" vectorEffect="non-scaling-stroke" />
+            <text x={alertX} y={AT - 0.5} fontSize="8" fontFamily="var(--font-mono)" fill="var(--amber-dim)" textAnchor="middle">
+              model flags
             </text>
           </>
         )}
@@ -193,26 +200,14 @@ export function BacktestChart({ c }: { c: BtCase }) {
             </text>
           </>
         )}
-        {/* lead bracket */}
-        {alertX != null && dropX != null && (
-          <g>
-            <line x1={Math.min(alertX, dropX)} y1={12} x2={Math.max(alertX, dropX)} y2={12} stroke={leadEarly ? "var(--cyan-dim)" : "var(--muted-deep)"} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            <line x1={alertX} y1={9} x2={alertX} y2={15} stroke={leadEarly ? "var(--cyan-dim)" : "var(--muted-deep)"} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            <line x1={dropX} y1={9} x2={dropX} y2={15} stroke={leadEarly ? "var(--cyan-dim)" : "var(--muted-deep)"} strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            <text x={(alertX + dropX) / 2} y={9} fontSize="8.5" fontFamily="var(--font-mono)" fill={leadEarly ? "var(--cyan-dim)" : "var(--muted-deep)"} textAnchor="middle">
-              {leadLabel}
-            </text>
-          </g>
-        )}
 
-        {/* x-axis time */}
+        {/* x-axis time (UTC) */}
         {xticks.map((i) => (
           <text key={i} x={x(P[i].ts)} y={H - 6} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--muted-deep)" textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>
             {hhmm(P[i].ts)}
           </text>
         ))}
 
-        {/* hover crosshair */}
         {cur && (
           <g>
             <line x1={x(cur.ts)} y1={AT} x2={x(cur.ts)} y2={BT + BH} stroke="var(--ink-dim)" strokeWidth="1" strokeDasharray="2 3" opacity="0.45" vectorEffect="non-scaling-stroke" />

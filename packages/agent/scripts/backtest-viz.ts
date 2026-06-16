@@ -41,6 +41,31 @@ const META: Record<string, { asset: string; cls: "systemic" | "idiosyncratic" | 
   cetus: { asset: "SUI", cls: "idiosyncratic", priceLabel: "SUI/USD (last)" },
 };
 
+// Real-world catalysts (UTC), researched + sourced — marked on each chart so the
+// model reaction can be read against the actual news. Curated to the chart-worthy
+// moments; far-off macro setup (e.g. the Jul-31 BoJ hike) is noted in the prose.
+const D = (y: number, mo: number, d: number, h: number, mi: number) => Date.UTC(y, mo - 1, d, h, mi, 0);
+type News = { ts: number; label: string; kind: "trigger" | "escalation" | "reversal"; confidence: "high" | "medium" | "low" };
+const NEWS: Record<string, News[]> = {
+  feb2025: [
+    { ts: D(2025, 2, 1, 22, 0), label: "Trump signs tariff EOs (CA/MX/CN)", kind: "trigger", confidence: "medium" },
+    { ts: D(2025, 2, 3, 15, 50), label: "Mexico tariffs paused 30d", kind: "reversal", confidence: "medium" },
+  ],
+  usdc2023: [
+    { ts: D(2023, 3, 10, 16, 0), label: "CA regulators close SVB", kind: "trigger", confidence: "medium" },
+    { ts: D(2023, 3, 11, 3, 0), label: "Circle: $3.3B USDC stuck at SVB", kind: "escalation", confidence: "high" },
+    // NB: the Mar-12 22:15Z Fed/FDIC backstop that restored the peg is past this
+    // report's data window (ends Mar-11 23:59Z), so it is noted in prose, not marked.
+  ],
+  oct10: [{ ts: D(2025, 10, 10, 21, 0), label: "Trump: 100% tariff on China", kind: "trigger", confidence: "high" }],
+  aug2024: [{ ts: D(2024, 8, 5, 6, 0), label: "Nikkei -12.4%, carry-unwind climax", kind: "escalation", confidence: "medium" }],
+  cetus: [
+    { ts: D(2025, 5, 22, 10, 30), label: "Cetus exploit begins", kind: "trigger", confidence: "high" },
+    { ts: D(2025, 5, 22, 11, 0), label: "Cetus halts pools", kind: "escalation", confidence: "medium" },
+    { ts: D(2025, 5, 22, 12, 50), label: "Sui validators freeze hacker", kind: "reversal", confidence: "medium" },
+  ],
+};
+
 interface VizPoint {
   ts: number;
   price: number | null;
@@ -130,27 +155,65 @@ async function gen(key: string): Promise<void> {
     return { ts: s.ts, price, divBps, score: sm.overall, maxLtv: curLtv, borrowCap: curCap, frozen: divBps != null && divBps >= FREEZE_BPS };
   });
 
-  // window to the action + decimate (keep alert/drop/peak ticks)
-  const anchors = [report.firstAlert, report.visibleDrop, report.peakD2?.ts].filter((x): x is number => typeof x === "number");
-  const lo = anchors.length ? Math.min(...anchors) - 180 * 60_000 : full[0]?.ts ?? 0;
-  const hi = anchors.length ? Math.max(...anchors) + 150 * 60_000 : full[full.length - 1]?.ts ?? 0;
+  // Window spans the real episode: from the news trigger (or >=3h calm before the
+  // alert, whichever is earlier) through the reaction to the recovery news. Anchored
+  // on alert+drop ONLY (peakD2 can be a warm-up-period artifact far from the event).
+  const newsTs = (NEWS[key] ?? []).map((nE) => nE.ts);
+  const wa = [report.firstAlert, report.visibleDrop].filter((x): x is number => typeof x === "number");
+  const aMin = wa.length ? Math.min(...wa) : full[0]?.ts ?? 0;
+  const aMax = wa.length ? Math.max(...wa) : full[full.length - 1]?.ts ?? 0;
+  // extend the upper bound past the whole FREEZE span (the depeg trough + the freeze
+  // persisting) so a frozen episode is always shown to its resolution, not cut short.
+  const eventFrozen = full.filter((p) => p.frozen && p.ts >= aMin - 3 * 3_600_000 && p.ts <= aMax + 24 * 3_600_000);
+  const lastFrozen = eventFrozen.length ? Math.max(...eventFrozen.map((p) => p.ts)) : null;
+  const lo = Math.min(aMin - 180 * 60_000, ...newsTs.map((t) => t - 60 * 60_000));
+  const hi = Math.max(aMax + 90 * 60_000, ...newsTs.map((t) => t + 60 * 60_000), ...(lastFrozen != null ? [lastFrozen + 180 * 60_000] : []));
   let windowed = full.filter((p) => p.ts >= lo && p.ts <= hi);
   if (windowed.length < 10) windowed = full;
-  const keepTs = new Set(anchors);
-  const stride = Math.max(1, Math.ceil(windowed.length / MAX_POINTS));
-  const points = windowed.filter((p, i) => i % stride === 0 || i === windowed.length - 1 || keepTs.has(p.ts));
 
-  // driver + knob floors are computed over the DISPLAYED points (what the chart
-  // actually renders), not the full series — so the tag/copy never claim a reaction
-  // that happened outside the visible window.
-  const minLtv = Math.min(...points.map((p) => p.maxLtv));
-  const minCap = Math.min(...points.map((p) => p.borrowCap));
+  // ENFORCEMENT timing + freeze RANGES (from the full windowed series, pre-decimation,
+  // so shading is exact and we don't have to keep every frozen tick in `points`).
+  const enforceTs = windowed.find((p) => p.maxLtv < MAX_LTV.baseline - 2 || p.borrowCap < BORROW_CAP.baseline - 2)?.ts ?? null;
+  const freezeTs = windowed.find((p) => p.frozen)?.ts ?? null;
+  const freezeRanges: Array<[number, number]> = [];
+  for (let i = 0; i < windowed.length; i++) {
+    if (!windowed[i].frozen) continue;
+    let j = i;
+    while (j + 1 < windowed.length && windowed[j + 1].frozen) j++;
+    freezeRanges.push([windowed[i].ts, windowed[j].ts]);
+    i = j;
+  }
+
+  // Summary stats over the WINDOWED series (pre-decimation) so the headline numbers
+  // + copy are STABLE and accurate regardless of decimation. The extreme ticks are
+  // pinned into `keepTs` so the chart still renders the peak/trough that produced them.
+  const extreme = (sel: (p: VizPoint) => number, dir: "max" | "min") =>
+    windowed.reduce((b, p) => (dir === "max" ? sel(p) >= sel(b) : sel(p) <= sel(b)) ? p : b, windowed[0]);
+  const minLtv = Math.min(...windowed.map((p) => p.maxLtv));
+  const minCap = Math.min(...windowed.map((p) => p.borrowCap));
+  const peakScore = Math.max(0, ...windowed.map((p) => p.score));
+  const wPrices = windowed.map((p) => p.price).filter((x): x is number => x != null);
   const ltvTighten = (MAX_LTV.baseline - minLtv) / (MAX_LTV.baseline - MAX_LTV.floor);
   const capTighten = (BORROW_CAP.baseline - minCap) / (BORROW_CAP.baseline - BORROW_CAP.floor);
   const drivenBy = ltvTighten > capTighten + 0.08 ? "solvency" : capTighten > ltvTighten + 0.08 ? "liquidity" : "both";
 
-  const prices = points.map((p) => p.price).filter((x): x is number => x != null);
-  const peakScore = Math.max(0, ...points.map((p) => p.score));
+  // Decimate to <= MAX_POINTS; always keep the markers + the stat-defining extremes
+  // (max divergence, min/max price, peak score, the param floors) so the chart shows
+  // exactly the peaks the headline numbers quote (freeze shading uses ranges).
+  const extremeTs = [
+    extreme((p) => p.divBps ?? -1, "max").ts,
+    extreme((p) => p.price ?? Infinity, "min").ts,
+    extreme((p) => p.price ?? -Infinity, "max").ts,
+    extreme((p) => p.score, "max").ts,
+    extreme((p) => p.maxLtv, "min").ts,
+    extreme((p) => p.borrowCap, "min").ts,
+  ];
+  const markerTs = [report.firstAlert, report.visibleDrop, report.peakD2?.ts, enforceTs, freezeTs, ...newsTs, ...extremeTs];
+  const keepTs = new Set<number>(markerTs.filter((x): x is number => x != null));
+  const stride = Math.max(1, Math.ceil(windowed.length / MAX_POINTS));
+  const points = windowed.filter((p, i) => i % stride === 0 || i === windowed.length - 1 || keepTs.has(p.ts));
+
+  const prices = wPrices;
   const out = {
     key,
     label: report.label,
@@ -164,14 +227,19 @@ async function gen(key: string): Promise<void> {
     leadMinutes: report.leadMinutes,
     firstAlertTs: report.firstAlert,
     visibleDropTs: report.visibleDrop,
+    enforceTs,
+    freezeTs,
     peakTs: report.peakD2?.ts ?? null,
     peakScore,
     calmFalseAlarmRate: report.calmCount ? report.calmSingleAlerts / report.calmCount : 0,
     priceMin: prices.length ? Math.min(...prices) : null,
     priceMax: prices.length ? Math.max(...prices) : null,
-    everFroze: points.some((p) => p.frozen),
+    everFroze: freezeRanges.length > 0,
     freezeBps: FREEZE_BPS,
     cautionBps: CAUTION_BPS,
+    freezeRanges,
+    // only the catalysts that actually fall inside the rendered data range
+    newsEvents: (NEWS[key] ?? []).filter((nE) => nE.ts >= points[0].ts && nE.ts <= points[points.length - 1].ts),
     regressionMaxDiff: Number(maxDiff.toFixed(3)),
     points,
   };
