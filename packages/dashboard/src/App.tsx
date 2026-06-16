@@ -14,7 +14,8 @@ import { GovernancePanel } from "./components/GovernancePanel";
 import { AttackPanel } from "./components/AttackPanel";
 import { LayerStatus } from "./components/LayerStatus";
 import { FooterLedger } from "./components/FooterLedger";
-import { KeeperStatus } from "./components/KeeperStatus";
+import { KeeperStatus, GuardianHealth } from "./components/KeeperStatus";
+import { ConstraintPanel } from "./components/ConstraintPanel";
 
 export function App() {
   const { latest, history, connected } = useAgentStream();
@@ -37,9 +38,19 @@ export function App() {
   const enforcedEnv = latest?.enforcedEnv ?? "testnet";
   const obs = latest?.observatory;
 
-  // On-chain heartbeat for the keeper-liveness pill (the keeper pokes every ~5
-  // min; last_check_ms is stamped on every poke/submit). Undefined until policy loads.
+  // Two on-chain liveness signals (both chain-read, can't be faked):
+  //  • keeperPokeMs — the REAL keeper signal: freshness of the last permissionless
+  //    poke = the newest RiskEvaluated with had_request=false (an agent submit is
+  //    had_request=true, so it can't masquerade as the keeper).
+  //  • lastCheckMs — the guardian "healthy" heartbeat: last_check_ms, stamped by the
+  //    keeper poke OR the agent submit (kept separate, per its looser meaning).
+  const keeperPokeMs = events.find(
+    (e) => e.kind === "RiskEvaluated" && (e.json as { had_request?: boolean }).had_request === false,
+  )?.tsMs;
   const lastCheckMs = policy?.lastCheckMs;
+
+  // Model warming up → the early score isn't trusted yet (shown on both score cards).
+  const calibrating = latest?.warmup ? !latest.warmup.ready : false;
 
   // Time since the last on-chain action (events newest-first) — posture + the wall.
   const lastTs = events[0]?.tsMs ?? 0;
@@ -73,7 +84,8 @@ export function App() {
             <span className={`dot ${connected ? "dot-ok" : "dot-bad"}`} />
             {connected ? "radar live" : "radar offline"}
           </span>
-          <KeeperStatus lastCheckMs={lastCheckMs} />
+          <KeeperStatus keeperPokeMs={keeperPokeMs} />
+          <GuardianHealth lastCheckMs={lastCheckMs} />
         </div>
         <ConnectButton />
       </header>
@@ -131,6 +143,7 @@ export function App() {
             divBps={latest?.divBps}
             book={latest?.book}
             available={!!latest}
+            calibrating={calibrating}
           />
           <ScoreCard
             env="mainnet"
@@ -139,6 +152,7 @@ export function App() {
             divBps={obs?.divBps}
             book={obs?.book}
             available={!!obs}
+            calibrating={calibrating}
           />
         </div>
         <Sparkline history={history} />
@@ -172,6 +186,15 @@ export function App() {
           floor={floor}
           baseline={baseline}
         />
+      </section>
+
+      {/* E2 — why these limits (agent ⟂ contract transparency) */}
+      <section className="band">
+        <div className="band-head">
+          <span className="kicker">Why these limits</span>
+          <span className="lede">what the agent asked, what the contract demanded on its own data, and what's actually applied</span>
+        </div>
+        <ConstraintPanel tick={latest} />
       </section>
 
       {/* F — on-chain proof */}

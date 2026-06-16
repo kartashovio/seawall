@@ -39,11 +39,21 @@ export interface ControlServer {
   clientCount: () => number;
 }
 
+// Rolling history of broadcast ticks, served to a fresh dashboard via GET /history
+// so the risk chart can paint up to ~12h of past readings instead of only what
+// accumulates after the page opens. 720 ticks = 12h at the 60s AGENT_GRID_MS grid
+// (a bit more in practice, since scene-change ticks also broadcast). In-memory
+// only — a process restart starts the window over (we surface "max available").
+// This is pure plumbing: it buffers DTOs the engine already produced; it never
+// touches the score, the request, or any on-chain decision.
+const HISTORY_MAX = 720;
+
 export function startControlServer(opts: ControlOpts): ControlServer {
   const clients = new Set<ServerResponse>();
   // Most recent tick, replayed to any NEW /stream subscriber immediately so a
   // fresh page paints the gauge at once instead of waiting up to one 60s grid.
   let lastTick: AgentTick | null = null;
+  const history: AgentTick[] = [];
 
   const send = (res: ServerResponse, code: number, body: unknown) => {
     res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
@@ -59,6 +69,9 @@ export function startControlServer(opts: ControlOpts): ControlServer {
 
     if (url === "/healthz") return send(res, 200, { ok: true });
     if (url === "/feed-id") return send(res, 200, { feedId: opts.feedId });
+    // Up to ~12h of past ticks (oldest→newest) so a fresh dashboard can seed its
+    // risk chart with history instead of only post-open data. Display only.
+    if (url === "/history") return send(res, 200, { ticks: history });
 
     if (url === "/stream") {
       res.writeHead(200, {
@@ -125,6 +138,8 @@ export function startControlServer(opts: ControlOpts): ControlServer {
 
   function broadcast(t: AgentTick): void {
     lastTick = t;
+    history.push(t);
+    if (history.length > HISTORY_MAX) history.shift();
     const line = `data: ${JSON.stringify(t)}\n\n`;
     for (const c of clients) c.write(line);
   }

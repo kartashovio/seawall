@@ -707,6 +707,190 @@ body.frozen .posture {
   color: var(--ink-dim);
 }
 
+/* calibrating badge + note on the score card */
+.title-tags {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.tag-cal {
+  background: var(--amber-wash);
+  color: var(--amber-dim);
+  border-color: var(--amber-line);
+}
+.cal-note {
+  align-self: stretch;
+  margin-top: 6px;
+  font: 500 var(--fs-xs) / 1.4 var(--font-mono);
+  color: var(--amber-dim);
+  text-align: center;
+}
+
+/* divergence → contract-only-freeze meter */
+.divmeter {
+  align-self: stretch;
+}
+.divmeter-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--g-track);
+}
+.divmeter-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  transition: width 0.5s var(--ease-tide), background 0.4s ease;
+}
+.divmeter-mark {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 12px;
+}
+.divmeter-caution {
+  background: var(--amber);
+  transform: translateX(-1px);
+}
+.divmeter-freeze {
+  background: var(--coral);
+  transform: translateX(-2px);
+}
+.divmeter-cap {
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.divmeter-cap b {
+  font-weight: 600;
+}
+.divmeter-state {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  color: var(--ink-dim);
+}
+.divmeter-frz {
+  color: var(--coral-dim);
+}
+
+/* ── "why these limits" — agent ⟂ contract constraint panel ───────────────── */
+.cns-lede {
+  margin: 4px 0 16px;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 82ch;
+}
+.cns-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cns-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  grid-template-areas: "name flow" "name bound";
+  gap: 5px 18px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ground-1);
+}
+.cns-name {
+  grid-area: name;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cns-driver {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--muted);
+}
+.cns-flow {
+  grid-area: flow;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.cns-num {
+  display: inline-flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+.cns-num i {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-deep);
+}
+.cns-applied {
+  color: var(--ink);
+}
+.cns-op {
+  font-family: var(--font-mono);
+  color: var(--muted-deep);
+  font-size: 13px;
+}
+.cns-bound {
+  grid-area: bound;
+  font-size: var(--fs-sm);
+  color: var(--ink-dim);
+}
+.cns-bound.is-contract {
+  color: var(--cyan-dim);
+}
+.cns-bound.is-agent {
+  color: var(--amber-dim);
+}
+.cns-held {
+  color: var(--muted);
+  font-style: italic;
+}
+.cns-relax {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+.cns-relax.is-blocked {
+  background: var(--amber-wash);
+  color: var(--amber-dim);
+  border: 1px solid var(--amber-line);
+}
+.cns-relax.is-open {
+  background: var(--cyan-wash);
+  color: var(--cyan-dim);
+  border: 1px solid var(--cyan-line);
+}
+.cns-liq {
+  margin-top: 12px;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+.cns-liq b {
+  color: var(--ink);
+}
+
 /* ── risk history (interactive chart: score + the two ratcheted params) ─── */
 .riskchart {
   margin-top: 28px;
@@ -756,10 +940,30 @@ body.frozen .posture {
   color: var(--muted);
   max-width: 78ch;
 }
+.rc-chart {
+  margin-top: 18px;
+}
+.rc-chart:first-of-type {
+  margin-top: 6px;
+}
+.rc-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.rc-chart-lbl {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: var(--display-opsz-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
 .rc-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 760 / 248;
+  aspect-ratio: 760 / 244;
   background: var(--ground-2);
   border: 1px solid var(--g-track);
   border-radius: 12px;
@@ -822,37 +1026,9 @@ body.frozen .posture {
   border-radius: 2px;
   flex: none;
 }
-.rc-mainnet {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-}
-.rc-mainnet-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.rc-mainnet-lbl {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-variation-settings: var(--display-opsz-heading);
-  font-size: 15px;
-  font-weight: 600;
+.rc-sub b {
   color: var(--ink);
-}
-.rc-mainnet svg {
-  width: 100%;
-  height: 60px;
-  display: block;
-  background: var(--ground-1);
-  border: 1px solid var(--g-track);
-  border-radius: 10px;
-}
-.rc-mainnet-note {
-  margin-top: 7px;
-  font-size: var(--fs-xs);
-  color: var(--muted);
+  font-weight: 600;
 }
 
 /* Model warm-up indicator — header chip + strip below the two seas */

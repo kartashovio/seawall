@@ -24,8 +24,10 @@ describe("ScoreCard — ENFORCED (testnet) role", () => {
     expect(html).toContain("ML · advisory");
   });
 
-  it("renders the shared info row: ~88.0 bps divergence + book mid/spread", () => {
-    expect(html).toContain("~88.0 bps");
+  it("renders the divergence meter (88.0 bps) with caution/freeze thresholds + book mid/spread", () => {
+    expect(html).toContain("88.0 bps");
+    expect(html).toContain("caution ≥ 100"); // D_CAUTION = 1% = 100 bps
+    expect(html).toContain("freeze ≥ 500"); // T_FREEZE = 5% = 500 bps
     expect(html).toContain("$0.7610");
     expect(html).toContain("40.0 bps");
   });
