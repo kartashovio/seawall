@@ -22,7 +22,7 @@ import { EVENTS } from "../src/events";
 import { loadSeries } from "../src/backtest-lib";
 import { Detector, buildFeatures, asofJoin, paramFromScore } from "@seawall/model";
 import { Calibrator, smoothScore, percentileFn, type CalibratedScore } from "../src/calibrate";
-import { MAX_LTV, BORROW_CAP, T_FREEZE, D_CAUTION, SCORE_LO, RELAX_STEP_FRAC_BPS, SCORE_SMOOTH_ALPHA } from "@seawall/shared";
+import { MAX_LTV, BORROW_CAP, T_FREEZE, D_CAUTION, SCORE_LO, RELAX_STEP_FRAC_BPS, SCORE_SMOOTH_ALPHA, LAMBDA_MEAN, LAMBDA_COV } from "@seawall/shared";
 
 const GRID = 60_000;
 const FREEZE_BPS = Number(T_FREEZE) / 1e5; // 500
@@ -100,7 +100,7 @@ async function gen(key: string): Promise<void> {
     marketRefKey: cfg.marketSymbol ? "market" : undefined, velWindow: cfg.velWindow ?? 30, rvSpan: cfg.velWindow ?? 30,
   });
   const featureList = cfg.marketSymbol ? ["disp", "div", "divvel", "volvel", "mktvol"] : ["disp", "div", "divvel", "volvel"];
-  const det = new Detector(featureList, { warmup: 120, lambdas: { mean: cfg.lambda ?? 0.99, cov: cfg.lambda ?? 0.99 } });
+  const det = new Detector(featureList, { warmup: 120, lambdas: { mean: cfg.lambda ?? LAMBDA_MEAN, cov: cfg.lambda ?? LAMBDA_COV } });
   const raw = feats.map(({ ts, fv }) => ({ ts, r: det.update(fv), div: typeof fv.div === "number" ? fv.div : null }));
 
   // ── regression guard: re-derive the report's calm-percentile score from this d²

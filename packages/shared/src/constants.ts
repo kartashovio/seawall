@@ -9,12 +9,15 @@
 
 // ───────────────────────── off-chain ML model (no on-chain twin) ─────────────
 
-// EWMA smoothing for the running mean and covariance (RiskMetrics-style). 0.99
-// is the SINGLE λ pair used in BOTH the live agent and the backtests/methodology
-// (minor #11) — these are the constructor defaults; every Detector also passes
-// them explicitly, so live and backtest are identical.
+// EWMA smoothing for the running mean and covariance (RiskMetrics-style). The mean
+// tracks fast (λ=0.99, ~69-tick half-life); the COVARIANCE is deliberately SLOWER
+// (λ=0.996, ~173-tick / ~2.9h half-life) so a multi-hour crisis stays anomalous
+// instead of being re-absorbed into the running scale within ~1h (which made the
+// score recede mid-event). Measured: ~2× the crash-tick score with the published
+// calm-percentile FP invariant and no lead regression. These are the constructor
+// defaults; backtest + live both read these so they stay identical. [TUNED 2026-06]
 export const LAMBDA_MEAN = 0.99;
-export const LAMBDA_COV = 0.99;
+export const LAMBDA_COV = 0.996;
 
 // Fixed ridge on the covariance so the Cholesky stays positive-definite.
 export const SHRINKAGE = 0.15;
@@ -22,10 +25,16 @@ export const EPS = 1e-9;
 
 // Score -> parameter mapping. Score is 0-100. Below SCORE_LO we don't tighten at
 // all (dead-band so noise doesn't thrash the params); at/above SCORE_HI the
-// params sit at their floor. In between it's a logistic.
-export const SCORE_LO = 60;
-export const SCORE_MID = 80;
-export const SCORE_HI = 95;
+// params sit at their floor. In between it's a logistic centred on SCORE_MID.
+// [TUNED 2026-06] HI lowered 95->80 so MODERATE events (live score 70-90) actually
+// drive the knob toward floor instead of barely leaving baseline; LO lowered 60->55
+// so the tighten gate engages a touch earlier; MID re-centred to the new band
+// midpoint. SCORE_LO is the calm gate — kept high enough that calm noise (which
+// the dead-zone already pins ~94% at 0) does not trip it: measured live sustained
+// >=99 calm FP stays 0 at this setting.
+export const SCORE_LO = 55;
+export const SCORE_MID = 68;
+export const SCORE_HI = 80;
 export const LOGISTIC_GAMMA = 0.15;
 
 // EWMA smoothing applied to the calibrated score before it drives the gauge + the

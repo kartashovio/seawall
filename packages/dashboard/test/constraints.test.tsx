@@ -7,12 +7,12 @@ import { describe, it, expect } from "vitest";
 import { agentTarget, contractTarget, explainParam } from "../src/constraints";
 
 describe("agentTarget — mirror of scoreToParams (solvency→max_ltv, liquidity→borrow_cap)", () => {
-  it("both scores ≤ SCORE_LO(60) → baseline (loosest)", () => {
+  it("both scores ≤ SCORE_LO(55) → baseline (loosest)", () => {
     expect(agentTarget(0, 0)).toEqual({ maxLtv: 7500, borrowCap: 10000 });
-    expect(agentTarget(60, 60)).toEqual({ maxLtv: 7500, borrowCap: 10000 });
+    expect(agentTarget(55, 55)).toEqual({ maxLtv: 7500, borrowCap: 10000 });
   });
-  it("both scores ≥ SCORE_HI(95) → floor (tightest)", () => {
-    expect(agentTarget(95, 95)).toEqual({ maxLtv: 5500, borrowCap: 4000 });
+  it("both scores ≥ SCORE_HI(80) → floor (tightest)", () => {
+    expect(agentTarget(80, 80)).toEqual({ maxLtv: 5500, borrowCap: 4000 });
     expect(agentTarget(100, 100)).toEqual({ maxLtv: 5500, borrowCap: 4000 });
   });
   it("the live state: solvency 97.49 floors LTV, liquidity 0 leaves cap at baseline", () => {

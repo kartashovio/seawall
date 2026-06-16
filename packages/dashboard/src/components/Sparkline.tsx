@@ -391,8 +391,8 @@ export function Sparkline({ history }: { history: AgentTickDTO[] }) {
         </div>
       </div>
       <p className="rc-sub">
-        Showing the last <b>{span}</b> (up to 12h). Limits tighten as the score climbs <b>60 → 95</b> — and the two params react
-        differently.
+        Showing the last <b>{span}</b> (up to 12h). Limits tighten as the score climbs <b>{BANDS.lo} → {BANDS.hi}</b> — and the two
+        params react differently.
       </p>
       <HistoryChart history={h} kind="testnet" />
       <DivStrip history={h} />

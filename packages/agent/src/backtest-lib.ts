@@ -9,7 +9,7 @@ import {
   GROUP_FEATURES,
   type Series,
 } from "@seawall/model";
-import { MAX_LTV, BORROW_CAP } from "@seawall/shared";
+import { MAX_LTV, BORROW_CAP, LAMBDA_MEAN, LAMBDA_COV } from "@seawall/shared";
 import { firstSustainedAlert, drawdownOnset, type Scored } from "./metrics";
 
 // One backtest event, fully described by data + windows so it can be run for
@@ -118,11 +118,13 @@ export async function runBacktest(cfg: EventConfig): Promise<BacktestResult> {
     rvSpan: cfg.velWindow ?? 30,
   });
 
-  const lambda = cfg.lambda ?? 0.99;
+  // mean/cov split from the constants (single source of truth) — the cov is slower
+  // than the mean by design (see LAMBDA_COV). A per-event cfg.lambda still overrides
+  // both for any future bespoke event.
   const featureList = cfg.marketSymbol
     ? ["disp", "div", "divvel", "volvel", "mktvol"]
     : ["disp", "div", "divvel", "volvel"];
-  const det = new Detector(featureList, { warmup: 120, lambdas: { mean: lambda, cov: lambda } });
+  const det = new Detector(featureList, { warmup: 120, lambdas: { mean: cfg.lambda ?? LAMBDA_MEAN, cov: cfg.lambda ?? LAMBDA_COV } });
   const raw = feats.map(({ ts, fv }) => {
     const r = det.update(fv);
     return { ts, d2: r.d2, rawScore: r.score, groupD2: r.groupD2, contributions: r.contributions, fv };

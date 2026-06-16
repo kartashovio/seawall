@@ -58,8 +58,11 @@ const QUOTE_DECIMALS: u8 = 6;
 const BPS_DENOM: u16 = 10_000;
 
 // --- score bands (u8) — gauge + score->param dead-band/floor ---
-const SCORE_LO: u8 = 60;
-const SCORE_HI: u8 = 95;
+// MIRROR ONLY (the off-chain agent owns the score->param map; the contract never
+// reads these). Kept in lockstep with shared/constants.ts. [TUNED 2026-06: 60->55,
+// 95->80] — no re-deploy needed since the contract logic does not use them.
+const SCORE_LO: u8 = 55;
+const SCORE_HI: u8 = 80;
 const ALERT_SCORE: u8 = 99;                // measurement marker, NOT the send gate
 const SUBMIT_SCORE: u8 = 99;               // agent anti-spam throttle
 

@@ -93,8 +93,9 @@ describe("constants parity (TS <-> Move)", () => {
     expect(SUBMIT_SCORE).toBe(99);
   });
 
-  it("uses the single 0.99 lambda pair (live == backtest, minor #11)", () => {
+  it("mean tracks fast, covariance is slower by design (live == backtest)", () => {
     expect(LAMBDA_MEAN).toBe(0.99);
-    expect(LAMBDA_COV).toBe(0.99);
+    expect(LAMBDA_COV).toBe(0.996);
+    expect(LAMBDA_COV).toBeGreaterThan(LAMBDA_MEAN);
   });
 });

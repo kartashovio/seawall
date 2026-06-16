@@ -1,13 +1,14 @@
 // One stress-test chart: two x-aligned panels over a shared time axis.
 //   • TOP — the guardian's response on a 0-100 scale: the AI risk score (hero,
 //     band-colored), and the two lending knobs it ratchets (max LTV, borrow cap),
-//     with the 60 caution / 95 floor reference lines.
+//     with the SCORE_LO caution / SCORE_HI floor reference lines (bound to constants).
 //   • BOTTOM — the market: the asset price (left axis) and the contract-measured
 //     divergence (right axis) with the 1% caution / 5% FREEZE lines.
 // REAL news catalysts are drawn as numbered flags (mapped to a list in the case
-// block); the model's first flag (validated detection) and the −5% drop are marked;
-// freeze ranges shade both panels. Pure SVG + an HTML hover read-out, no library.
+// block); the agent's first action + the −5% drop are marked; a latched freeze shades
+// both panels to the end. Pure SVG + an HTML hover read-out, no library.
 import { useState } from "react";
+import { SCORE_LO, SCORE_MID, SCORE_HI } from "@seawall/shared";
 
 export interface BtPoint {
   ts: number;
@@ -118,9 +119,11 @@ export function BacktestChart({ c }: { c: BtCase }) {
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${c.key} stress test`}>
         <defs>
           <linearGradient id={gid} x1="0" y1={yA(100)} x2="0" y2={yA(0)} gradientUnits="userSpaceOnUse">
+            {/* band colours bound to the constants: coral >= SCORE_HI, amber at MID, teal <= SCORE_LO */}
             <stop offset="0%" stopColor="var(--coral)" />
-            <stop offset="5%" stopColor="var(--coral)" />
-            <stop offset="40%" stopColor="var(--amber)" />
+            <stop offset={`${(1 - SCORE_HI / 100) * 100}%`} stopColor="var(--coral)" />
+            <stop offset={`${(1 - SCORE_MID / 100) * 100}%`} stopColor="var(--amber)" />
+            <stop offset={`${(1 - SCORE_LO / 100) * 100}%`} stopColor="var(--cyan)" />
             <stop offset="100%" stopColor="var(--cyan)" />
           </linearGradient>
         </defs>
@@ -147,9 +150,9 @@ export function BacktestChart({ c }: { c: BtCase }) {
         {[20, 40, 80].map((g) => (
           <line key={g} x1={ML} y1={yA(g)} x2={ML + PW} y2={yA(g)} stroke="var(--line-soft)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         ))}
-        <line x1={ML} y1={yA(60)} x2={ML + PW} y2={yA(60)} stroke="var(--amber-line)" strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
-        <line x1={ML} y1={yA(95)} x2={ML + PW} y2={yA(95)} stroke="var(--coral-line)" strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
-        {[0, 60, 95, 100].map((g) => (
+        <line x1={ML} y1={yA(SCORE_LO)} x2={ML + PW} y2={yA(SCORE_LO)} stroke="var(--amber-line)" strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
+        <line x1={ML} y1={yA(SCORE_HI)} x2={ML + PW} y2={yA(SCORE_HI)} stroke="var(--coral-line)" strokeWidth="1" strokeDasharray="3 5" vectorEffect="non-scaling-stroke" />
+        {[0, SCORE_LO, SCORE_HI, 100].map((g) => (
           <text key={g} x={ML - 5} y={yA(g)} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--muted-deep)" textAnchor="end" dominantBaseline="middle">
             {g}
           </text>
