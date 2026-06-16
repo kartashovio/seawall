@@ -21,7 +21,7 @@ export const COPY: Record<string, CaseCopy> = {
     detection:
       "Where the agent ACTS (the 'agent → CAUTION' marker): its real action — ratcheting both knobs down — fires in the deep-crash leg on Feb 3, ~9 h after the validated detector's first faint flag. So the +320 min is a detection lead, not an action lead; the agent moves only once stress is unmistakable.",
     market:
-      "Trump signed tariff executive orders on Canada, Mexico and China late Saturday Feb 1 (①); 24/7 crypto sold off through the weekend — SUI bled ~38% as the leg deepened into Feb 3, then partly retraced after Mexico's tariffs were paused (②).",
+      "Trump signed tariff executive orders on Canada, Mexico and China late Saturday Feb 1 (①); 24/7 crypto sold off through the weekend and the macro shock detonated a leverage cascade — ~$2.27B liquidated in 24h (~743k traders, ~$1.7B of it longs), the largest single-day wipeout since the COVID/FTX shocks, with one exchange CEO flagging the true figure as several times higher. SUI bled ~38% as the leg deepened into Feb 3, partly retracing after Mexico's (then Canada's) tariffs were paused (②).",
     guardian:
       "The clearest case of the ML earning its place. The divergence the contract measures only briefly grazes its own 1% caution line (one spike to ~123 bps) and never comes near the 5% freeze — so the inline check never acts. Yet the anomaly score climbs through the deep-crash leg and the one-way ratchet drives BOTH knobs down (borrow cap to its 40% floor, max LTV to ~56%), then relaxes as the selloff stabilizes. The sustained flooring is overwhelmingly the SCORE's doing, not the divergence reading. No freeze.",
     read:
@@ -31,11 +31,11 @@ export const COPY: Record<string, CaseCopy> = {
     detection:
       "The agent nudges the cap early, but the decisive action is the contract FREEZE the moment peg-divergence crossed 5% (Mar 11 03:36Z) — contract-derived from raw divergence, not a score call. Once frozen it STAYS frozen (the red zone) until the DAO lifts it.",
     market:
-      "California regulators closed Silicon Valley Bank on Friday Mar 10 (①); that night Circle disclosed $3.3B of USDC reserves were trapped at SVB (②) and USDC broke its dollar peg (to ~$0.86 on Bybit here, deeper elsewhere) while BTC stayed calm — a clean idiosyncratic, solvency-class event.",
+      "California regulators closed Silicon Valley Bank on Friday Mar 10 (①); that night Circle disclosed $3.3B of USDC reserves were trapped at SVB (②) and USDC broke its dollar peg — an all-time low around $0.877 (to ~$0.86 on the thin Bybit book we replay here) — while BTC was unaffected, in fact rallying as capital fled USDC into BTC. A clean idiosyncratic, solvency-class event (the SVB cash was later recovered at par — a reserve scare, not true insolvency).",
     guardian:
       "The freeze showcase. As the depeg widens, divergence against the $1 peg crosses the 5% contract-FREEZE line (peak ~1455 bps) and the contract HALTS on its own reading — the agent has no part. The ratchet floors max LTV (→55%) while borrow cap barely moves (holds near baseline) — a solvency break, not a liquidity one.",
     read:
-      "The closest analog to the real target threat: a stablecoin losing its peg is exactly the oracle/price-correctness break that mis-liquidates lending markets. The score's early flag is faint — but it doesn't matter here, because the freeze is re-derived from raw divergence the instant it crossed 5%. (The peg recovered after the Fed/FDIC backstopped all SVB deposits on Mar 12 — past this chart's data window.)",
+      "The closest analog to the real target threat — and a clean real-world A/B: during this depeg, Compound HARDCODED USDC at $1 (its oracle ignored the break) while Aave used a LIVE price and correctly marked USDC down, keeping its safety buffer. That is the exact difference between a breaker that watches divergence and one that trusts an assumed peg. The score's early flag is faint, but it doesn't matter here: the freeze is re-derived from raw divergence the instant it crossed 5%. (The peg recovered after the Fed/FDIC backstop on Mar 12 — past this chart's window.)",
   },
   oct10: {
     detection:
@@ -53,7 +53,7 @@ export const COPY: Record<string, CaseCopy> = {
     detection:
       "Coincident (−3 min): the agent's CAUTION fires with the crash — a borrow-cap tightening as cross-venue volatility spikes. No lead, no freeze.",
     market:
-      "The yen carry-trade unwound — the BoJ hiked on Jul 31 and a weak US jobs report on Aug 2 tripped the Sahm recession rule — and on Aug 5 the Nikkei closed −12.4% amid a global cascade (①). SUI fell ~19% with BTC, a systemic market-wide move.",
+      "The yen carry-trade unwound — the BoJ hiked on Jul 31 and a weak US jobs report on Aug 2 tripped the Sahm recession rule — and on Aug 5 the Nikkei closed −12.4% (①) amid a global cascade. In crypto it was a smaller Oct-10: ~$1B+ liquidated in 24h (~254k traders, ~90% longs) as carry-funded leverage unwound into thin books. SUI fell ~19% with BTC — a systemic, leverage-amplified move, but with NO oracle break (stablecoins held their pegs; DeFi liquidations ran orderly).",
     guardian:
       "The liquidity signature: BTC volatility-velocity and cross-venue dispersion lead, so BORROW CAP is the knob that moves (toward ~75%) while max LTV holds at baseline — a systemic deleveraging caps new leverage rather than repricing collateral. Divergence stayed well under 5% (peak ~64 bps), so a measured cap tightening, not a freeze. (24/7 crypto actually cascaded hours before the Nikkei cash close ①.)",
     read:
@@ -63,7 +63,7 @@ export const COPY: Record<string, CaseCopy> = {
     detection:
       "Coincident (−1 min) and modest: the agent eases max LTV as SUI dumps on-chain, but the CEX basis barely registers the DEX-only shock — see the limit below.",
     market:
-      "The Cetus DEX exploit drained ~$220–260M from Sui CLMM pools starting ~10:30Z May 22 (①); Cetus halted its pools (②) and SUI dumped ~11% on-chain, before Sui validators voted to freeze ~$162M of the stolen funds (③). BTC stayed flat — a single-asset shock.",
+      "The Cetus exploit drained ~$223M from Sui CLMM pools starting ~10:30Z May 22 (①) — an integer-overflow bug in the pool liquidity math (the checked_shlw guard) let a flash-loaned position mint near-infinite liquidity for ~1 token. Cetus halted its pools (②) and SUI dumped ~11% on-chain, before Sui validators voted to freeze ~$162M of the funds (③). BTC stayed flat — a single-asset, contract-bug shock.",
     guardian:
       "The solvency signature on a single-asset shock: max LTV eases (toward ~69%) while borrow cap holds — the broad market is calm, so this reads as a price/divergence anomaly, not systemic liquidity. Coincident, modest, and no freeze.",
     read: "Driver discrimination on a SUI-native event: a single-asset shock with the market calm tightens the solvency knob, not the liquidity one.",
