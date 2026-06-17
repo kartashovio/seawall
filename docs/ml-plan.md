@@ -26,7 +26,7 @@ Historical order-book depth isn't available for free, so depth is live-only.
 
 - `disp` — price dispersion across venues (bps)
 - `div` — oracle vs market divergence (bps)
-- `divvel` — divergence velocity
+- `divvel` — divergence velocity (widening / worsening-only: `max(0, ·)`, 0 when the gap narrows)
 - `volvel` — volatility velocity (fires first in a crash)
 - `imb` — depth imbalance, [-1, 1] (live only)
 - `spread` — spread (bps, live only)

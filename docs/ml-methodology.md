@@ -40,13 +40,13 @@ The live run uses five features: four from the watched token plus `mktvol`, the 
 | Feature | What it measures | Source | Group -> parameter |
 |---------|------------------|--------|--------------------|
 | `div` | oracle vs market divergence | Pyth vs DeepBook mid (live) / perp last vs index (backtest) | solvency -> `max_ltv` |
-| `divvel` | how fast that divergence is widening | derivative of `div` | solvency -> `max_ltv` |
+| `divvel` | how fast that divergence is widening (0 when narrowing) | derivative of `div` | solvency -> `max_ltv` |
 | `disp` | price disagreement across venues | Coinbase / OKX / Bybit | liquidity -> `borrow_cap` |
 | `volvel` | the token's own volatility, accelerating | token price | liquidity -> `borrow_cap` |
 | `mktvol` | the market's (BTC) volatility, accelerating | BTC, Binance / CEX | liquidity -> `borrow_cap` (as attribution) |
 | `imb`, `spread` | order-book skew + spread | DeepBook L2 / CEX depth | liquidity (live only) |
 
-The formulas are short. `div = 1e4·|ln(p_pyth) − ln(p_cex_median)|` in bps. `divvel = div_t − div_{t−w}`. `disp = 1e4·stdev_i(ln p_i)` over 1m mids across venues, in bps. `volvel = ln((rv_t+ε)/(rv_{t−w}+ε))` with `rv_t = EWMA_30(r²)`, `r = Δln p`, `w ≈ 30` — a log-ratio of realized variance now versus about 30 minutes ago. `mktvol` is the same `volvel`, computed on the BTC proxy instead of the token.
+The formulas are short. `div = 1e4·|ln(p_pyth) − ln(p_cex_median)|` in bps. `divvel = max(0, div_t − div_{t−w})` — one-sided: it is 0 when the divergence is narrowing, so the solvency/price-trust knob only tightens as the oracle-vs-market gap *worsens*, never on a recovery. `disp = 1e4·stdev_i(ln p_i)` over 1m mids across venues, in bps. `volvel = ln((rv_t+ε)/(rv_{t−w}+ε))` with `rv_t = EWMA_30(r²)`, `r = Δln p`, `w ≈ 30` — a log-ratio of realized variance now versus about 30 minutes ago. `mktvol` is the same `volvel`, computed on the BTC proxy instead of the token.
 
 Every feature is engineered unit-free and roughly stationary so the covariance stays well-conditioned. The `imb`/`spread` depth features are live-only, because free historical order-book depth does not exist; they are covered with the backtest material.
 
@@ -54,7 +54,7 @@ Every feature is engineered unit-free and roughly stationary so the covariance s
 
 The features split into two groups. Each group drives one parameter, on its own.
 
-`max_ltv ← solvency {div, divvel}` answers "can we trust the price?" When the oracle disagrees with the market, allow less leverage per position.
+`max_ltv ← solvency {div, divvel}` answers "can we trust the price?" When the oracle disagrees with the market, allow less leverage per position. Because `divvel` is rectified to the widening direction (0 when narrowing), this knob tightens only as the gap worsens and never on a recovery, so "can we trust the price?" holds literally.
 
 `borrow_cap ← liquidity {disp, volvel, mktvol}` (plus live depth) answers "how violent and fragmented is it?" When the asset itself moves hard, or the broader market does, cap new borrowing.
 

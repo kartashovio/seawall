@@ -4,7 +4,7 @@
 export interface FeatureVector {
   disp: number; // cross-venue price dispersion, bps
   div: number; // oracle vs market divergence, bps
-  divvel: number; // divergence velocity, bps per window
+  divvel: number; // divergence WIDENING velocity, bps/window (one-sided: 0 when narrowing)
   volvel: number; // realized-volatility velocity, dimensionless
   mktvol?: number; // market (e.g. BTC) volatility velocity, dimensionless (optional)
   imb?: number; // depth imbalance in [-1, 1] (live only)

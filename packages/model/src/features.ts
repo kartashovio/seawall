@@ -105,7 +105,13 @@ export class FeatureBuilder {
 
     const divLag = this.divHist[this.divHist.length - 1 - this.w];
     const rvLag = this.rvHist[this.rvHist.length - 1 - this.w];
-    const divvel = div - divLag;
+    // One-sided: only a WIDENING divergence is a price-trust anomaly. `div` is already a
+    // magnitude (abs, above), so a NARROWING (recovering) divergence gives div-divLag < 0;
+    // left signed it would square into the solvency Mahalanobis IDENTICALLY to a widening of
+    // the same speed — i.e. floor max_ltv while the price is RECOVERING, which contradicts
+    // "max_ltv answers can-we-trust-the-price". max(0,·) zeroes the recovery half so the
+    // solvency knob only tightens as the oracle/market gap WORSENS. [TUNED 2026-06]
+    const divvel = Math.max(0, div - divLag);
     const volvel = Math.log((this.rv + EPS) / (rvLag + EPS));
 
     const fv: FeatureVector = { disp, div, divvel, volvel };
