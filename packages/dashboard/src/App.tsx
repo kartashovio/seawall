@@ -11,6 +11,7 @@ import { ArchitectureDiagram } from "./components/ArchitectureDiagram";
 import { HowItWorks } from "./components/HowItWorks";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
+import { FreezeDemo } from "./components/FreezeDemo";
 import { GovernancePanel } from "./components/GovernancePanel";
 import { AttackPanel } from "./components/AttackPanel";
 import { LayerStatus } from "./components/LayerStatus";
@@ -189,6 +190,15 @@ export function App() {
           <ActionLog events={events} />
           <GovernancePanel paused={paused} />
         </div>
+      </section>
+
+      {/* F2 — the freeze, recorded on-chain (a verifiable witness, not interactive) */}
+      <section className="band">
+        <div className="band-head">
+          <span className="kicker">The freeze, recorded</span>
+          <span className="lede">one full LIVE → freeze → blocked borrow → DAO unfreeze cycle, captured on testnet — every step a real transaction</span>
+        </div>
+        <FreezeDemo />
       </section>
 
       {/* G — the drill */}

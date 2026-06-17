@@ -1,0 +1,101 @@
+{
+  "recordedAt": "2026-06-17T08:38:44.590Z",
+  "network": "testnet",
+  "explorerTxBase": "https://suiscan.xyz/testnet/tx",
+  "explorerObjBase": "https://suiscan.xyz/testnet/object",
+  "poolId": "0x1c19362ca52b8ffd7a33cee805a67d40f31e6ba303753fd3a4cfdfacea7163a5",
+  "feedId": "0x50c67b3fd225db8912a424dd4baed60ffdde625ed2feaaf283724f9608fea266",
+  "prodTPct": 5,
+  "demoTPct": 0.02,
+  "healthy": {
+    "policyId": "0x2deeb3bf653e12542fd5d5756312d77ebd50633c82f90f04121b4b763ff0aae0",
+    "vaultId": "0x0cf0c0437fb1f7d68fc9a3965661e6e57781681c0541a42c45f8b25c8dcf6011",
+    "tPct": 5
+  },
+  "stressed": {
+    "policyId": "0x2ba903f674721829ad10a7a8912a95ade942bb9d75b35436e1d926a7a3f3600f",
+    "vaultId": "0xa7ad21626f82c6774ccf940da619c097fec284ff96f60525cfbe4845e6e0050a",
+    "capId": "0x99df1dee56bb2a280c8ef5f473fbaae659ba449317b5b1ffb87d6601f781e411",
+    "tPct": 0.02
+  },
+  "setup": {
+    "healthyCreate": "J4fUvUXtj3Amc8yu4D8pxcT9CX2eXPxkHV75bgmHYZik",
+    "healthyVault": "3NFPdsBviAqDN3CpSssirbsHro9YuntQbfct2VAp9Sgj",
+    "healthyDeposit": "ExSeaykdfTarDs9xn7pNvpAgLADbvNfwsVoPhYUv391h",
+    "stressedCreate": "GMoLjwbtr5fqyqeNJk6ZoW2khvARhuDxqwAdRQWkCz2L",
+    "stressedVault": "GpMpiMXkURzaGWe7wrfsczK1sz2RapTkV3Zky2Kb8Y9f",
+    "stressedDeposit": "9sYBsRJNyg17ieFiyovSogwvkC6S97VsfyPy8P8mvtpi"
+  },
+  "marks": {
+    "freezeAtMs": 33711,
+    "unfreezeAtMs": 41178
+  },
+  "series": [
+    {
+      "tMs": 14001,
+      "divPct": 0.3674447
+    },
+    {
+      "tMs": 29113,
+      "divPct": 0.3416611
+    },
+    {
+      "tMs": 33711,
+      "divPct": 0.3416611
+    },
+    {
+      "tMs": 37590,
+      "divPct": 0.3289893
+    },
+    {
+      "tMs": 43155,
+      "divPct": 0.3630105
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "key": "normal",
+      "title": "Normal operation",
+      "desc": "A borrow flows on a healthy policy. The inline floor re-derives the live Pyth↔DeepBook divergence, sees it well under the 5% threshold, and allows it.",
+      "digest": "3XjubYVJcE7DQZUsJRK9kCWrWTuMCfYeBRcdKmxRd38q",
+      "status": "success",
+      "paused": false,
+      "actor": "vault"
+    },
+    {
+      "n": 2,
+      "key": "freeze",
+      "title": "Ping → contract-only freeze",
+      "desc": "A keeper-style ping makes the contract re-derive its OWN divergence and, finding it over the (deliberately tight) demo threshold, HALT. The off-chain agent has no part in the freeze.",
+      "digest": "fRdB2pPMoaCHa3oE3LdURaci2DDv2164AjJJgMiD2wx",
+      "status": "success",
+      "paused": true,
+      "divPct": 0.3416611,
+      "cause": 0,
+      "actor": "contract"
+    },
+    {
+      "n": 3,
+      "key": "abort",
+      "title": "Inline floor aborts the borrow",
+      "desc": "The identical borrow now aborts on-chain: the inline floor checks the freeze first and refuses the transaction (EFrozen). Same tiny in-corridor amount as step 1 — only the freeze blocks it, not leverage.",
+      "digest": "6h7m6PoAL6CuYxuU4Cjcbkib6nLc8mmbWzktieegeaeL",
+      "status": "failure",
+      "abortCode": 2,
+      "abortName": "EFrozen",
+      "paused": true,
+      "actor": "contract"
+    },
+    {
+      "n": 4,
+      "key": "unfreeze",
+      "title": "DAO unfreeze",
+      "desc": "The owned GovernanceCap clears the halt — the only authority that can. The agent physically cannot hold this cap.",
+      "digest": "2VdAijh92nS96DGtB3LfPRJpVTBe2LrLAfstxUFYUZHu",
+      "status": "success",
+      "paused": false,
+      "actor": "dao"
+    }
+  ]
+}

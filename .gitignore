@@ -33,3 +33,6 @@ pnpm-debug.log*
 # --- scratch / throwaway backtest runners ---
 packages/*/src/scratch/
 data/
+# but the recorded freeze-demo artifact is a committed source asset the dashboard imports
+!packages/dashboard/src/data/
+!packages/dashboard/src/data/freeze-demo.json
