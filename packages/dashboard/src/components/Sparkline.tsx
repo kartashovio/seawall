@@ -305,8 +305,8 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
 
   return (
     <div className="rc-chart rc-divstrip">
-      <div className="rc-chart-head">
-        <span className="rc-chart-lbl">DIVERGENCE</span>
+      <div className="rc-substrip-head">
+        <span className="rc-substrip-lbl">↳ testnet · divergence</span>
         <span className="tag tag-contract">contract-measured · Pyth↔DeepBook</span>
       </div>
       <div className="rc-frame rc-frame--strip" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>

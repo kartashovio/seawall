@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/logo-1x1.svg" width="120" alt="Seawall"/></p>
+<p align="center"><img src="assets/logo.png" width="120" alt="Seawall"/></p>
 
 # Seawall — Autonomous Risk Guardian for Sui lending
 

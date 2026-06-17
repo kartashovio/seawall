@@ -72,6 +72,15 @@
   --coral-wash: rgba(220, 44, 79, 0.1);
   --coral-line: rgba(220, 44, 79, 0.34);
 
+  /* ── EMERALD = LIVE / HEALTHY / OK (distinct from the cyan brand accent, so
+        "all systems go" reads unambiguously green, not blue) ─────────────── */
+  --emerald: #0fa34f;
+  --emerald-dim: #0a6e35;
+  --emerald-glow: #1fc066;
+  --emerald-wash: rgba(31, 192, 102, 0.12);
+  --emerald-line: rgba(15, 163, 79, 0.34);
+  --glow-emerald: 0 0 0 4px rgba(31, 192, 102, 0.16);
+
   /* ── DAO (deeper Sui navy-blue — only secondary) ─────────────────────── */
   --dao: #0b6ad6;
   --dao-wash: rgba(11, 106, 214, 0.1);
@@ -389,9 +398,9 @@ a:hover {
   vertical-align: middle;
 }
 .dot-ok {
-  background: var(--cyan-glow);
-  box-shadow: var(--glow-cyan);
-  animation: pulse var(--t-pulse) ease-in-out infinite;
+  background: var(--emerald);
+  box-shadow: var(--glow-emerald);
+  animation: pulse-ok var(--t-pulse) ease-in-out infinite;
 }
 .dot-bad {
   background: var(--coral);
@@ -424,13 +433,13 @@ a:hover {
 .statusbar .stat-item + .stat-item {
   border-left: 1px solid var(--line-soft);
 }
-@keyframes pulse {
+@keyframes pulse-ok {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(77, 162, 255, 0.18);
+    box-shadow: 0 0 0 0 rgba(31, 192, 102, 0.2);
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(77, 162, 255, 0.16);
+    box-shadow: 0 0 0 5px rgba(31, 192, 102, 0.16);
   }
 }
 
@@ -518,83 +527,204 @@ body.frozen .posture {
 }
 
 /* ============================================================================
-   B — THESIS STRIP
+   B — ARCHITECTURE EXPLAINER ("how it works", under the diagram)
+   The trust-first, sequential onramp that replaced the thesis strip. Actor
+   legend matches the rest of the dashboard: amber = agent · cyan = contract ·
+   dao-blue = the DAO.
    ========================================================================== */
-.thesis {
-  margin-top: var(--band-gap-tight);
-  padding: 20px 22px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--ground-2);
-  box-shadow: var(--shadow-card);
+.hiw {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 1px solid var(--line-soft);
 }
-.thesis-lede {
-  margin: 0 0 16px;
-  font-size: var(--fs-lg);
-  line-height: 1.6;
-  color: var(--ink-dim);
-}
-.thesis .tname {
+.hiw-intro {
+  margin: 0 0 30px;
+  max-width: 90ch;
   font-family: var(--font-display);
   font-optical-sizing: auto;
   font-variation-settings: var(--display-opsz-heading);
-  font-weight: 600;
-  font-size: 18px;
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
-.thesis .tagline {
-  color: var(--ink);
-  font-weight: 600;
-}
-.roles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-.role {
+.hiw-subhead {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.hiw-subhead .kicker {
+  font: 600 var(--fs-kicker) / 1 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan-dim);
+}
+.hiw-subhead-note {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+/* the sequential ladder — one risk event, start to finish */
+.hiw-flow {
+  margin-bottom: 32px;
+}
+.hiw-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.hiw-step {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 15px;
+  align-items: start;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 12px;
+  background: var(--ground-1);
+}
+.hiw-step--agent {
+  border-left-color: var(--amber);
+}
+.hiw-step--contract {
+  border-left-color: var(--cyan);
+}
+.hiw-step-n {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font: 600 14px / 1 var(--font-mono);
+  color: #fff;
+}
+.hiw-step--agent .hiw-step-n {
+  background: var(--amber);
+}
+.hiw-step--contract .hiw-step-n {
+  background: var(--cyan);
+}
+.hiw-step-title {
+  display: block;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.hiw-step-text {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+/* layout wrappers — overflow safety so a long unbroken token can't blow out a
+   grid column (mirrors the .logrow>* / .proof>* guard pattern). */
+.hiw-step-main,
+.hiw-block {
+  min-width: 0;
+}
+
+/* guarantees + why-Sui, side by side */
+.hiw-cols {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 32px;
+  margin-bottom: 28px;
+}
+.hiw-guards {
+  display: grid;
+  gap: 10px;
+}
+.hiw-guard {
   padding: 13px 15px;
   border: 1px solid var(--line);
   border-left-width: 3px;
   border-radius: 10px;
   background: var(--ground-1);
 }
-.role-tag {
-  font: 700 var(--fs-xs) / 1 var(--font-ui);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.hiw-guard--contract {
+  border-left-color: var(--cyan);
 }
-.role-desc {
+.hiw-guard--agent {
+  border-left-color: var(--amber);
+}
+.hiw-guard--dao {
+  border-left-color: var(--dao);
+}
+.hiw-guard-title {
+  display: block;
+  font: 700 var(--fs-xs) / 1.3 var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.hiw-guard--contract .hiw-guard-title {
+  color: var(--cyan-dim);
+}
+.hiw-guard--agent .hiw-guard-title {
+  color: var(--amber-dim);
+}
+.hiw-guard--dao .hiw-guard-title {
+  color: var(--dao);
+}
+.hiw-guard-text {
+  margin: 0;
   font-size: var(--fs-sm);
   line-height: 1.5;
   color: var(--ink-dim);
 }
-.role--agent {
-  border-left-color: var(--amber);
+.hiw-why {
+  display: grid;
+  gap: 15px;
 }
-.role--agent .role-tag {
-  color: var(--amber-dim);
+.hiw-why-item {
+  padding-left: 14px;
+  border-left: 2px solid var(--cyan-line);
 }
-.role--contract {
-  border-left-color: var(--cyan);
+.hiw-why-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
 }
-.role--contract .role-tag {
-  color: var(--cyan-dim);
+.hiw-why-text {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-dim);
 }
-.role--dao {
-  border-left-color: var(--dao);
-}
-.role--dao .role-tag {
-  color: var(--dao);
+
+/* closing one-liner — the speed claim */
+.hiw-oneliner {
+  margin: 0;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--cyan-wash), transparent 72%);
+  border: 1px solid var(--cyan-line);
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: var(--display-opsz-heading);
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 /* ============================================================================
    NEW — ARCHITECTURE band (airiest)
    ========================================================================== */
 .band--arch {
-  margin-top: 88px;
+  margin-top: var(--band-gap-tight);
 }
 .arch-frame {
   background: var(--ground-2);
@@ -1116,7 +1246,7 @@ body.frozen .posture {
 }
 
 .warm-strip {
-  margin: 22px 2px 2px;
+  margin: 22px 2px 24px;
   padding: 14px 16px;
   border-radius: 12px;
   font-size: var(--fs-sm);
@@ -1530,6 +1660,80 @@ body.frozen .posture {
 .gov-row .muted {
   font-size: var(--fs-sm);
 }
+
+/* DAO action groups (unfreeze / re-anchor corridor / rotate agent) */
+.gov-act {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.gov-act:first-of-type {
+  margin-top: 6px;
+  padding-top: 0;
+  border-top: 0;
+}
+.gov-act-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.gov-act-name {
+  font: 600 14px / 1.2 var(--font-display);
+  color: var(--ink);
+}
+.gov-fn {
+  font-size: 10.5px;
+  color: var(--muted-deep);
+}
+.gov-act-note {
+  margin: 0 0 10px;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.gov-act-note b {
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+.gov-corridor {
+  display: grid;
+  grid-template-columns: 82px 1fr 1fr;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.gov-cor-lbl {
+  font: 600 var(--fs-xs) / 1 var(--font-mono);
+  color: var(--ink-dim);
+}
+.gov-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font: 500 10px / 1 var(--font-mono);
+  color: var(--muted-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.gov-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--ground-1);
+  color: var(--ink);
+  font: 500 var(--fs-sm) / 1.2 var(--font-mono);
+  text-transform: none;
+}
+.gov-input:focus-visible {
+  outline: 2px solid var(--cyan-dim);
+  outline-offset: 1px;
+}
+.gov-input--addr {
+  font-size: var(--fs-xs);
+}
 .gov-msg {
   margin-top: 12px;
   font-family: var(--font-mono);
@@ -1561,8 +1765,8 @@ body.frozen .posture {
   border-radius: 999px;
 }
 .st-live {
-  background: var(--cyan-wash);
-  color: var(--cyan-dim);
+  background: var(--emerald-wash);
+  color: var(--emerald-dim);
 }
 .st-frozen {
   background: var(--coral-wash);
@@ -1709,7 +1913,7 @@ body.frozen .posture {
    ========================================================================== */
 @media (max-width: 920px) {
   .seas,
-  .roles,
+  .hiw-cols,
   .proof,
   .model-blocks,
   .ledger {
@@ -1765,7 +1969,22 @@ body.frozen .posture {
    DIVERGENCE STRIP (live risk chart) + STRESS-TEST GALLERY (backtests)
    ========================================================================== */
 .rc-divstrip {
-  margin-top: 12px;
+  margin-top: 6px;
+}
+/* the divergence panel is a SUB-panel of the testnet chart above it (same time
+   axis), NOT a third sibling next to TESTNET/MAINNET — so its header is a small
+   muted caption, not a display-size label. */
+.rc-substrip-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.rc-substrip-lbl {
+  font: 600 var(--fs-xs) / 1 var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .rc-frame--strip {
   aspect-ratio: 760 / 104;

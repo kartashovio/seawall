@@ -8,6 +8,7 @@ import { Sparkline } from "./components/Sparkline";
 import { WarmupStatus } from "./components/WarmupStatus";
 import { PostureBanner } from "./components/PostureBanner";
 import { ArchitectureDiagram } from "./components/ArchitectureDiagram";
+import { HowItWorks } from "./components/HowItWorks";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { GovernancePanel } from "./components/GovernancePanel";
@@ -64,7 +65,7 @@ export function App() {
       {/* A — masthead */}
       <header className="header">
         <div className="brand">
-          <img src="/logo.svg" alt="Seawall" />
+          <img src="/logo.png" alt="Seawall" />
           <div>
             <h1>Seawall</h1>
             <div className="sub">
@@ -87,29 +88,8 @@ export function App() {
       {/* A — hard-stop alarm (only renders when FROZEN) */}
       <PostureBanner paused={paused} />
 
-      {/* B — thesis strip: the claim once, then the three roles as a color legend */}
-      <section className="thesis">
-        <p className="thesis-lede">
-          <span className="tname">Seawall</span> is a circuit breaker that no one has to trust.{" "}
-          <span className="tagline">The agent's number is never trusted — the contract re-checks every breach on its own data.</span>
-        </p>
-        <div className="roles">
-          <div className="role role--agent">
-            <span className="role-tag">Radar · the agent</span>
-            <span className="role-desc">Untrusted. Watches the oracle and the order book off-chain, and can only ever ask to tighten.</span>
-          </div>
-          <div className="role role--contract">
-            <span className="role-tag">The contract</span>
-            <span className="role-desc">Re-derives every breach on-chain from raw Pyth + DeepBook. Only ever pushes safer. Final say.</span>
-          </div>
-          <div className="role role--dao">
-            <span className="role-tag">The DAO</span>
-            <span className="role-desc">Holds the one key that can loosen the limits or unfreeze the market.</span>
-          </div>
-        </div>
-      </section>
-
-      {/* NEW — architecture: the thesis drawn, before the live data reads as it in motion */}
+      {/* B — architecture: the system drawn, then explained in plain language
+          (the diagram + the "how it works" onramp replaced the old thesis strip) */}
       <section className="band band--arch">
         <div className="band-head">
           <span className="kicker">Architecture</span>
@@ -118,6 +98,7 @@ export function App() {
         <div className="arch-frame">
           <ArchitectureDiagram />
         </div>
+        <HowItWorks />
       </section>
 
       {/* C — the two seas */}

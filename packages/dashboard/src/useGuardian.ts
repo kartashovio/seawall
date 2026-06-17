@@ -24,6 +24,13 @@ export interface PolicyView {
   paused: boolean;
   maxLtvCurrentBps: number;
   borrowCapCurrentBps: number;
+  // DAO-set corridor bounds (the agent can never touch these) — drive the
+  // governance corridor editor's seed values + the validation envelope.
+  maxLtvFloorBps: number;
+  maxLtvBaselineBps: number;
+  borrowCapFloorBps: number;
+  borrowCapBaselineBps: number;
+  registeredAgent: string;
   lastCheckMs: number;
 }
 
@@ -39,6 +46,11 @@ export function usePolicy(refetchMs = 2500): PolicyView | null {
     paused: !!f.paused,
     maxLtvCurrentBps: Number(f.max_ltv_current_bps),
     borrowCapCurrentBps: Number(f.borrow_cap_current_bps),
+    maxLtvFloorBps: Number(f.max_ltv_floor_bps),
+    maxLtvBaselineBps: Number(f.max_ltv_baseline_bps),
+    borrowCapFloorBps: Number(f.borrow_cap_floor_bps),
+    borrowCapBaselineBps: Number(f.borrow_cap_baseline_bps),
+    registeredAgent: String(f.registered_agent ?? ""),
     lastCheckMs: Number(f.last_check_ms),
   };
 }

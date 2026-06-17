@@ -1,0 +1,17 @@
+# Fires the gas watchdog every 2h. OnBootSec is the primary reboot path;
+# Persistent=true catches up a window missed during downtime. Burn is only
+# ~0.4 SUI/day combined, so a 2h cadence keeps both wallets topped while staying
+# gentle on the shared per-IP faucet rate limit (this REPLACES the retired
+# seawall-keeper-fuel timer — run exactly one faucet refiller).
+[Unit]
+Description=Run the Seawall gas watchdog every 2 hours
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2h
+AccuracySec=2min
+Persistent=true
+Unit=seawall-gas-watchdog.service
+
+[Install]
+WantedBy=timers.target
