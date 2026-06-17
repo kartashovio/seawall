@@ -152,11 +152,21 @@ export function FreezeDemo() {
       </p>
 
       <div className="fd-meta mono">
-        <span>recorded {recorded} · testnet</span>
+        <span>recorded {recorded} · testnet · objects:</span>
         <a href={objUrl(freeze.stressed.policyId)} target="_blank" rel="noreferrer">frozen policy</a>
         <a href={objUrl(freeze.stressed.vaultId)} target="_blank" rel="noreferrer">vault</a>
         <a href={objUrl(freeze.stressed.capId)} target="_blank" rel="noreferrer">GovernanceCap</a>
         <a href={objUrl(freeze.healthy.policyId)} target="_blank" rel="noreferrer">healthy policy</a>
+      </div>
+      <div className="fd-meta mono fd-setup">
+        <span>deploy receipts — healthy:</span>
+        <a href={txUrl(freeze.setup.healthyCreate)} target="_blank" rel="noreferrer">create</a>
+        <a href={txUrl(freeze.setup.healthyVault)} target="_blank" rel="noreferrer">vault</a>
+        <a href={txUrl(freeze.setup.healthyDeposit)} target="_blank" rel="noreferrer">deposit</a>
+        <span>· stressed:</span>
+        <a href={txUrl(freeze.setup.stressedCreate)} target="_blank" rel="noreferrer">create</a>
+        <a href={txUrl(freeze.setup.stressedVault)} target="_blank" rel="noreferrer">vault</a>
+        <a href={txUrl(freeze.setup.stressedDeposit)} target="_blank" rel="noreferrer">deposit</a>
       </div>
     </section>
   );
