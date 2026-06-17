@@ -41,7 +41,10 @@ export function RiskGauge({ score }: { score: number }) {
 
   return (
     <>
-      <svg viewBox="0 0 200 200" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
+      {/* viewBox padded to -12..212 (not 0..200): the rim labels sit at radius 102,
+          so "80" lands at x≈201 and "55" at y≈1 — both would clip against a 0..200
+          box (and .scorecard's overflow:hidden). The padding keeps the dial centered. */}
+      <svg viewBox="-12 -12 224 224" role="img" aria-label={`risk score ${Math.round(v)} of 100`}>
         <g transform="rotate(135 100 100)">
           {/* track */}
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--g-track)" strokeWidth={SW} strokeLinecap="round" {...seg(0, 100)} />
