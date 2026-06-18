@@ -15,7 +15,13 @@ createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
-        <WalletProvider autoConnect>
+        {/* The connect modal is populated by the Wallet Standard — dapp-kit auto-lists
+            every installed wallet that advertises a Sui signing feature; we never pick
+            one. Surface Slush (official Mysten wallet) first: it's the Sui-native signer
+            with a real testnet switcher, which is what the live override needs. Phantom
+            can also appear (it registers Sui) but its Sui support is mainnet-only, so it
+            can't sign this testnet demo — preferredWallets only REORDERS, it doesn't hide. */}
+        <WalletProvider preferredWallets={["Slush"]} autoConnect>
           <App />
         </WalletProvider>
       </SuiClientProvider>
