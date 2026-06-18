@@ -105,9 +105,9 @@ export function FooterLedger() {
                 <a className="who-name" href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98" target="_blank" rel="noreferrer">
                   Birzhan Iglik
                 </a>
-                <span className="who-loc">Kazakhstan</span>
+                <span className="who-loc">VIP Kazakh</span>
               </span>
-              <span className="role">architecture · mentorship · tests · ML-model consulting</span>
+              <span className="role">architecture · mentorship · tests · ML-engineer</span>
               <span className="who-links">
                 <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98" target="_blank" rel="noreferrer">
                   DeepSurge
