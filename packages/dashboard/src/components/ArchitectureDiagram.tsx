@@ -350,17 +350,20 @@ export function ArchitectureDiagram() {
 
       {/* ── (c) PRIMARY EDGES ─────────────────────────────────────────────── */}
       <g fill="none">
-        {/* E1 pyth → agent (dashed read, amber) */}
+        {/* E1 pyth → ML model (dashed read, amber). The feeds enter the MODEL,
+            which is what consumes them — the model then hands the agent a score
+            (E3). Each feed ALSO flows straight to the chain (E7/E8) for the
+            independent on-chain re-derivation. */}
         <path
-          d="M 254 124 C 290 140, 300 200, 318 218"
+          d="M 254 118 C 284 117, 300 116, 318 116"
           stroke={C.amber}
           strokeWidth={1.5}
           strokeDasharray="5 4"
           markerEnd="url(#arch-arrow-amber)"
         />
-        {/* E2 deepbook → agent (dashed read, amber) */}
+        {/* E2 deepbook → ML model (dashed read, amber) — rises into the model */}
         <path
-          d="M 254 208 C 290 216, 300 224, 318 230"
+          d="M 254 208 C 286 206, 304 150, 318 142"
           stroke={C.amber}
           strokeWidth={1.5}
           strokeDasharray="5 4"
@@ -419,9 +422,10 @@ export function ArchitectureDiagram() {
       </g>
 
       {/* ── EDGE LABELS (over fills, halo-backed) ──────────────────────────── */}
-      <EdgeLabel x={150} y={62 + 100} text="signed price feed" fill={C.amberText} />
-      {/* E2 label moved onto the path (between feeds zone and agent, off the node) */}
-      <EdgeLabel x={285} y={210} text="L2 book + CEX depth" fill={C.amberText} />
+      {/* E1/E2 read labels — in the feeds↔model gutter, attached to the arrows
+          that now terminate on the ML model. */}
+      <EdgeLabel x={286} y={104} text="signed price feed" fill={C.amberText} />
+      <EdgeLabel x={286} y={200} text="L2 book + CEX depth" fill={C.amberText} />
       <EdgeLabel x={450} y={176} text="0–100 score (advisory)" fill={C.ink} />
       {/* E4 hero label, two-line lowered onto the off-chain↔on-chain seam */}
       <EdgeLabel x={640} y={178} text="same-PTB: post Pyth +" fill={C.suiBlueText} bold />

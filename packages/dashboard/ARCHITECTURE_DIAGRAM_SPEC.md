@@ -145,8 +145,8 @@ Markers: define one `<marker id="arrow">` (solid `ink`), `id="arrow-blue"` (`sui
 
 | # | from → to | label | style | route hint |
 |---|---|---|---|---|
-| E1 | `pyth` → `agent` | "signed price feed" | dashed read, amber | Z1→Z2, gentle right |
-| E2 | `deepbook` → `agent` | "L2 book + CEX depth" | dashed read, amber | Z1→Z2 |
+| E1 | `pyth` → `ml` | "signed price feed" | dashed read, amber | Z1→Z2, into the model (the feeds' consumer) |
+| E2 | `deepbook` → `ml` | "L2 book + CEX depth" | dashed read, amber | Z1→Z2, rises into the model |
 | E3 | `ml` → `agent` | "0–100 score (advisory)" | solid 2px `ink` | within Z2, down |
 | E4 | `agent` → `policy` | **"same-PTB: post Pyth + submit ParamRequest (sender-gated)"** | **solid 3px trust-critical `sui-blue`** | Z2→Z3, the hero edge; route across mid-canvas y≈196 |
 | E5 | `keeper` → `policy` | "permissionless poke · 5 min" | solid 2px `sui-blue` | Z2→Z3, lower y≈330 |
