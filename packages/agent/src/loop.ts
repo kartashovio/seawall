@@ -187,6 +187,10 @@ export class Engine {
       row?.book.ok && typeof pyth === "number" && pyth > 0 && row.book.mid != null
         ? 1e4 * (Math.abs(pyth - row.book.mid) / pyth)
         : undefined;
+    // The Pyth price that fed divBps — surfaced for the divergence chart's two-feed
+    // view (Pyth oracle vs DeepBook book.mid). Display only; never on the decision
+    // path. Omitted when there is no usable price (same gate as divBps).
+    const pythPrice = typeof pyth === "number" && pyth > 0 ? pyth : undefined;
 
     if (scene.mode === "malicious") {
       // a compromised agent ignores the corridor + ratchet and asks below floor.
@@ -196,7 +200,7 @@ export class Engine {
       const hot = { overall: 100, solvency: 100, liquidity: 100 };
       if (snap.paused) {
         return {
-          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false, book: row?.book, divBps },
+          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false, book: row?.book, divBps, pythPrice },
           cex,
         };
       }
@@ -214,6 +218,7 @@ export class Engine {
             clamped: r.clamped.length,
             book: row?.book,
             divBps,
+            pythPrice,
           },
           cex,
         };
@@ -221,7 +226,7 @@ export class Engine {
         // submit failed (e.g. out of gas) — still emit the score so the gauge lives.
         console.error(`[submit] malicious-scene submit failed, score-only: ${(e as Error).message}`);
         return {
-          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false, book: row?.book, divBps },
+          result: { ...this.base(nowMs, "malicious", snap, hot, d2, contributions), req: mal, applied, sent: false, book: row?.book, divBps, pythPrice },
           cex,
         };
       }
@@ -276,6 +281,7 @@ export class Engine {
         clamped,
         book: row?.book,
         divBps,
+        pythPrice,
       },
       cex,
     };

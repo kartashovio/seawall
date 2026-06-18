@@ -248,9 +248,9 @@ function HistoryChart({ history, kind }: { history: AgentTickDTO[]; kind: Kind }
 // see any freeze (paused) shaded in. The score never freezes — only this measured
 // divergence does, at the 5% line. Auto-scaled so the live (small) gap is legible,
 // with the 1% caution line shown and the 5% freeze line marked above. Display only.
-const SMT = 22; // strip top (label)
+const SMT = 20; // strip top (label)
 const SMB = 20; // strip bottom (time)
-const SH = 104;
+const SH = 132; // taller: a left $ price axis (Pyth + DeepBook mid) over the bps axis
 const SPH = SH - SMT - SMB;
 
 function DivStrip({ history }: { history: AgentTickDTO[] }) {
@@ -266,6 +266,38 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
   const sx = (i: number): number => ML + (n <= 1 ? 0 : (i / (n - 1)) * PW);
   const yD = (v: number): number => SMT + (1 - clamp(v, 0, dmax) / dmax) * SPH;
   const showFreeze = DIV.freezeBps <= dmax;
+
+  // The TWO live feeds the divergence is computed from (must-have #1: live price
+  // feed). Pyth oracle price + DeepBook CLOB mid share a LEFT $ axis; the visible
+  // gap between them IS the divergence line below. Domain = min/max of both series
+  // + 18% pad (auto-expands during an event, never anchored at 0). Old ticks lack
+  // pythPrice → that line segments cleanly (same break-on-null as divergence).
+  const pyth = ticks.map((t) => (typeof t.pythPrice === "number" ? t.pythPrice : null));
+  const bmid = ticks.map((t) => (t.book?.ok && typeof t.book.mid === "number" ? t.book.mid : null));
+  const priceVals = [...pyth, ...bmid].filter((v): v is number => v != null);
+  const hasPrice = priceVals.length > 0;
+  const pMin = hasPrice ? Math.min(...priceVals) : 0;
+  const pMax = hasPrice ? Math.max(...priceVals) : 1;
+  const pPad = (pMax - pMin) * 0.18 || 0.002; // never zero-height
+  const pLo = pMin - pPad;
+  const pHi = pMax + pPad;
+  const yP = (v: number): number => SMT + (1 - clamp((v - pLo) / (pHi - pLo), 0, 1)) * SPH;
+  const priceSegs = (series: Array<number | null>): Array<Array<[number, number]>> => {
+    const out: Array<Array<[number, number]>> = [];
+    let c: Array<[number, number]> = [];
+    for (let i = 0; i < n; i++) {
+      if (series[i] == null) {
+        if (c.length) out.push(c);
+        c = [];
+      } else {
+        c.push([sx(i), yP(series[i] as number)]);
+      }
+    }
+    if (c.length) out.push(c);
+    return out;
+  };
+  const pythSegs = priceSegs(pyth);
+  const bmidSegs = priceSegs(bmid);
 
   // contiguous frozen ranges (paused) → coral shading
   const freezes: Array<[number, number]> = [];
@@ -306,7 +338,18 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
   return (
     <div className="rc-chart rc-divstrip">
       <div className="rc-substrip-head">
-        <span className="rc-substrip-lbl">↳ testnet · divergence</span>
+        <span className="rc-substrip-lbl">↳ testnet · price & divergence</span>
+        <span className="rc-divstrip-legend">
+          <span className="rc-leg">
+            <span className="rc-leg-line rc-leg-pyth" /> Pyth
+          </span>
+          <span className="rc-leg">
+            <span className="rc-leg-line rc-leg-book" /> DeepBook mid
+          </span>
+          <span className="rc-leg">
+            <span className="rc-leg-line rc-leg-div" /> divergence
+          </span>
+        </span>
         <span className="tag tag-contract">contract-measured · Pyth↔DeepBook</span>
       </div>
       <div className="rc-frame rc-frame--strip" onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
@@ -315,6 +358,26 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
           {freezes.map(([a, b], i) => (
             <rect key={i} x={sx(a)} y={SMT} width={Math.max(1.5, sx(b) - sx(a))} height={SPH} fill="var(--coral-wash)" />
           ))}
+          {/* ── price layer (left $ axis): DeepBook CLOB mid (cyan = the on-chain book
+                the contract re-reads) + Pyth oracle (neutral ink — a trusted oracle,
+                deliberately NOT amber/agent). Their gap = the divergence below. ── */}
+          {bmidSegs.map((s, i) => (
+            <polyline key={`bm-${i}`} points={polyline(s)} fill="none" stroke="var(--cyan)" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          ))}
+          {pythSegs.map((s, i) => (
+            <polyline key={`py-${i}`} points={polyline(s)} fill="none" stroke="var(--ink-dim)" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" opacity="0.9" />
+          ))}
+          {hasPrice &&
+            [pLo + (pHi - pLo) * 0.12, (pLo + pHi) / 2, pHi - (pHi - pLo) * 0.12].map((v, i) => (
+              <text key={`pax-${i}`} x={ML - 4} y={yP(v)} fontSize="8" fontFamily="var(--font-mono)" fill="var(--muted-deep)" textAnchor="end" dominantBaseline="middle">
+                ${v.toFixed(3)}
+              </text>
+            ))}
+          {!hasPrice && (
+            <text x={ML + PW / 2} y={SMT + SPH / 2} fontSize="9" fontFamily="var(--font-mono)" fill="var(--muted-deep)" textAnchor="middle">
+              awaiting oracle price feed
+            </text>
+          )}
           {/* caution + (optional) freeze reference lines */}
           <line x1={ML} y1={yD(DIV.cautionBps)} x2={ML + PW} y2={yD(DIV.cautionBps)} stroke="var(--amber-line)" strokeWidth="1" strokeDasharray="2 4" vectorEffect="non-scaling-stroke" />
           <text x={ML + PW + 5} y={yD(DIV.cautionBps)} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--amber-dim)" dominantBaseline="middle">
@@ -342,17 +405,31 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
               {hhmm(ticks[i].ts)}
             </text>
           ))}
-          {/* hover */}
-          {hi != null && divs[hi] != null && (
+          {/* hover (shows on any tick — prices can exist before any divergence) */}
+          {hi != null && (
             <g>
               <line x1={sx(hi)} y1={SMT} x2={sx(hi)} y2={SMT + SPH} stroke="var(--ink-dim)" strokeWidth="1" strokeDasharray="2 3" opacity="0.5" vectorEffect="non-scaling-stroke" />
-              <circle cx={sx(hi)} cy={yD(divs[hi] as number)} r="3" fill="var(--coral)" stroke="var(--ground-2)" strokeWidth="1.2" />
+              {bmid[hi] != null && <circle cx={sx(hi)} cy={yP(bmid[hi] as number)} r="2.6" fill="var(--cyan)" stroke="var(--ground-2)" strokeWidth="1" />}
+              {pyth[hi] != null && <circle cx={sx(hi)} cy={yP(pyth[hi] as number)} r="2.6" fill="var(--ink-dim)" stroke="var(--ground-2)" strokeWidth="1" />}
+              {divs[hi] != null && <circle cx={sx(hi)} cy={yD(divs[hi] as number)} r="3" fill="var(--coral)" stroke="var(--ground-2)" strokeWidth="1.2" />}
             </g>
           )}
         </svg>
         {hi != null && (
           <div className={`rc-tip ${flip ? "rc-tip--left" : ""}`} style={{ left: `${tipLeftPct}%` }}>
             <div className="rc-tip-time">{stamp(ticks[hi].ts)}</div>
+            {pyth[hi] != null && (
+              <div className="rc-tip-row">
+                <span className="rc-sw" style={{ background: "var(--ink-dim)" }} />
+                Pyth<b>${(pyth[hi] as number).toFixed(4)}</b>
+              </div>
+            )}
+            {bmid[hi] != null && (
+              <div className="rc-tip-row">
+                <span className="rc-sw" style={{ background: "var(--cyan)" }} />
+                DeepBook mid<b>${(bmid[hi] as number).toFixed(4)}</b>
+              </div>
+            )}
             <div className="rc-tip-row">
               <span className="rc-sw" style={{ background: "var(--coral)" }} />
               divergence<b>{divs[hi] != null ? `${(divs[hi] as number).toFixed(1)} bps` : "—"}</b>
@@ -362,8 +439,8 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
         )}
       </div>
       <p className="rc-divstrip-note">
-        The score never freezes — only this <b>contract-measured</b> divergence does, when it crosses <b>{DIV.freezeBps} bps</b> (5%) on
-        the contract's own on-chain reading.
+        The gap between the two price lines <b>is</b> the divergence below it (1e4·|Pyth−mid|/Pyth). The score never freezes — only
+        this <b>contract-measured</b> divergence does, when it crosses <b>{DIV.freezeBps} bps</b> (5%) on the contract's own on-chain reading.
       </p>
     </div>
   );

@@ -72,7 +72,7 @@ export function App() {
           <div className="brand-text">
             <div className="brand-line">
               <h1>Seawall</h1>
-              <span className={`env-pill env-${enforcedEnv}`}>ENFORCING ▸ {enforcedEnv.toUpperCase()}</span>
+              <span className={`env-pill env-${enforcedEnv}`}>DEPLOYED ON {enforcedEnv.toUpperCase()}</span>
             </div>
             <p className="sub">Autonomous Risk Guardian</p>
           </div>
@@ -111,10 +111,13 @@ export function App() {
 
       {/* C — the two seas */}
       <section className="band">
-        <div className="band-head">
+        <div className="band-head band-head--notes">
           <span className="kicker">The two seas</span>
           <span className="lede">
-            one unchanged model, two markets — the enforced testnet score + a read-only mainnet reference
+            the system is currently deployed on testnet only — mainnet is shown here purely for demonstration / reference
+          </span>
+          <span className="band-note">
+            the model is currently tuned to SUI — covering other assets requires re-fitting the ML model
           </span>
         </div>
         {/* Calibration state — ABOVE the two scores (it gates whether they're trusted yet) */}

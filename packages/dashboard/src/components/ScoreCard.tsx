@@ -32,7 +32,7 @@ const NOTE = {
 
 // A compact 0→freeze divergence scale with caution + freeze marks and the live
 // reading placed on it. The freeze threshold sits at the right end.
-function DivMeter({ divBps, ok }: { divBps?: number; ok: boolean }) {
+function DivMeter({ divBps, ok, enforced }: { divBps?: number; ok: boolean; enforced: boolean }) {
   const { cautionBps, freezeBps } = DIV;
   if (!ok || divBps == null) {
     return <div className="divmeter-cap muted">Pyth↔DeepBook divergence: no signal</div>;
@@ -52,7 +52,11 @@ function DivMeter({ divBps, ok }: { divBps?: number; ok: boolean }) {
         Pyth↔DeepBook divergence <b style={{ color: col }}>{divBps.toFixed(1)} bps</b> <span className="divmeter-state">{state}</span> · caution ≥{" "}
         {cautionBps} · <span className="divmeter-frz">contract-freeze ≥ {freezeBps}</span> bps
       </div>
-      <div className="divmeter-note">The contract halts the market on its own measured divergence — the AI risk score itself never freezes.</div>
+      <div className="divmeter-note">
+        {enforced
+          ? "The contract halts the market on its own measured divergence — the AI risk score itself never freezes."
+          : "Reference only — the read-only mainnet observatory enforces nothing; no freeze here."}
+      </div>
     </div>
   );
 }
@@ -67,21 +71,37 @@ export function ScoreCard({ env, enforced, score, divBps, book, available = true
       <h2 className="scorecard-title">
         {env.toUpperCase()}{" "}
         <span className="title-tags">
-          <span className="tag tag-agent">ML · advisory</span>
+          {/* "ML · advisory" now heads GROUP A below; only the card-level
+              calibrating state stays pinned to the title. */}
           {calibrating && <span className="tag tag-cal">calibrating</span>}
         </span>
       </h2>
       {available ? (
         <>
+          {/* ── GROUP A — the off-chain agent's UNTRUSTED advisory score ── */}
+          <div className="sc-group-head sc-group--a">
+            <span className="sc-group-sw" />
+            <span className="sc-group-lbl">ML · advisory</span>
+            <span className="sc-group-rule" />
+            <span className="sc-group-sub">off-chain · never trusted</span>
+          </div>
           <RiskGauge score={book?.ok === false ? 0 : score} />
           {calibrating && <div className="cal-note">model still warming up — this reading isn't trusted yet</div>}
-          <div className="info-row" style={{ marginTop: 10 }}>
-            <DivMeter divBps={divBps} ok={ok} />
+
+          {/* ── GROUP B — the contract's OWN on-chain measurement ── */}
+          <div className="sc-group-head sc-group--b">
+            <span className="sc-group-sw" />
+            <span className="sc-group-lbl">on-chain</span>
+            <span className="sc-group-rule" />
+            <span className="sc-group-sub">{enforced ? "contract-measured · the freeze trigger" : "contract-measured · not enforced"}</span>
+          </div>
+          <div className="info-row" style={{ marginTop: 0 }}>
+            <DivMeter divBps={divBps} ok={ok} enforced={enforced} />
             <div className="muted" style={{ fontSize: 12.5, marginTop: 7 }}>
               book mid: {mid} · spread: {spread}
             </div>
           </div>
-          <div className="gauge-cap role-note" style={{ marginTop: 10 }}>
+          <div className="gauge-cap role-note" style={{ marginTop: 14 }}>
             {enforced ? NOTE.enforced : NOTE.readonly}
           </div>
         </>

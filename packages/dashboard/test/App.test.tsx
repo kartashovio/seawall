@@ -84,8 +84,8 @@ describe("App — enforcedEnv=testnet lights the testnet card + header pill", ()
     expect(mainnetSide).toContain("READ-ONLY · OBSERVING");
   });
 
-  it("the header pill reads ENFORCING ▸ TESTNET", () => {
-    expect(html).toContain("ENFORCING ▸ TESTNET");
+  it("the header pill reads DEPLOYED ON TESTNET", () => {
+    expect(html).toContain("DEPLOYED ON TESTNET");
     expect(html).toContain("env-pill");
   });
 
@@ -112,8 +112,8 @@ describe("App — enforcedEnv=mainnet SWAPS the roles with zero code change", ()
     expect(testnetSide).toContain("READ-ONLY · OBSERVING");
   });
 
-  it("the header pill flips to ENFORCING ▸ MAINNET", () => {
-    expect(html).toContain("ENFORCING ▸ MAINNET");
+  it("the header pill flips to DEPLOYED ON MAINNET", () => {
+    expect(html).toContain("DEPLOYED ON MAINNET");
   });
 });
 
@@ -121,7 +121,7 @@ describe("App — defaults + the old hardcode is gone", () => {
   it("before the first tick (latest=null) defaults to testnet enforced", () => {
     latestRef.current = null;
     const html = renderToStaticMarkup(<App />);
-    expect(html).toContain("ENFORCING ▸ TESTNET");
+    expect(html).toContain("DEPLOYED ON TESTNET");
     const { testnetSide, mainnetSide } = splitCards(html);
     expect(testnetSide).toContain("is-enforced");
     expect(mainnetSide).toContain("is-readonly");

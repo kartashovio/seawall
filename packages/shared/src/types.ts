@@ -93,6 +93,13 @@ export interface AgentTickDTO {
   // tick (book.ok===false / dead branch) omits it and the card reads "no signal".
   // DISPLAY ONLY — read off already-fetched row data; never on the decision path.
   divBps?: number;
+  // The live testnet Pyth oracle price ($, expo already applied) at this tick —
+  // the SAME `row.values.pyth` that feeds divBps (divBps = 1e4·|pyth−book.mid|/pyth).
+  // Surfaced so the divergence chart can draw BOTH feeds it is computed from (Pyth
+  // oracle vs DeepBook book.mid); the visible gap between them IS the divergence.
+  // OPTIONAL: omitted on a book loss-of-signal / dead tick (no usable price).
+  // DISPLAY ONLY — never on the decision path (same guarantee as divBps).
+  pythPrice?: number;
   // Which environment the agent ENFORCES on (submits CAUTION ParamRequests to).
   // The dashboard lights the matching card's ENFORCED ribbon + the header pill
   // from this value. It is a STATUS MIRROR of agent config — NEVER a control
