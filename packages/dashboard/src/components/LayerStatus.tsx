@@ -1,20 +1,25 @@
-// The 3-layer enforcement ladder — promoted to the HERO of the merged "How it
-// works" band. Three self-documenting RUNGS, each carrying its own actor (who may
-// pull it), trigger (on what), and a why-safe line — so the old prose steps + the
-// separate "guards" block fold INTO the live artifact, authored exactly once.
+// The 3-layer enforcement ladder — the HERO of the merged "How it works" band.
+// Redesigned as a true ESCALATION LADDER on one signal (Pyth↔DeepBook divergence):
 //
-// Three LIVE states per rung, never just on/off — so a calm steady-state still
-// reads "armed and watching", never "optional/dead" (the framing must-have #3
-// forbids):
-//   L1  always ENFORCING        (the contract · agent-independent · per-borrow)
-//   L2  ARMED · standing by  →  TIGHTENING · enforced   (the agent, contract-clamped)
-//   L3  ARMED · contract-watching  →  FROZEN            (the contract ALONE)
+//   • A number-tile per rung carries the ACTOR identity at all times (cyan = the
+//     contract · amber = the untrusted agent · coral = frozen). Top→bottom the tiles
+//     read contract · agent · contract — the agent is SANDWICHED, never atop the ladder.
+//   • A 2px ascent spine connects L1→L2 behind the rail and DIES at L2's base. L3 has
+//     NO spine; a full-width "AGENT STOPS HERE" gate-band severs it. The freeze is the
+//     contract's alone — nothing visual connects the agent's rung to it.
+//   • Three LIVE states per rung, never on/off — a calm market still reads "armed &
+//     watching", never "optional/dead" (framing must-have #3):
+//       L1  always ENFORCING            (the contract · agent-independent · per-borrow)
+//       L2  ARMED  →  TIGHTENING        (the agent originates, the contract clamps)
+//       L3  WATCHING  →  FROZEN         (the contract ALONE)
+//   • L2 promotes the live RATCHET (maxLTV + borrowCap, baseline→current, with a
+//     corridor mini-track) — the glass-box proof the one-way clamp actually moved.
 //
 // FREEZE-ATTRIBUTION INVARIANT: L3 lights purely from `paused` (the contract's own
-// re-derived Pyth↔DeepBook divergence ≥ T, or a not-ok book). There is NO
-// connector/arrow/gradient bridging L2→L3; the L3 actor chip is the contract; a
-// scoped coral tab restates "freeze: contract-only". The advisory score is never
-// consulted here — keeping amber (agent) and coral (contract) distinct is load-bearing.
+// re-derived Pyth↔DeepBook divergence ≥ T, or a not-ok book). There is NO connector
+// bridging L2→L3; the advisory score is never consulted here — keeping amber (agent)
+// and coral (contract) distinct is load-bearing. The advisory 0–100 score never
+// appears as a value; the only reference is the "score · advisory only" caption.
 import type { AgentTickDTO } from "@seawall/shared";
 import type { GuardianEventRow } from "../abi";
 import { DIV } from "../config";
@@ -38,8 +43,24 @@ export function LayerStatus({
   // to the corridor). The advisory score is never consulted.
   const agentTightened = !!tick && tick.applied.maxLtv < tick.baseline.maxLtv;
 
-  // Live corridor headroom — glass-box: what's applied now vs the DAO baseline.
-  const headroom = tick ? `maxLTV ${pct(tick.applied.maxLtv)} / ${pct(tick.baseline.maxLtv)}` : null;
+  // The live ratchet rows — what's applied now vs the DAO baseline, per param, with
+  // the share of the [floor, baseline] corridor the ratchet has removed (0 at
+  // baseline → 1 at floor). Both params are bps; pct() renders them as percentages.
+  const ratchet = tick
+    ? (["maxLtv", "borrowCap"] as const).map((p) => {
+        const base = tick.baseline[p];
+        const fl = tick.floor[p];
+        const app = tick.applied[p];
+        return {
+          p,
+          label: p === "maxLtv" ? "maxLTV" : "borrowCap",
+          base,
+          app,
+          tightened: app < base,
+          fill: base > fl ? Math.min(1, Math.max(0, (base - app) / (base - fl))) : 0,
+        };
+      })
+    : null;
 
   // Time since the last on-chain action (events are newest-first).
   const last = events[0];
@@ -47,21 +68,23 @@ export function LayerStatus({
 
   return (
     <section className="card layers">
+      <div className="rung-axis-cap">divergence</div>
       <div className="lamps">
-        {/* L1 — the always-on inline floor. The contract, agent-independent: it is
-            the seatbelt every borrow/withdraw self-checks, working even if the agent
-            is dead. Always ENFORCING. */}
+        {/* L1 — the always-on inline floor. The contract, agent-independent: the
+            seatbelt every borrow/withdraw self-checks, working even if the agent is
+            dead. Always ENFORCING. */}
         <div className="lamp on l1">
-          <span className="led" />
-          <span className="rung-label">L1</span>
+          <div className="rung-tile">
+            <span className="led" />
+            <span className="rung-num">L1</span>
+          </div>
           <div className="rung-body">
-            <div className="rung-row1">
+            <div className="rung-head">
               <span className="lt">Inline floor</span>
               <span className="rung-state st-on-cyan">enforcing</span>
-              <span className="tag tag-contract rung-chip">the contract</span>
             </div>
-            <div className="rung-trigger">every borrow &amp; withdraw re-runs the guardian</div>
-            <div className="why-safe">works even if the agent is dead</div>
+            <div className="rung-trigger">the contract re-runs on every borrow and withdraw</div>
+            <div className="why-safe">holds even if the agent goes offline</div>
           </div>
         </div>
 
@@ -69,41 +92,73 @@ export function LayerStatus({
             applied value, which the contract clamped to [floor, baseline]. Amber = agent.
             Calm = ARMED (taut), not dim — it is load-bearing, not optional. */}
         <div className={`lamp l2 ${agentTightened ? "on" : "armed"}`}>
-          <span className="led" />
-          <span className="rung-label">L2</span>
+          <div className="rung-tile">
+            <span className="led" />
+            <span className="rung-num">L2</span>
+          </div>
           <div className="rung-body">
-            <div className="rung-row1">
-              <span className="lt">CAUTION limits</span>
+            <div className="rung-head">
+              <span className="lt">Caution limits</span>
               <span className={`rung-state ${agentTightened ? "st-on-amber" : "st-armed-amber"}`}>
-                {agentTightened ? "tightening · enforced" : "armed · standing by"}
+                {agentTightened ? "tightening" : "armed"}
               </span>
+            </div>
+            {ratchet && (
+              <div className="ratchet">
+                {ratchet.map((r) => (
+                  <div className="ratchet-row" key={r.p}>
+                    <span className="ratchet-k">{r.label}</span>
+                    <span className="ratchet-val">
+                      {r.tightened ? (
+                        <>
+                          <span className="base">{pct(r.base)}</span>
+                          <span className="arr">→</span>
+                          <span className="now">{pct(r.app)}</span>
+                        </>
+                      ) : (
+                        <span className="now-calm">{pct(r.app)}</span>
+                      )}
+                    </span>
+                    <div className="ratchet-track">
+                      <div className="ratchet-fill" style={{ width: `${r.fill * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+                {!agentTightened && <div className="ratchet-calm">at baseline, not tightening</div>}
+              </div>
+            )}
+            <div className="advisory-cap">
               <span className="advisory-pill">score · advisory only</span>
-              <span className="tag tag-agent rung-chip">the agent</span>
             </div>
-            <div className="rung-trigger">the agent originates the tightening as risk rises</div>
-            <div className="why-safe">
-              contract clamps it to DAO bounds — a one-way ratchet, only safer
-              {headroom && <span className="rung-headroom">{headroom}</span>}
+            <div className="rung-trigger">
+              the agent requests a tighter limit as risk rises; the contract applies it
             </div>
+            <div className="why-safe">the contract clamps it inside DAO bounds — one-way, only safer</div>
           </div>
         </div>
 
-        {/* L3 — FROZEN hard stop. CONTRACT-ONLY: lights purely from `paused`, on the
+        {/* gate-band — the severance made spatial: the agent's rung ends HERE; the
+            freeze below is the contract's alone. A dashed divider, never a connector. */}
+        <div className="rung-gate">contract-only · agent stops here</div>
+
+        {/* L3 — the market freeze. CONTRACT-ONLY: lights purely from `paused`, on the
             contract's own divergence ≥ T or a not-ok book. Coral = contract. The agent
             has NO role in the freeze — deliberately no agent attribution on this rung. */}
         <div className={`lamp l3 ${paused ? "on" : "armed"}`}>
-          <span className="led" />
-          <span className="rung-label">L3</span>
+          <div className="rung-tile">
+            <span className="led" />
+            <span className="rung-num">L3</span>
+          </div>
           <div className="rung-body">
-            <div className="rung-row1">
-              <span className="lt">FROZEN</span>
+            <div className="rung-head">
+              <span className="lt">Market freeze</span>
               <span className={`rung-state ${paused ? "st-on-coral" : "st-armed-coral"}`}>
-                {paused ? "frozen" : "armed · contract-watching"}
+                {paused ? "frozen" : "watching"}
               </span>
-              <span className="freeze-tab">freeze: contract-only</span>
-              <span className="tag tag-contract rung-chip">the contract</span>
             </div>
-            <div className="rung-trigger">its own divergence ≥ {FREEZE_PCT}% or the book unusable</div>
+            <div className="rung-trigger">
+              the contract&apos;s own divergence hits {FREEZE_PCT}%, or the book goes unusable
+            </div>
             <div className="why-safe">only the DAO unfreezes</div>
           </div>
         </div>

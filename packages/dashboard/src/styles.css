@@ -1706,21 +1706,35 @@ body.frozen .posture {
 
 /* ============================================================================
    B (hero) — THE LIVE LADDER (3-layer enforcement, promoted into "How it works")
-   Three self-documenting rungs. Each rung's own actor colour labels it — cyan
-   (contract) · amber (agent) · coral (frozen) — via a left edge + LED + chip;
-   NO connecting rail/gradient between rungs, so nothing reads as "agent → freeze".
-   Three live states: ENFORCING (lit) · ARMED (taut outline, not dim) · the calm
-   armed state must never look optional/dead.
+   A vertical escalation ladder on ONE signal (Pyth↔DeepBook divergence). Each rung's
+   actor colour rides its number-tile — cyan (contract) · amber (agent) · coral
+   (frozen); top→bottom the tiles read contract · agent · contract. A 2px spine
+   connects L1→L2 and DIES at L2; a dashed "AGENT STOPS HERE" gate severs L3, so
+   nothing reads as "agent → freeze". L2 promotes the live ratchet (maxLTV + borrowCap
+   baseline→current + corridor track). Three live states: ENFORCING (lit) · ARMED
+   (taut outline, not dim) · the calm armed state must never look optional/dead.
    ========================================================================== */
 .lamps {
+  position: relative;
+  --lamp-gap: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--lamp-gap);
+}
+/* the ladder's axis label — names the single signal the three rungs sit on */
+.rung-axis-cap {
+  padding-left: 20px;
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-deep);
 }
 .lamp {
   position: relative;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
   align-items: start;
   gap: 14px;
   padding: 16px 18px;
@@ -1731,13 +1745,68 @@ body.frozen .posture {
   border-radius: var(--r-ctl);
   transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
 }
+/* ascent spine behind the rail — connects L1→L2 (tile-centre to tile-centre) and
+   DIES at L2. L3 gets NONE: the freeze is a separate contract-only rung, never
+   reached from the agent. Neutral hairline, never a gradient/arrow. */
+.lamp.l1::before {
+  content: "";
+  position: absolute;
+  left: 35px;
+  top: 34px;
+  bottom: calc(-1 * var(--lamp-gap));
+  width: 2px;
+  background: var(--line-lit);
+  z-index: 0;
+}
+.lamp.l2::before {
+  content: "";
+  position: absolute;
+  left: 35px;
+  top: 0;
+  height: 34px;
+  width: 2px;
+  background: var(--line-lit);
+  z-index: 0;
+}
+/* the number-tile carries actor identity at ALL times (lit or armed): wash fill,
+   actor-line border, actor-dim numeral. Top→bottom: contract · agent · contract. */
+.rung-tile {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.lamp.l1 .rung-tile {
+  background: var(--cyan-wash);
+  border-color: var(--cyan-line);
+  color: var(--cyan-dim);
+}
+.lamp.l2 .rung-tile {
+  background: var(--amber-wash);
+  border-color: var(--amber-line);
+  color: var(--amber-dim);
+}
+.lamp.l3 .rung-tile {
+  background: var(--coral-wash);
+  border-color: var(--coral-line);
+  color: var(--coral-dim);
+}
 .lamp .led {
-  width: 11px;
-  height: 11px;
-  margin-top: 5px;
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--line-lit);
-  flex: none;
   transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 /* ── ENFORCING (lit) states ─────────────────────────────────────────────── */
@@ -1786,41 +1855,25 @@ body.frozen .posture {
   background: transparent;
   box-shadow: inset 0 0 0 2px var(--coral-dim);
 }
-/* a touch more air before the contract-only freeze rung — reads as a separate
-   rung, never an escalation flowing out of L2 */
-.lamp.l3 {
-  margin-top: 6px;
-}
 /* ── rung internals ─────────────────────────────────────────────────────── */
-.rung-label {
-  margin-top: 2px;
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
 .rung-body {
   min-width: 0;
 }
-.rung-row1 {
+.rung-head {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
-.rung-row1 .lt {
+.rung-head .lt {
   font-family: var(--font-display);
   font-optical-sizing: auto;
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
 }
-.rung-chip {
-  margin-left: auto;
-  white-space: nowrap;
-}
 .rung-state {
+  margin-left: auto;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -1850,24 +1903,100 @@ body.frozen .posture {
   color: var(--coral-dim);
   border: 1px solid var(--coral-line);
 }
-.advisory-pill,
-.freeze-tab {
+.advisory-pill {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   border-radius: 999px;
   padding: 1px 8px;
   white-space: nowrap;
-}
-.advisory-pill {
   color: var(--muted);
   background: var(--ground-2);
   border: 1px solid var(--line);
 }
-.freeze-tab {
+.advisory-cap {
+  margin-top: 8px;
+}
+/* L2 live ratchet — the promoted glass-box proof: the [floor, baseline] corridor
+   clamped to its CURRENT value, both params, from real bps tick fields. Amber is
+   the SOLE hue on the agent's rung (any bound mark stays amber, never coral). */
+.ratchet {
+  margin: 8px 0 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--amber-line);
+  border-radius: var(--r-ctl);
+  background: var(--amber-wash);
+}
+.ratchet-row {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+.ratchet-row + .ratchet-row {
+  margin-top: 7px;
+}
+.ratchet-k {
+  color: var(--muted);
+}
+.ratchet-val {
+  justify-self: end;
+}
+.ratchet-val .base {
+  color: var(--ink-dim);
+}
+.ratchet-val .arr {
+  margin: 0 6px;
+  color: var(--muted-deep);
+}
+.ratchet-val .now {
+  color: var(--amber-dim);
   font-weight: 600;
-  color: var(--coral-dim);
-  background: var(--coral-wash);
-  border: 1px solid var(--coral-line);
+}
+.ratchet-val .now-calm {
+  color: var(--ink-dim);
+}
+.ratchet-track {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--amber-line);
+  overflow: hidden;
+}
+.ratchet-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--amber-glow);
+  transition: width 0.4s ease;
+}
+.ratchet-calm {
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+/* the severance band — the agent rung ends here; the freeze below is the contract's
+   alone. A dashed divider, never a connector (must-fix: no agent→freeze path). */
+.rung-gate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rung-gate::before,
+.rung-gate::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--line);
 }
 .rung-trigger {
   margin-top: 5px;
@@ -1880,11 +2009,6 @@ body.frozen .posture {
   font-size: var(--fs-xs);
   line-height: 1.45;
   color: var(--muted);
-}
-.rung-headroom {
-  margin-left: 8px;
-  font-family: var(--font-mono);
-  color: var(--ink-dim);
 }
 .timer {
   margin-top: 18px;
