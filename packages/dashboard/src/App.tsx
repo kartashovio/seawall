@@ -13,7 +13,7 @@ import { ConnectBand } from "./components/ConnectBand";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { FreezeDemo } from "./components/FreezeDemo";
-import { GovernancePanel } from "./components/GovernancePanel";
+import { DaoConsoleBand } from "./components/DaoConsoleBand";
 import { AttackPanel } from "./components/AttackPanel";
 import { LayerStatus } from "./components/LayerStatus";
 import { FooterLedger } from "./components/FooterLedger";
@@ -210,11 +210,13 @@ export function App() {
           <span className="kicker">On-chain proof</span>
           <span className="lede">every action re-derived + enforced on testnet — the receipts, explorer-linked</span>
         </div>
-        <div className="proof">
-          <ActionLog events={events} />
-          <GovernancePanel paused={paused} />
-        </div>
+        <ActionLog events={events} />
       </section>
+
+      {/* F1.5 — human override: the standalone LIVE DAO console (must-have #4).
+          Pulled out of "On-chain proof"; sits right before the recorded freeze
+          cycle so a judge presses the real Unfreeze button, then sees it recorded. */}
+      <DaoConsoleBand paused={paused} />
 
       {/* F2 — the freeze, recorded on-chain (a verifiable witness, not interactive) */}
       <section className="band">

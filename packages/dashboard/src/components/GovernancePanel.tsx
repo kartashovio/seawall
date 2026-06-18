@@ -1,16 +1,15 @@
-// Must-have #4: human override — and the full DAO surface the &GovernanceCap
-// gates. Every control here calls a `governance_*` fn that takes the OWNED
+// The LIVE human-override console — ST1 must-have #4. The hero of the "Human
+// override" band. Every control calls a `governance_*` fn that takes the OWNED
 // &GovernanceCap as its 2nd arg, so each is disabled unless the connected wallet
-// actually holds that cap. This proves the authority to unfreeze / re-anchor the
-// corridor / rotate the agent lives in the owned object, never in the shared
-// policy (and never in the agent).
+// holds that cap. The authority to unfreeze / re-anchor the corridor / rotate the
+// agent lives in the owned object — the agent can't reach it, and a shared-object
+// call can't bypass it.
 //
-//   • Unfreeze        governance_unfreeze       — the only way out of a hard stop
-//   • Re-anchor       governance_set_corridor   — move the [floor, baseline] bounds
-//   • Rotate agent    governance_rotate_agent   — swap the registered submitter
-//
-// The corridor is the ONLY place a limit can move looser instantly — by the cap
-// owner, never the agent (the agent is a one-way ratchet toward safer).
+// IA: the UNFREEZE marquee leads (the must-have #4 override); re-anchor + rotate
+// are the quieter cap-holder-only powers below it. `armed = ownsCap` flips the
+// whole console locked→armed as one unit. Wallet logic is unchanged from the prior
+// version — only the JSX structure + copy were restructured. The narrative claim,
+// the authority axis, and the trust payoff live in the band wrapper (DaoConsoleBand).
 import { useEffect, useState } from "react";
 import { ConnectButton, useCurrentAccount, useSignAndExecuteTransaction, useSuiClientQuery } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
@@ -40,6 +39,8 @@ export function GovernancePanel({ paused }: { paused: boolean }) {
   );
   const capOwner = (cap?.data?.owner as any)?.AddressOwner as string | undefined;
   const ownsCap = !!account && !!capOwner && capOwner === account.address;
+  // One derived flag flips the whole console locked→armed as a unit.
+  const armed = ownsCap;
 
   // Corridor + agent form, seeded once from the live on-chain policy.
   const [ltvFloor, setLtvFloor] = useState("");
@@ -118,93 +119,124 @@ export function GovernancePanel({ paused }: { paused: boolean }) {
   const gate = !ownsCap || isPending;
 
   return (
-    <section className="card governance">
-      <h2>
-        DAO controls <span className="tag tag-dao">&amp;GovernanceCap · owned</span>
-      </h2>
-      <p className="muted">
-        The road toward <i>riskier</i> — the only authority that can unfreeze, loosen the limits, or rotate the
-        agent. It lives in the owned cap: the agent can't reach it, and a shared-object call can't bypass it.
-      </p>
+    <section className={`card governance${armed ? " gov-armed" : ""}`}>
       <div className="gov-connect">
         <ConnectButton />
       </div>
 
-      {/* 1 — unfreeze (the must-have #4 override) */}
-      <div className="gov-act">
+      {/* live readout — the "armed frame" that makes locked controls read live, not
+          broken. Folds the old top/foot duplication into one block. */}
+      <div className="gov-status">
+        <div className="gov-status-row">
+          <span className="gov-status-lbl">policy state</span>
+          <span className={paused ? "st st-frozen" : "st st-live"}>{paused ? "FROZEN" : "LIVE · unfrozen"}</span>
+        </div>
+        <div className="gov-status-row">
+          <span className="gov-status-lbl">cap holder</span>
+          <span className={`mono gov-status-val${ownsCap ? " gov-you" : ""}`}>
+            {ownsCap ? "you ✓ · single key (demo)" : shortId(capOwner)}
+          </span>
+        </div>
+        <div className="gov-status-row">
+          <span className="gov-status-lbl">registered agent</span>
+          <span className="mono gov-status-val">{shortId(policy?.registeredAgent)}</span>
+        </div>
+        <div className="gov-status-row">
+          <span className="gov-status-lbl">GovernanceCap</span>
+          <a className="mono gov-status-val" href={`${CFG.explorerObj}/${capId ?? ""}`} target="_blank" rel="noreferrer">
+            {shortId(capId)}
+          </a>
+        </div>
+      </div>
+
+      {/* MARQUEE — the human override (must-have #4). Coral-framed only while frozen. */}
+      <div className={`override-marquee${paused ? " is-frozen" : ""}`}>
         <div className="gov-act-head">
-          <span className="gov-act-name">Unfreeze the market</span>
+          <span className="gov-act-name marquee-name">Unfreeze the market</span>
           <span className="mono gov-fn">governance_unfreeze</span>
         </div>
+        <p className="gov-act-note">
+          The contract freezes on its own re-derived divergence. Only this owned cap unfreezes it.
+        </p>
         <div className="gov-row">
-          <button className="btn btn-danger" onClick={unfreeze} disabled={gate || !paused}>
-            {isPending ? "…" : "Unfreeze (DAO)"}
+          <button className="btn btn-danger marquee-btn" onClick={unfreeze} disabled={gate || !paused}>
+            {isPending ? "Unfreezing…" : "Unfreeze (DAO)"}
           </button>
           <span className="muted">
             {!account
-              ? "connect the cap-holder wallet"
+              ? "Connect the cap-holder wallet"
               : !ownsCap
-                ? "wallet does not hold the GovernanceCap"
+                ? "This wallet doesn’t hold the GovernanceCap"
                 : !paused
-                  ? "policy is not frozen"
-                  : "ready"}
+                  ? "Policy is live — nothing to unfreeze"
+                  : "Ready — unfreezes the market"}
           </span>
         </div>
       </div>
 
-      {/* 2 — re-anchor the corridor (the one place a limit can move looser) */}
+      <div className="gov-secondary-head">Bounds &amp; agent — cap-holder only</div>
+
+      {/* re-anchor the corridor (the one place a limit can move looser) */}
       <div className="gov-act">
         <div className="gov-act-head">
           <span className="gov-act-name">Re-anchor the corridor</span>
           <span className="mono gov-fn">governance_set_corridor</span>
         </div>
         <p className="gov-act-note">
-          The bounds each limit lives in, in %. <b>Floor</b> = tightest (safety), <b>baseline</b> = loosest. The
-          agent moves <i>current</i> only within these; only the DAO moves the bounds.
+          The bounds each limit lives in, in %. <b>Floor</b> = tightest (safety). <b>Baseline</b> = loosest. The agent
+          moves <i>current</i> inside these; only you move the bounds.
         </p>
         <div className="gov-corridor">
           <span className="gov-cor-lbl">Max LTV</span>
           <label className="gov-field">
             <span>floor</span>
-            <input className="gov-input" inputMode="decimal" value={ltvFloor} onChange={(e) => setLtvFloor(e.target.value)} />
+            <input className="gov-input" inputMode="decimal" aria-label="Max LTV floor, percent" value={ltvFloor} onChange={(e) => setLtvFloor(e.target.value)} />
           </label>
           <label className="gov-field">
             <span>baseline</span>
-            <input className="gov-input" inputMode="decimal" value={ltvBase} onChange={(e) => setLtvBase(e.target.value)} />
+            <input className="gov-input" inputMode="decimal" aria-label="Max LTV baseline, percent" value={ltvBase} onChange={(e) => setLtvBase(e.target.value)} />
           </label>
           <span className="gov-cor-lbl">Borrow cap</span>
           <label className="gov-field">
             <span>floor</span>
-            <input className="gov-input" inputMode="decimal" value={capFloor} onChange={(e) => setCapFloor(e.target.value)} />
+            <input className="gov-input" inputMode="decimal" aria-label="Borrow cap floor, percent" value={capFloor} onChange={(e) => setCapFloor(e.target.value)} />
           </label>
           <label className="gov-field">
             <span>baseline</span>
-            <input className="gov-input" inputMode="decimal" value={capBase} onChange={(e) => setCapBase(e.target.value)} />
+            <input className="gov-input" inputMode="decimal" aria-label="Borrow cap baseline, percent" value={capBase} onChange={(e) => setCapBase(e.target.value)} />
           </label>
         </div>
         <div className="gov-row">
           <button className="btn" onClick={setCorridor} disabled={gate || !corridorValid}>
-            {isPending ? "…" : "Set corridor (DAO)"}
+            {isPending ? "Setting…" : "Set corridor (DAO)"}
           </button>
           <span className="muted">
-            {!ownsCap ? "cap-holder only" : !corridorValid ? "need 0 ≤ floor ≤ baseline ≤ 100" : "current clamps into the new bounds"}
+            {!account
+              ? "Connect the cap-holder wallet"
+              : !ownsCap
+                ? "This wallet doesn’t hold the GovernanceCap"
+                : !corridorValid
+                  ? "need 0 ≤ floor ≤ baseline ≤ 100"
+                  : "Ready — current re-clamps into the new bounds"}
           </span>
         </div>
       </div>
 
-      {/* 3 — rotate the registered agent */}
+      {/* rotate the registered agent */}
       <div className="gov-act">
         <div className="gov-act-head">
           <span className="gov-act-name">Rotate the agent</span>
           <span className="mono gov-fn">governance_rotate_agent</span>
         </div>
         <p className="gov-act-note">
-          The address allowed to submit ParamRequests. The clamp still bounds any agent — this only changes <i>who</i> may ask.
+          The address allowed to submit ParamRequests. The contract clamps any agent — this changes <i>who</i> may ask,
+          not what they can do.
         </p>
         <div className="gov-row">
           <input
             className="gov-input gov-input--addr mono"
             placeholder="0x… new agent address"
+            aria-label="New agent address"
             value={agentAddr}
             onChange={(e) => setAgentAddr(e.target.value)}
             spellCheck={false}
@@ -212,40 +244,23 @@ export function GovernancePanel({ paused }: { paused: boolean }) {
         </div>
         <div className="gov-row">
           <button className="btn" onClick={rotateAgent} disabled={gate || !agentValid}>
-            {isPending ? "…" : "Rotate agent (DAO)"}
+            {isPending ? "Rotating…" : "Rotate agent (DAO)"}
           </button>
           <span className="muted">
-            {!ownsCap ? "cap-holder only" : !isAddr(agentAddr) ? "enter a valid address" : !agentValid ? "same as current" : "ready"}
+            {!account
+              ? "Connect the cap-holder wallet"
+              : !ownsCap
+                ? "This wallet doesn’t hold the GovernanceCap"
+                : !isAddr(agentAddr)
+                  ? "enter a valid address"
+                  : !agentValid
+                    ? "same as the current agent"
+                    : "Ready — rotates to the new address"}
           </span>
         </div>
       </div>
 
       {msg && <div className="gov-msg mono">{msg}</div>}
-
-      <div className="gov-meta">
-        <div className="row">
-          <span className="lbl">policy state</span>
-          <span className={paused ? "st st-frozen" : "st st-live"}>{paused ? "FROZEN" : "LIVE · unfrozen"}</span>
-        </div>
-        <div className="row">
-          <span className="lbl">GovernanceCap</span>
-          <a className="mono" href={`${CFG.explorerObj}/${capId ?? ""}`} target="_blank" rel="noreferrer">
-            {shortId(capId)}
-          </a>
-        </div>
-        <div className="row">
-          <span className="lbl">cap holder</span>
-          <span className="mono">{ownsCap ? "you ✓" : shortId(capOwner)}</span>
-        </div>
-        <div className="row">
-          <span className="lbl">registered agent</span>
-          <span className="mono">{shortId(policy?.registeredAgent)}</span>
-        </div>
-      </div>
-      <p className="muted gov-foot">
-        The freeze fires on the contract's own re-derived divergence; the keeper + inline floor keep enforcing even if
-        the agent is dead. Only this owned cap moves the system back toward riskier.
-      </p>
     </section>
   );
 }

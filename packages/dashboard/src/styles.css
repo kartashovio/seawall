@@ -2149,13 +2149,90 @@ body.frozen .posture {
   color: var(--dao);
 }
 
-/* governance */
-.governance p {
+/* ============================================================================
+   F1.5 — HUMAN OVERRIDE (the standalone live DAO console)
+   Claim → authority axis → seam → the live console (hero) → payoff → ABI
+   disclosure. Fixed actor colors: --dao = the DAO/human authority · --cyan = the
+   contract · --amber = the untrusted agent · --coral = frozen · --emerald = live.
+   ========================================================================== */
+.dao-console {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* the one-way ratchet, drawn: three actors push SAFER ← ; only the DAO cap →
+   RISKIER. Mirrors the .flow-strip idiom; connectors NEUTRAL except the lone DAO arrow. */
+.auth-axis {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.auth-pole {
+  font: 600 var(--fs-xs) / 1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.auth-pole--safe {
+  color: var(--emerald-dim);
+}
+.auth-pole--risk {
+  color: var(--coral-dim);
+}
+.auth-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--inset);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.3;
   color: var(--ink-dim);
-  line-height: 1.6;
+}
+.auth-chip--contract {
+  border-color: var(--cyan-line);
+  background: var(--cyan-wash);
+  color: var(--cyan-dim);
+}
+.auth-chip--agent {
+  border-color: var(--amber-line);
+  background: var(--amber-wash);
+  color: var(--amber-dim);
+}
+/* the lone DAO chip — both blues sit close, so it leans on the dao wash + a heavier
+   border + the SOLE rightward arrow to read unmistakably as the DAO, not a contract chip. */
+/* solid dao fill (not just a wash) so the lone DAO chip is unmistakable next to the
+   light cyan/amber chips — survives the mobile column stack where the rule is hidden. */
+.auth-chip--dao {
+  border: 1.5px solid var(--dao);
+  background: var(--dao);
+  color: #fff;
+  font-weight: 600;
+}
+.auth-rule {
+  flex: 1 1 24px;
+  min-width: 18px;
+  height: 1px;
+  background: var(--line-lit);
+}
+.auth-arrow {
+  display: flex;
+  align-items: center;
+  flex: none;
+  font-size: 18px;
+  color: var(--dao);
+}
+
+/* governance — the live console card (hero of the Human-override band) */
+.governance {
+  position: relative;
+  border-left: 3px solid var(--dao-line);
 }
 .gov-connect {
-  margin: 6px 0 14px;
+  margin: 2px 0 14px;
 }
 .gov-row {
   display: flex;
@@ -2168,14 +2245,108 @@ body.frozen .posture {
   font-size: var(--fs-sm);
 }
 
-/* DAO action groups (unfreeze / re-anchor corridor / rotate agent) */
+/* live readout — the armed status frame (folds the old top/foot meta into one) */
+.gov-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--inset);
+}
+.gov-status-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+.gov-status-lbl {
+  flex: none;
+  color: var(--muted);
+}
+.gov-status-val {
+  overflow: hidden;
+  font-size: var(--fs-xs);
+  color: var(--ink-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gov-you {
+  color: var(--dao);
+}
+/* the GovernanceCap explorer link — underlined so it doesn't rely on color alone */
+a.gov-status-val {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* state pills (reused in the status readout) */
+.st {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.st-live {
+  background: var(--emerald-wash);
+  color: var(--emerald-dim);
+}
+.st-frozen {
+  background: var(--coral-wash);
+  color: var(--coral-dim);
+}
+
+/* UNFREEZE marquee — the must-have #4 hero control; coral-framed only while frozen */
+.override-marquee {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--ground-2);
+}
+.override-marquee.is-frozen {
+  border-color: var(--coral-line);
+  background: var(--coral-wash);
+  box-shadow: var(--glow-coral);
+}
+.marquee-name {
+  font-size: 17px;
+}
+.marquee-btn {
+  padding: 11px 22px;
+  font-size: var(--fs-base);
+}
+
+/* secondary powers (cap-holder only) */
+.gov-secondary-head {
+  margin-top: 4px;
+  font: 600 var(--fs-xs) / 1 var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* armed/locked: locked controls keep full color (not greyed-as-broken) — the helper
+   states the next action; holding the cap lights the card with a dao inner ring. */
+.governance .btn:disabled {
+  opacity: 0.82;
+}
+.gov-armed {
+  border-left-color: var(--dao);
+  box-shadow: inset 0 0 0 2px var(--dao-line);
+}
+
+/* DAO action groups (re-anchor corridor / rotate agent) */
 .gov-act {
-  margin-top: 16px;
+  margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--line-soft);
 }
 .gov-act:first-of-type {
-  margin-top: 6px;
+  margin-top: 8px;
   padding-top: 0;
   border-top: 0;
 }
@@ -2192,7 +2363,7 @@ body.frozen .posture {
 }
 .gov-fn {
   font-size: 10.5px;
-  color: var(--muted-deep);
+  color: var(--muted);
 }
 .gov-act-note {
   margin: 0 0 10px;
@@ -2220,7 +2391,7 @@ body.frozen .posture {
   flex-direction: column;
   gap: 3px;
   font: 500 10px / 1 var(--font-mono);
-  color: var(--muted-deep);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -2247,44 +2418,8 @@ body.frozen .posture {
   font-size: var(--fs-xs);
   color: var(--ink-dim);
 }
-.gov-meta {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.gov-meta .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-size: var(--fs-sm);
-}
-.gov-meta .lbl {
-  color: var(--muted);
-}
-.gov-meta .st {
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  padding: 2px 9px;
-  border-radius: 999px;
-}
-.st-live {
-  background: var(--emerald-wash);
-  color: var(--emerald-dim);
-}
-.st-frozen {
-  background: var(--coral-wash);
-  color: var(--coral-dim);
-}
-.gov-foot {
-  font-size: var(--fs-xs);
-  line-height: 1.55;
-  margin-top: 12px;
-  color: var(--muted);
-}
+/* (.gov-meta / .gov-foot / .st pills moved up into the F1.5 block; the prose and
+   foot note folded into the band claim + payoff) */
 
 /* ============================================================================
    G — THE DRILL (attack panel)
@@ -2449,6 +2584,22 @@ body.frozen .posture {
     flex: 0 0 auto;
     flex-direction: column;
     align-items: stretch;
+  }
+  /* authority axis → vertical stack (SAFER above RISKIER); the filler rule is
+     useless stacked, and the lone DAO arrow rotates to ↓ */
+  .auth-axis {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .auth-rule {
+    display: none;
+  }
+  .auth-arrow {
+    justify-content: center;
+    transform: rotate(90deg);
+  }
+  .gov-status {
+    grid-template-columns: 1fr;
   }
   .arch-frame {
     padding: 16px;
