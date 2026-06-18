@@ -1322,14 +1322,7 @@ body.frozen .posture {
   color: var(--muted-deep);
 }
 
-/* ── "why these limits" — agent ⟂ contract constraint panel ───────────────── */
-.cns-lede {
-  margin: 4px 0 16px;
-  font-size: var(--fs-sm);
-  line-height: 1.55;
-  color: var(--muted);
-  max-width: 82ch;
-}
+/* ── THE READING — agent ⟂ contract negotiation rows (on the corridor) ────── */
 .cns-rows {
   display: flex;
   flex-direction: column;
@@ -2084,7 +2077,7 @@ body.frozen .posture {
 }
 
 /* ============================================================================
-   E — THE INSTRUMENTS (model internals)
+   E — THE READING (measurement → clamp): shared instrument primitives
    ========================================================================== */
 .model-blocks {
   display: grid;
@@ -2215,6 +2208,88 @@ body.frozen .posture {
   box-shadow: var(--shadow-0);
   transition: left var(--t-value) var(--ease-tide);
   z-index: 2;
+}
+
+/* ── THE READING — measurement → clamp (merged "instruments" + "why these limits").
+   These rules come AFTER .cns-* and .corr so the per-row overrides win the cascade. */
+.model-blocks--2 {
+  grid-template-columns: 1fr 1.2fr; /* the corridor moved into the rows below */
+}
+/* the one wire between measurement and enforcement — neutral, full-width */
+.reading-seam {
+  margin: 22px 0 18px;
+  max-width: 82ch;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--muted);
+}
+.reading-seam b {
+  color: var(--ink-dim);
+}
+/* negotiation row → a 3rd grid area for the corridor track under the numbers */
+.cns-row.reading-row {
+  grid-template-areas: "name flow" "name track" "name bound";
+}
+/* Self-contained corridor track — does NOT reuse .corr (its absolute model fought the
+   grid's containing block). A relative rail; the band + marks position against it. */
+.reading-track {
+  grid-area: track;
+  position: relative;
+  height: 22px;
+  margin: 4px 0 2px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: var(--r-bar);
+}
+/* The DAO corridor [floor, baseline] = a solid light-cyan ZONE bracketed by bold
+   colored GOALPOSTS (translucent fills wash out on the light theme). The cyan wall =
+   floor (tightest, safest end); the coral wall = baseline (the loosest allowed —
+   applied can ratchet left toward floor, never right past this). NOTE: the class is
+   NOT "band" — that collides with the global section `.band` (margin + animation). */
+.reading-track .reading-corridor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #c2d9f5;
+  border-left: 3px solid var(--cyan);
+  border-right: 3px solid var(--coral);
+}
+/* applied = the committed on-chain value → a neutral INK diamond (not the agent's amber) */
+.reading-track .reading-cur {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--ink);
+  border: 1.5px solid var(--ground-2);
+  box-shadow: var(--shadow-0);
+  z-index: 2;
+}
+/* the agent's ask: an amber tick (the untrusted request) */
+.reading-track .reading-ghost {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  transform: translateX(-50%);
+  background: var(--amber-dim);
+  opacity: 0.9;
+  z-index: 1;
+}
+/* agent-ask marker = a faint AMBER tick (the untrusted agent's request) */
+.reading-ghost {
+  background: var(--amber-dim);
+  opacity: 0.7;
+}
+/* applied = the committed on-chain value → neutral INK diamond (not the agent's amber) */
+.reading-track .cur {
+  background: var(--ink);
+}
+.reading-legend {
+  font-size: 11px;
+  margin-top: 8px;
+  line-height: 1.5;
 }
 
 /* ============================================================================
@@ -2815,8 +2890,14 @@ a.gov-status-val {
   .seas,
   .proof,
   .model-blocks,
+  .model-blocks--2,
   .ledger {
     grid-template-columns: 1fr;
+  }
+  /* the reading's negotiation rows stack: name → numbers → track → binding */
+  .cns-row.reading-row {
+    grid-template-columns: 1fr;
+    grid-template-areas: "name" "flow" "track" "bound";
   }
   /* team credit stacks one member per line; drop the inter-member vertical hairline
      (.who + .who is specificity 0,2,0 — the override must match it, not plain .who) */

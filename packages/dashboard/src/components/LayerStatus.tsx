@@ -76,7 +76,9 @@ export function LayerStatus({
   const keeperAge = keeperPokeMs !== undefined ? Date.now() - keeperPokeMs : undefined;
   const keeperS: "idle" | "ok" | "warn" | "down" = keeperAge !== undefined ? state(keeperAge) : "idle";
   // down → grey (dot-idle), NEVER coral: coral stays the freeze actor on this rung.
-  const keeperDot = keeperAge === undefined || keeperS === "down" ? "dot-idle" : dotFor(keeperS);
+  // (keeperS === "idle" iff keeperAge === undefined — narrowing on keeperS lets dotFor
+  // see only "ok"|"warn", the same runtime behaviour as the keeperAge check.)
+  const keeperDot = keeperS === "idle" || keeperS === "down" ? "dot-idle" : dotFor(keeperS);
   const keeperFresh =
     keeperAge === undefined
       ? "—"

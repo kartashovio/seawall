@@ -10,7 +10,6 @@ import { PostureBanner } from "./components/PostureBanner";
 import { FlowStrip } from "./components/FlowStrip";
 import { WiringReveal } from "./components/WiringReveal";
 import { ConnectBand } from "./components/ConnectBand";
-import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { FreezeDemo } from "./components/FreezeDemo";
 import { DaoConsoleBand } from "./components/DaoConsoleBand";
@@ -18,7 +17,7 @@ import { AttackPanel } from "./components/AttackPanel";
 import { LayerStatus } from "./components/LayerStatus";
 import { FooterLedger } from "./components/FooterLedger";
 import { KeeperStatus, GuardianHealth } from "./components/KeeperStatus";
-import { ConstraintPanel } from "./components/ConstraintPanel";
+import { TheReading } from "./components/TheReading";
 import { BacktestGallery } from "./components/BacktestGallery";
 
 export function App() {
@@ -177,31 +176,17 @@ export function App() {
         <BacktestGallery />
       </section>
 
-      {/* E — the instruments */}
+      {/* E — the reading: the deep-dive glass box between the high-level ladder and
+          the on-chain receipts. What the model measured, then the limits the contract
+          clamped it to. The old "instruments" + "why these limits" bands fold into
+          this one; the corridor geometry now lives here ONCE (LayerStatus L2 stays the
+          high-level teaser). */}
       <section className="band">
         <div className="band-head">
-          <span className="kicker">The instruments</span>
-          <span className="lede">glass-box — exactly what the radar measured, and the cage it cannot widen</span>
+          <span className="kicker">The reading</span>
+          <span className="lede">what the model measured, and the limits the contract clamped it to</span>
         </div>
-        <ModelInternals
-          d2={latest?.d2 ?? 0}
-          k={latest?.k ?? 5}
-          contributions={latest?.contributions ?? {}}
-          solvency={latest?.solvency ?? 0}
-          liquidity={latest?.liquidity ?? 0}
-          applied={applied}
-          floor={floor}
-          baseline={baseline}
-        />
-      </section>
-
-      {/* E2 — why these limits (agent ⟂ contract transparency) */}
-      <section className="band">
-        <div className="band-head">
-          <span className="kicker">Why these limits</span>
-          <span className="lede">what the agent asked, what the contract demanded on its own data, and what's actually applied</span>
-        </div>
-        <ConstraintPanel tick={latest} />
+        <TheReading tick={latest} applied={applied} floor={floor} baseline={baseline} />
       </section>
 
       {/* F — on-chain proof */}
