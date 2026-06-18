@@ -132,12 +132,6 @@ export function App() {
         <WiringReveal />
       </section>
 
-      {/* B2 — connect your protocol: guardian-as-a-service adoption. WHAT a consumer
-          protocol edits (the drop-in gate) + the deploy→gate→agent flow + the exact
-          calls, grounded in the live testnet ids. Sits between the mechanism (How it
-          works) and the live proof (The two seas). */}
-      <ConnectBand />
-
       {/* C — the two seas */}
       <section className="band">
         <div className="band-head band-head--notes">
@@ -239,6 +233,11 @@ export function App() {
         </div>
         <AttackPanel agentUrl={CFG.agentUrl} />
       </section>
+
+      {/* G2 — connect your protocol: the adoption capstone. Integration guidance,
+          not primary product presentation, so it lands near the end — after the
+          proof + the drill, right before the footer. */}
+      <ConnectBand />
 
       {/* H — footer ledger */}
       <FooterLedger />

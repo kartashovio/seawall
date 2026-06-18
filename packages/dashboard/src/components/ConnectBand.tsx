@@ -1,7 +1,7 @@
 // "Connect your protocol" — the guardian-as-a-service ADOPTION band (Real-World 50%).
-// Sits between "How it works" (what the system does) and "The two seas" (it running
-// live). It does NOT re-teach the L1/L2/L3 ladder; it shows where a consumer protocol
-// TOUCHES each layer and exactly what calls flow.
+// Lives near the END of the page (after the proof + the drill): it's integration
+// guidance, not primary product presentation. It does NOT re-teach the L1/L2/L3
+// ladder; it shows where a consumer protocol TOUCHES each layer and what calls flow.
 //
 // Same owner-endorsed sequential IA as "How it works": CLAIM → artifact (the drop-in
 // diff) → SEAM → adoption FLOW (deploy → gate → agent) → mode line → live RECEIPT →
@@ -16,12 +16,14 @@ import { CFG } from "../config";
 
 const short = (id?: string) => (id && id.length > 12 ? `${id.slice(0, 6)}…${id.slice(-4)}` : id || "—");
 
-// The hero artifact: the literal change a vault makes to borrow(). Exactly FOUR `+`
-// lines (poke + freeze-check + the two live-cap asserts); the price read is a context
-// line that consumes `d`, so the "four lines" claim matches the rail count with no
-// dangling binding. is_paused carries the lone coral hairline (frozen → abort).
+// The hero artifact: the literal change a vault makes to each risk-increasing path.
+// The SAME four `+` lines (poke + freeze-check + the two live-cap asserts) go in both
+// borrow() and withdraw_collateral() — both call inline_poke + enforce_solvency on
+// chain; deposit/repay are toward-safe and ungated. The price read is a context line
+// that consumes `d`, so the "four lines" claim matches the rail count with no dangling
+// binding. is_paused carries the lone coral hairline (frozen → abort).
 const DIFF: { t: string; add?: boolean; freeze?: boolean; comment?: boolean }[] = [
-  { t: "// your vault's borrow() — same PTB as a fresh Pyth update", comment: true },
+  { t: "// in borrow() and withdraw() — same PTB as a fresh Pyth update", comment: true },
   { t: "let d = guardian::poke(&mut policy, &pio, &pool, &clock);", add: true },
   { t: "assert!(!guardian::is_paused(&policy), EFrozen);", add: true, freeze: true },
   { t: "let coll = coll_value(divergence::pyth_px_1e9(&d));" },
@@ -53,7 +55,7 @@ function DiffCard() {
 
 const STEPS: { n: string; mod: "dao" | "contract" | "agent"; label: string; sub: string; untrusted?: boolean }[] = [
   { n: "1", mod: "dao", label: "Deploy once", sub: "create_policy → shared GuardianPolicy, owned GovernanceCap to your DAO" },
-  { n: "2", mod: "contract", label: "Add the gate", sub: "four lines in borrow() and withdraw()" },
+  { n: "2", mod: "contract", label: "Add the gate", sub: "four lines in borrow() and withdraw() — every path that raises risk" },
   { n: "3", mod: "agent", label: "Run the agent", sub: "posts a fresh Pyth update and a tighter-only request — the contract clamps it", untrusted: true },
 ];
 
@@ -144,7 +146,8 @@ export function ConnectBand() {
       </div>
 
       <h2 className="connect-claim">
-        Add four lines to your <code className="connect-claim-code">borrow()</code>. Seawall watches and enforces.
+        Add four lines to every <code className="connect-claim-code">borrow()</code> and{" "}
+        <code className="connect-claim-code">withdraw()</code>. Seawall watches and enforces.
       </h2>
 
       <DiffCard />
