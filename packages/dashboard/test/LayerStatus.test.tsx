@@ -13,6 +13,7 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { AgentTickDTO } from "@seawall/shared";
+import type { GuardianEventRow } from "../src/abi";
 import { LayerStatus } from "../src/components/LayerStatus";
 
 // The component reads applied / baseline / floor (maxLtv + borrowCap) off the tick —
@@ -93,7 +94,7 @@ describe("LayerStatus — gate-band severs the agent from the freeze", () => {
   });
 });
 
-describe("LayerStatus — FROZEN (contract-only, no agent attribution)", () => {
+describe("LayerStatus — FROZEN (contract-only; keeper pokes, never decides)", () => {
   const html = renderToStaticMarkup(
     <LayerStatus tick={tick(5500, 7500)} paused={true} events={[]} />,
   );
@@ -103,9 +104,41 @@ describe("LayerStatus — FROZEN (contract-only, no agent attribution)", () => {
     expect(html).toContain(">frozen<");
   });
 
-  it("the freeze rung itself carries ZERO agent attribution", () => {
+  it("the freeze is the contract's; the agent/keeper never cause it", () => {
     const region = l3Region(html);
+    // the freeze cause + authority stay the contract's / the DAO's
     expect(region).toContain("the contract");
-    expect(region).not.toContain("the agent");
+    // no agent CAUSAL language on the freeze rung — the only 'agent' here is the
+    // non-attribution note "…even if the agent stops"
+    expect(region).not.toMatch(/agent (requests|submits|tightens|freezes|triggers|causes)/);
+    // the keeper appears ONLY as a permissionless poker + a non-attribution note
+    expect(region).toContain("a permissionless keeper");
+    expect(region).toContain("keeps the contract checking even if the agent stops");
+  });
+});
+
+describe("LayerStatus — three invokers (poke ≠ decide)", () => {
+  const html = renderToStaticMarkup(
+    <LayerStatus tick={tick(7500, 7500)} paused={false} events={[]} />,
+  );
+
+  it("each rung names its on-chain poker (borrows · the agent · a keeper)", () => {
+    expect(html.match(/poked by/g)?.length).toBe(3);
+    expect(html).toContain("every borrow");
+    expect(html).toContain("a permissionless keeper");
+  });
+
+  it("the keeper heartbeat is honestly idle when no poke is seen (no fake live)", () => {
+    expect(html).toContain("dot-idle");
+    expect(html).not.toContain("dot-ok"); // no fabricated 'live' pulse on empty events
+  });
+
+  it("a real keeper poke lights the live heartbeat", () => {
+    const ev = [
+      { kind: "RiskEvaluated", digest: "0x", tsMs: Date.now() - 30_000, json: { had_request: false } },
+    ] as unknown as GuardianEventRow[];
+    const live = renderToStaticMarkup(<LayerStatus tick={tick(7500, 7500)} paused={false} events={ev} />);
+    expect(live).toContain("dot-ok"); // emerald, within the 6-min cadence
+    expect(live).toContain("poke "); // "poke 30s ago"
   });
 });

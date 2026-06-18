@@ -21,7 +21,8 @@
 // and coral (contract) distinct is load-bearing. The advisory 0–100 score never
 // appears as a value; the only reference is the "score · advisory only" caption.
 import type { AgentTickDTO } from "@seawall/shared";
-import type { GuardianEventRow } from "../abi";
+import { lastKeeperPokeMs, type GuardianEventRow } from "../abi";
+import { agoText, state, dotFor } from "./KeeperStatus";
 import { DIV } from "../config";
 
 // Bound to the contract constant the gauge bands also bind to (T_FREEZE).
@@ -66,6 +67,23 @@ export function LayerStatus({
   const last = events[0];
   const ago = last && last.tsMs > 0 ? `${Math.round((Date.now() - last.tsMs) / 1000)}s ago` : "—";
 
+  // L3 keeper heartbeat — the ONLY live invoker element. Reads ONLY the keeper-style
+  // poke ts (newest RiskEvaluated with had_request=false) via the SAME 6/12-min cadence
+  // the header KeeperStatus uses (single-sourced), so the two dots can never drift. The
+  // keeper POKES evaluate() so the contract keeps re-deriving; it never decides the
+  // freeze (that stays `paused` = the contract's OWN divergence).
+  const keeperPokeMs = lastKeeperPokeMs(events);
+  const keeperAge = keeperPokeMs !== undefined ? Date.now() - keeperPokeMs : undefined;
+  const keeperS: "idle" | "ok" | "warn" | "down" = keeperAge !== undefined ? state(keeperAge) : "idle";
+  // down → grey (dot-idle), NEVER coral: coral stays the freeze actor on this rung.
+  const keeperDot = keeperAge === undefined || keeperS === "down" ? "dot-idle" : dotFor(keeperS);
+  const keeperFresh =
+    keeperAge === undefined
+      ? "—"
+      : keeperS === "down"
+        ? `no poke ${agoText(keeperAge)}`
+        : `poke ${agoText(keeperAge)}`;
+
   return (
     <section className="card layers">
       <div className="rung-axis-cap">divergence</div>
@@ -83,7 +101,11 @@ export function LayerStatus({
               <span className="lt">Inline floor</span>
               <span className="rung-state st-on-cyan">enforcing</span>
             </div>
-            <div className="rung-trigger">the contract re-runs on every borrow and withdraw</div>
+            <div className="rung-trigger">the contract self-checks staleness, confidence and divergence</div>
+            <div className="rung-poke">
+              <span className="poke-k">poked by</span>
+              <span className="poke-who poke-contract">every borrow &amp; withdraw</span>
+            </div>
             <div className="why-safe">holds even if the agent goes offline</div>
           </div>
         </div>
@@ -133,6 +155,10 @@ export function LayerStatus({
             <div className="rung-trigger">
               the agent requests a tighter limit as risk rises; the contract applies it
             </div>
+            <div className="rung-poke">
+              <span className="poke-k">poked by</span>
+              <span className="poke-who poke-agent">the agent</span>
+            </div>
             <div className="why-safe">the contract clamps it inside DAO bounds — one-way, only safer</div>
           </div>
         </div>
@@ -159,6 +185,20 @@ export function LayerStatus({
             <div className="rung-trigger">
               the contract&apos;s own divergence hits {FREEZE_PCT}%, or the book goes unusable
             </div>
+            {/* The keeper — a permissionless, model-free heartbeat that POKES evaluate()
+                so the contract keeps re-deriving even if the agent is dead. It INVOKES
+                the check; it never decides the freeze (that's `paused` = the contract's
+                OWN divergence). Label tinted CYAN (contract-side poker), NOT coral — do
+                NOT change to coral: that would imply keeper→freeze and break poke≠decide.
+                The live dot reuses the header keeper-liveness palette; down → grey, never
+                coral, so coral stays the freeze actor on this rung. */}
+            <div className="rung-poke rung-poke--keeper">
+              <span className="poke-k">poked by</span>
+              <span className="poke-who poke-keeper">a permissionless keeper</span>
+              <span className={`dot ${keeperDot}`} />
+              <span className="poke-fresh">{keeperFresh}</span>
+            </div>
+            <div className="poke-note">keeps the contract checking even if the agent stops</div>
             <div className="why-safe">only the DAO unfreezes</div>
           </div>
         </div>

@@ -14,7 +14,9 @@
 const FRESH_MS = 6 * 60_000; // within one 5-min cadence (+1 min grace)
 const STALE_MS = 12 * 60_000; // 2+ missed → down
 
-function agoText(ms: number): string {
+// Exported so the L3 keeper heartbeat on the ladder (LayerStatus) reads off the SAME
+// 6/12-min cadence — the on-rung dot and this header dot can never drift.
+export function agoText(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000));
   if (s < 60) return `${s}s ago`;
   const m = Math.round(s / 60);
@@ -22,10 +24,10 @@ function agoText(ms: number): string {
   return `${Math.round(m / 60)}h ago`;
 }
 
-function state(age: number): "ok" | "warn" | "down" {
+export function state(age: number): "ok" | "warn" | "down" {
   return age <= FRESH_MS ? "ok" : age <= STALE_MS ? "warn" : "down";
 }
-const dotFor = (s: "ok" | "warn" | "down"): string => (s === "ok" ? "dot-ok" : s === "warn" ? "dot-warn" : "dot-bad");
+export const dotFor = (s: "ok" | "warn" | "down"): string => (s === "ok" ? "dot-ok" : s === "warn" ? "dot-warn" : "dot-bad");
 
 // KEEPER — freshness of the last permissionless poke (had_request=false event).
 export function KeeperStatus({ keeperPokeMs }: { keeperPokeMs?: number }) {

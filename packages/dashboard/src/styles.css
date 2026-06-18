@@ -2010,6 +2010,57 @@ body.frozen .posture {
   line-height: 1.45;
   color: var(--muted);
 }
+/* ── invoker captions — who POKES evaluate() on each rung (borrows · the agent ·
+   a permissionless keeper). "poked by" is a passive caller, never the decider; the
+   freeze decision stays the contract's (the state word + `paused`). The keeper line
+   is the one LIVE element — its dot reuses the header keeper-liveness palette. ──── */
+.rung-poke {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
+.poke-k {
+  color: var(--muted-deep);
+  letter-spacing: 0.04em;
+}
+.poke-who {
+  font-weight: 600;
+}
+.poke-contract {
+  color: var(--cyan-dim);
+}
+.poke-agent {
+  color: var(--amber-dim);
+}
+/* keeper tinted CYAN (contract-side: it keeps the CONTRACT checking), NOT coral —
+   the keeper pokes the contract-only rung but is NOT the freeze. Coral here would
+   imply keeper→freeze and break poke≠decide. */
+.poke-keeper {
+  color: var(--cyan-dim);
+}
+.poke-fresh {
+  color: var(--muted);
+}
+.rung-poke .dot {
+  margin-right: 0;
+}
+/* extra air so the live keeper line reads as a distinct "who keeps poking it" fact,
+   clearly subordinate to the freeze-cause trigger above (never cause→effect). */
+.rung-poke--keeper {
+  margin-top: 10px;
+}
+.poke-note {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--muted);
+}
 .timer {
   margin-top: 18px;
   padding-top: 16px;
