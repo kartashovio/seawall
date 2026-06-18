@@ -7,8 +7,8 @@ import { ScoreCard } from "./components/ScoreCard";
 import { Sparkline } from "./components/Sparkline";
 import { WarmupStatus } from "./components/WarmupStatus";
 import { PostureBanner } from "./components/PostureBanner";
-import { ArchitectureDiagram } from "./components/ArchitectureDiagram";
-import { HowItWorks } from "./components/HowItWorks";
+import { FlowStrip } from "./components/FlowStrip";
+import { WiringReveal } from "./components/WiringReveal";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { FreezeDemo } from "./components/FreezeDemo";
@@ -96,17 +96,39 @@ export function App() {
       {/* A — hard-stop alarm (only renders when FROZEN) */}
       <PostureBanner paused={paused} />
 
-      {/* B — architecture: the system drawn, then explained in plain language
-          (the diagram + the "how it works" onramp replaced the old thesis strip) */}
-      <section className="band band--arch">
+      {/* B — how it works: the merged product story. One claim → the sequential
+          flow (verbs) → the SAME ladder live as the hero (the promoted "wall") →
+          the full wiring on demand. The old "Architecture" diagram band and the
+          standalone "The wall" band fold into this one band. */}
+      <section className="band wall-story">
         <div className="band-head">
-          <span className="kicker">Architecture</span>
-          <span className="lede">how an untrusted radar, the contract, and the DAO actually wire together</span>
+          <span className="kicker">How it works</span>
+          <span className="lede">
+            one signal — Pyth↔DeepBook divergence — climbs three rungs; trust decides who pulls which
+          </span>
         </div>
-        <div className="arch-frame">
-          <ArchitectureDiagram />
+
+        <div className="hero-claim">
+          <h2 className="hero-claim-line">You never have to trust it.</h2>
+          <p className="hero-claim-body">
+            An off-chain <span className="c-agent">AI radar</span> watches the oracle and the order book —
+            but the contract <span className="c-contract">re-derives every breach</span> from raw Pyth +
+            DeepBook itself, and can only ever be <span className="c-contract">pushed safer</span>.
+          </p>
+          <div className="hero-legend">
+            <span className="tag tag-agent">untrusted radar</span>
+            <span className="tag tag-contract">the contract</span>
+            <span className="tag tag-dao">the DAO</span>
+          </div>
         </div>
-        <HowItWorks />
+
+        <FlowStrip />
+
+        <div className="story-seam">That sequence, live on {enforcedEnv} right now:</div>
+
+        <LayerStatus tick={latest} paused={paused} events={events} />
+
+        <WiringReveal />
       </section>
 
       {/* C — the two seas */}
@@ -152,15 +174,6 @@ export function App() {
           <span className="lede">the same unchanged model replayed through five historical crashes — score, knobs, divergence vs price</span>
         </div>
         <BacktestGallery />
-      </section>
-
-      {/* D — the wall */}
-      <section className="band">
-        <div className="band-head">
-          <span className="kicker">The wall</span>
-          <span className="lede">three rungs of one ladder — trust decides who can pull which</span>
-        </div>
-        <LayerStatus tick={latest} paused={paused} events={events} />
       </section>
 
       {/* E — the instruments */}
