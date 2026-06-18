@@ -155,7 +155,7 @@ export function LayerStatus({
               <span className="advisory-pill">score · advisory only</span>
             </div>
             <div className="rung-trigger">
-              the agent requests a tighter limit as risk rises; the contract applies it
+              the agent requests a tighter limit as risk rises; the contract clamps it to the safe direction and applies it
             </div>
             <div className="rung-poke">
               <span className="poke-k">poked by</span>

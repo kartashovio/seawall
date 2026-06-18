@@ -177,13 +177,13 @@ export function TheReading({
               <div className="cns-name">
                 {r.key}
                 <span className="cns-driver">← {r.driver} {r.score.toFixed(0)}</span>
-                <span className="cns-driver cns-thresh">tightens at {r.driver} ≥ {SCORE_LO} · hits floor at {SCORE_HI}</span>
+                <span className="cns-driver cns-thresh">tightens at {r.driver} ≥ {SCORE_LO} · bottoms out at {SCORE_HI}</span>
               </div>
 
               <div className="cns-flow">
                 <span className="cns-num"><i>agent asks</i>{pct(r.e.agentWants)}%</span>
                 <span className="cns-op">vs</span>
-                <span className="cns-num"><i>contract floor (divergence)</i>{pct(r.e.contractFloor)}%</span>
+                <span className="cns-num"><i>contract target (divergence)</i>{pct(r.e.contractFloor)}%</span>
                 <span className="cns-op">→</span>
                 <span className="cns-num cns-applied"><i>applied</i>{pct(r.e.applied)}%</span>
               </div>
@@ -218,7 +218,7 @@ export function TheReading({
       <div className={`cns-relax ${relaxBlocked ? "is-blocked" : "is-open"}`}>
         {relaxBlocked ? (
           <>
-            <b>Held tight.</b> Divergence {div.toFixed(0)} bps is above the {DIV.cautionBps} bps calm line. The
+            <b>Held tight.</b> Divergence {div.toFixed(0)} bps is above the {DIV.cautionBps} bps caution line. The
             contract holds the limits and eases them back toward baseline only after 10 minutes of sustained calm.
           </>
         ) : (

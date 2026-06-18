@@ -316,7 +316,7 @@ export function ArchitectureDiagram() {
       <g>
         {/* E7 pyth → divmod, looping along the bottom gutter (y≈540) */}
         <path
-          d="M 149 146 C 149 545, 149 545, 600 545 S 850 320, 850 318"
+          d="M 149 146 C 290 146, 290 535, 600 535 S 850 320, 850 318"
           fill="none"
           stroke={C.amber}
           strokeWidth={1.5}
@@ -326,7 +326,7 @@ export function ArchitectureDiagram() {
         />
         {/* E8 deepbook → divmod, parallel inner arc */}
         <path
-          d="M 149 236 C 149 520, 200 520, 600 520 S 820 318, 838 312"
+          d="M 149 236 C 290 236, 290 512, 600 512 S 820 318, 838 312"
           fill="none"
           stroke={C.amber}
           strokeWidth={1.5}
@@ -428,19 +428,19 @@ export function ArchitectureDiagram() {
       <EdgeLabel x={286} y={200} text="L2 book + CEX depth" fill={C.amberText} />
       <EdgeLabel x={450} y={176} text="0–100 score (advisory)" fill={C.ink} />
       {/* E4 hero label, two-line lowered onto the off-chain↔on-chain seam */}
-      <EdgeLabel x={640} y={178} text="same-PTB: post Pyth +" fill={C.suiBlueText} bold />
-      <EdgeLabel x={640} y={192} text="submit ParamRequest (sender-gated)" fill={C.suiBlueText} bold />
-      <EdgeLabel x={612} y={330} text="permissionless poke · 5 min" fill={C.suiBlueText} />
-      <EdgeLabel x={920} y={244} text="reads price + L2 book ITSELF," fill={C.suiBlueText} bold />
-      <EdgeLabel x={920} y={257} text="re-derives divergence" fill={C.suiBlueText} bold />
+      <EdgeLabel x={640} y={178} text="same-PTB: post Pyth update" fill={C.suiBlueText} bold />
+      <EdgeLabel x={640} y={192} text="submit ParamRequest" fill={C.suiBlueText} bold />
+      <EdgeLabel x={655} y={330} text="permissionless poke · 5 min" fill={C.suiBlueText} />
+      <EdgeLabel x={905} y={244} text="reads price + L2 book ITSELF," fill={C.suiBlueText} bold />
+      <EdgeLabel x={905} y={257} text="re-derives divergence" fill={C.suiBlueText} bold />
       <EdgeLabel x={665} y={346} text="inline poke on borrow / withdraw" fill={C.ink} />
       {/* E10 dao label, two-line */}
       <EdgeLabel x={1024} y={150} text="&GovernanceCap:" fill={C.daoInk} bold />
-      <EdgeLabel x={1024} y={164} text="unfreeze / set corridor / rotate agent" fill={C.daoInk} bold />
+      <EdgeLabel x={1024} y={164} text="unfreeze / set bounds / rotate agent" fill={C.daoInk} bold />
       <EdgeLabel x={636} y={400} text="events → dashboard (queryEvents)" fill={C.inkSoft} />
       {/* E7 / E8 bottom-arc labels */}
-      <EdgeLabel x={400} y={543} text="PriceInfoObject (same PTB)" fill={C.amberText} />
-      <EdgeLabel x={400} y={520} text="Pool L2 ticks (on-chain)" fill={C.amberText} />
+      <EdgeLabel x={400} y={535} text="PriceInfoObject (same PTB)" fill={C.amberText} />
+      <EdgeLabel x={430} y={512} text="Pool L2 ticks (on-chain)" fill={C.amberText} />
 
       {/* ── (e) TRUST-BOUNDARY banner — top header, counter-shifted up so it clears
               the zone titles (the content group below pushes everything down 40). ─ */}
@@ -485,8 +485,8 @@ export function ArchitectureDiagram() {
       {/* ── (d) 3-LAYER ENFORCEMENT LADDER (inset, bottom-right of Z3) ──────── */}
       <g>
         {(() => {
-          const lx = 700;
-          const lw = 300;
+          const lx = 672;
+          const lw = 328;
           const barH = 20;
           const gap = 4;
           let by = 432;
@@ -532,9 +532,9 @@ export function ArchitectureDiagram() {
           };
           return (
             <>
-              {rung("l1", C.paper, C.ink, "L1 · Inline floor — aborts if frozen / LTV-cap breach", "any borrow tx")}
-              {rung("l2", C.suiBlueWash, C.suiBlue, "L2 · CAUTION — clamp-and-log param tighten", "agent req, clamped · or contract-own")}
-              {rung("l3", C.dangerWash, C.danger, "L3 · FREEZE — halt borrow + withdraw", "contract-only · DAO unfreezes")}
+              {rung("l1", C.paper, C.ink, "L1 · Inline floor — abort on freeze / LTV breach", "any tx")}
+              {rung("l2", C.suiBlueWash, C.suiBlue, "L2 · CAUTION — tighten max_ltv↓ / borrow_cap↓", "agent · clamped")}
+              {rung("l3", C.dangerWash, C.danger, "L3 · FREEZE — halt borrow/withdraw", "contract-only")}
             </>
           );
         })()}

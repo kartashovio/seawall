@@ -60,8 +60,7 @@ describe("ScoreCard — READ-ONLY (mainnet) role", () => {
 
   it("carries the READ-ONLY role-note (never on any enforcement path)", () => {
     expect(html).toContain("read-only");
-    expect(html).toContain("not enforced");
-    expect(html).toContain("Never on any enforcement path");
+    expect(html).toContain("never on any enforcement path");
   });
 
   it("relabels the on-chain group 'not deployed' (no mainnet contract)", () => {

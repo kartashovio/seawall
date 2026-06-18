@@ -1,8 +1,7 @@
-// Demo control: drives the OFF-CHAIN agent into each of the four demo scenes by
-// POSTing a scene descriptor to the agent's control server. The contract-only
-// FREEZE (Scene ①) is a SEPARATE, real DeepBook divergence injected on-chain
-// (scripts/inject-divergence) — this panel only nudges the agent, it never
-// fakes the on-chain breach.
+// Demo control: drives the OFF-CHAIN agent into each demo scene by POSTing a scene
+// descriptor to the agent's control server. The contract-only FREEZE is a SEPARATE,
+// real DeepBook divergence (scripts/demo-freeze.ts) — this panel only nudges the
+// agent, it never fakes the on-chain breach.
 import { useState } from "react";
 
 type Scene = {
@@ -14,7 +13,7 @@ type Scene = {
 // depend on them) — only presentation (num glyph, label, accent) is added.
 const SCENES: { num: string; label: string; accent: string; body: Scene }[] = [
   { num: "②", label: "Slow drift → agent CAUTION", accent: "caution", body: { mode: "elevate", override: { overall: 78, solvency: 80, liquidity: 55 } } },
-  { num: "①", label: "Fast de-peg → hard tighten", accent: "caution", body: { mode: "elevate", override: { overall: 99, solvency: 99, liquidity: 70 } } },
+  { num: "①", label: "Fast de-peg → agent hard tighten", accent: "caution", body: { mode: "elevate", override: { overall: 99, solvency: 99, liquidity: 70 } } },
   { num: "③", label: "Malicious agent (clamped)", accent: "caution", body: { mode: "malicious" } },
   { num: "④", label: "Dead agent (L1 still holds)", accent: "neutral", body: { mode: "dead" } },
   { num: "↺", label: "Calm (reset)", accent: "calm", body: { mode: "calm" } },
@@ -45,7 +44,7 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
         Attack panel <span className="tag">demo control → agent</span>
       </h2>
       <div className="scene-strip">
-        {SCENES.map((s) => (
+        {[...SCENES].sort((a, b) => "①②③④↺".indexOf(a.num) - "①②③④↺".indexOf(b.num)).map((s) => (
           <button key={s.label} className={`btn btn-scene scene--${s.accent}`} onClick={() => sendScene(s.body)}>
             <span className="scene-num">{s.num}</span>
             <span className="scene-label">{s.label}</span>
@@ -59,8 +58,9 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
         </div>
       )}
       <div className="muted-sm">
-        drives the OFF-CHAIN agent. The contract-only FREEZE (Scene ①) is a separate REAL DeepBook divergence — see
-        scripts/inject-divergence.
+        This panel drives the OFF-CHAIN agent only — it never fakes an on-chain breach. The contract-only FREEZE is
+        triggered separately by a real DeepBook divergence (scripts/demo-freeze.ts) and recorded in “The freeze, recorded”
+        above.
       </div>
     </section>
   );

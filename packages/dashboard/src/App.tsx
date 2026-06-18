@@ -101,13 +101,6 @@ export function App() {
           the full wiring on demand. The old "Architecture" diagram band and the
           standalone "The wall" band fold into this one band. */}
       <section className="band wall-story">
-        <div className="band-head">
-          <span className="kicker">How it works</span>
-          <span className="lede">
-            one signal — Pyth↔DeepBook divergence — climbs three rungs; trust decides who pulls which
-          </span>
-        </div>
-
         <div className="hero-claim">
           <h2 className="hero-claim-line">You never have to trust it.</h2>
           <p className="hero-claim-body">
@@ -131,16 +124,26 @@ export function App() {
         <WiringReveal />
       </section>
 
-      {/* C — the two seas */}
+      {/* C — the two seas: one model, two seas — one enforced, one observed.
+          STATUS, NOT CONTROL: the env is a data field echoed from the agent; no
+          toggle, no implication mainnet can be switched to enforcing. The contrast
+          (calm on the real market, jumpy on the sandbox by design) IS the proof. */}
       <section className="band">
-        <div className="band-head band-head--notes">
-          <span className="kicker">The two seas</span>
-          <span className="lede">
-            the system is currently deployed on testnet only — mainnet is shown here purely for demonstration / reference
-          </span>
-          <span className="band-note">
-            the model is currently tuned to SUI — covering other assets requires re-fitting the ML model
-          </span>
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            One model, two seas — <span className="c-enforced">enforced</span> on testnet,{" "}
+            <span className="c-observing">observing</span> mainnet.
+          </h2>
+          <p className="hero-claim-body">
+            The same unchanged EWMA-Mahalanobis model runs in both. On testnet it drives{" "}
+            <span className="c-enforced">live on-chain enforcement</span>; on the real mainnet
+            SUI/USDC market it <span className="c-observing">reads only</span>. It stays calm on
+            the real market while the thin testnet pool runs jumpy by design — proof the model
+            isn't trigger-happy, only the sandbox is.
+          </p>
+          <p className="band-note seas-scope">
+            Fit to SUI today — other assets need the model re-fit.
+          </p>
         </div>
         {/* Calibration state — ABOVE the two scores (it gates whether they're trusted yet) */}
         <WarmupStatus warmup={latest?.warmup} variant="strip" />
@@ -167,26 +170,25 @@ export function App() {
         <Sparkline history={history} />
       </section>
 
-      {/* C2 — stress-test gallery: why the guardian matters when the market isn't calm */}
-      <section className="band band--backtest">
-        <div className="band-head">
-          <span className="kicker">Proven on real crises</span>
-          <span className="lede">the same unchanged model replayed through five historical crashes — score, knobs, divergence vs price</span>
-        </div>
-        <BacktestGallery />
-      </section>
-
-      {/* E — the reading: the deep-dive glass box between the high-level ladder and
-          the on-chain receipts. What the model measured, then the limits the contract
-          clamped it to. The old "instruments" + "why these limits" bands fold into
-          this one; the corridor geometry now lives here ONCE (LayerStatus L2 stays the
-          high-level teaser). */}
+      {/* The reading: the live deep-dive glass box — the payoff of the two-seas gauges
+          directly above it. What the model measured, then the limits the contract
+          clamped it to. (The old "instruments" + "why these limits" bands fold into
+          this one; the corridor geometry lives here ONCE — LayerStatus L2 is the teaser.) */}
       <section className="band">
         <div className="band-head">
           <span className="kicker">The reading</span>
           <span className="lede">what the model measured, and the limits the contract clamped it to</span>
         </div>
         <TheReading tick={latest} applied={applied} floor={floor} baseline={baseline} />
+      </section>
+
+      {/* stress-test gallery: historical proof the guardian matters when the market isn't calm */}
+      <section className="band band--backtest">
+        <div className="band-head">
+          <span className="kicker">Proven on real crises</span>
+          <span className="lede">the same unchanged model replayed through five historical crashes — score, knobs, divergence vs price</span>
+        </div>
+        <BacktestGallery />
       </section>
 
       {/* F — on-chain proof */}

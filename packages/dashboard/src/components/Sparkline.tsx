@@ -65,7 +65,7 @@ function HistoryChart({ history, kind }: { history: AgentTickDTO[]; kind: Kind }
 
   const label = isTest ? "TESTNET" : "MAINNET";
   const badge = isTest ? "ENFORCED · IN USE" : "READ-ONLY · OBSERVING";
-  const badgeCls = isTest ? "tag-agent" : "tag-readonly";
+  const badgeCls = isTest ? "tag-enforced" : "tag-readonly";
 
   const head = (
     <>
@@ -75,7 +75,7 @@ function HistoryChart({ history, kind }: { history: AgentTickDTO[]; kind: Kind }
       </div>
       {!isTest && (
         <p className="rc-chart-note">
-          In the current phase the project is deployed on testnet; the mainnet AI risk score is reference-only.
+          Read-only observatory — same model, real market.
         </p>
       )}
     </>

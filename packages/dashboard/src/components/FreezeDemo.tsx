@@ -2,7 +2,7 @@
 // it; they don't get to spam our contract with freezes. It renders one real,
 // recorded testnet cycle (data/freeze-demo.json, produced by
 // scripts/record-freeze-demo.ts): a normal borrow on a healthy policy, then a
-// keeper-style ping that makes a stressed policy FREEZE on the contract's own
+// keeper poke that makes a stressed policy FREEZE on the contract's own
 // re-derived divergence, then the IDENTICAL borrow aborting at the L1 inline
 // floor (EFrozen, a real failed tx), then the DAO clearing the halt. Every step
 // is a real transaction — each digest is explorer-linked and verifiable.
@@ -45,11 +45,11 @@ const dY = (v: number): number => MT + (1 - clamp(v, 0, maxDiv) / maxDiv) * PH;
 const polyline = (pts: Array<[number, number]>): string => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(2)}`).join(" ");
 const divLine = polyline(series.map((s): [number, number] => [tX(s.tMs), dY(s.divPct)]));
 
-const STEP_META: Record<string, { cls: string; label: string; row: string }> = {
-  normal: { cls: "k-ok", label: "OK", row: "" },
-  freeze: { cls: "k-frozen", label: "FREEZE", row: " frozen" },
-  abort: { cls: "k-reject", label: "ABORT", row: " reject" },
-  unfreeze: { cls: "k-dao", label: "DAO", row: "" },
+const STEP_META: Record<string, { cls: string; label: string; state: string }> = {
+  normal: { cls: "k-ok", label: "OK", state: "live" },
+  freeze: { cls: "k-frozen", label: "FREEZE", state: "freeze" },
+  abort: { cls: "k-reject", label: "ABORT", state: "abort" },
+  unfreeze: { cls: "k-dao", label: "DAO", state: "dao" },
 };
 
 const objUrl = (id: string): string => `${freeze.explorerObjBase}/${id}`;
@@ -65,11 +65,14 @@ export function FreezeDemo() {
   return (
     <section className="card freeze-demo">
       <h2>
-        The freeze, recorded on-chain <span className="tag tag-contract">witness · not interactive</span>
+        The contract froze itself — every step is a real transaction{" "}
+        <span className="tag tag-contract">recorded on-chain · verify every hash</span>
       </h2>
-      <p className="muted fd-intro">
-        One real testnet cycle, captured end-to-end — <b>LIVE → contract-only FREEZE → inline ABORT → DAO UNFREEZE</b>. Every
-        step below is a real transaction; click any hash to verify it on the explorer.
+      <p className="fd-intro">
+        One recorded testnet cycle: a <span className="c-emerald">healthy borrow</span>, a keeper poke that makes the contract{" "}
+        <span className="c-coral">freeze on its own divergence</span>, the same borrow now{" "}
+        <span className="c-coral">aborting at the inline floor</span>, then the{" "}
+        <span className="c-dao">DAO lifting the halt</span>.
       </p>
 
       {/* timeline chart */}
@@ -111,7 +114,7 @@ export function FreezeDemo() {
           <line x1={tX(freezeAtMs)} y1={MT} x2={tX(freezeAtMs)} y2={MT + PH} stroke="var(--coral)" strokeWidth="1.2" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
           <line x1={tX(unfreezeAtMs)} y1={MT} x2={tX(unfreezeAtMs)} y2={MT + PH} stroke="var(--dao)" strokeWidth="1.2" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
           <text x={tX(freezeAtMs)} y={H - 6} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--coral-dim)" textAnchor="middle">
-            ping → freeze
+            poke → freeze
           </text>
           <text x={tX(unfreezeAtMs)} y={H - 6} fontSize="8.5" fontFamily="var(--font-mono)" fill="var(--dao)" textAnchor="middle">
             DAO unfreeze
@@ -119,19 +122,20 @@ export function FreezeDemo() {
         </svg>
       </div>
       <p className="rc-divstrip-note fd-chart-note">
-        The contract-measured divergence (coral) sits at ~0.35% the whole time — far above this policy's <b>tight demo
-        threshold</b> ({freeze.demoTPct}%), so a single ping is enough to make the contract HALT on its own reading. The
-        score plays no part: the freeze is contract-only.
+        The contract's own divergence reading (coral) holds near ~0.35% the whole time — real, live testnet divergence, well
+        above this policy's <b>tight demo threshold</b> ({freeze.demoTPct}%). One poke makes it halt on its own data.
       </p>
 
-      {/* the four real transactions */}
-      <div className="log fd-steps">
+      {/* the same cycle, transaction by transaction — one numbered, state-coloured sequence */}
+      <p className="story-seam">The same cycle, transaction by transaction — every hash verifiable on-chain</p>
+      <ol className="fd-seq">
         {freeze.steps.map((s) => {
-          const m = STEP_META[s.key] ?? { cls: "k-dao", label: "TX", row: "" };
+          const m = STEP_META[s.key] ?? { cls: "k-dao", label: "TX", state: "dao" };
           return (
-            <div className={"logrow" + m.row} key={s.n}>
+            <li className="fd-seq-row" data-state={m.state} key={s.n}>
+              <span className="fd-seq-n">{s.n}</span>
               <span className={"k " + m.cls}>{m.label}</span>
-              <span>
+              <span className="fd-seq-body">
                 <b>{s.title}</b> — {s.desc}
                 {s.status === "failure" ? <span className="fd-fail"> · reverted on-chain ({s.abortName}, code {s.abortCode})</span> : null}
                 {typeof s.divPct === "number" ? <span className="fd-dim"> · div {s.divPct.toFixed(3)}%</span> : null}
@@ -139,35 +143,45 @@ export function FreezeDemo() {
               <a className="digest mono" href={txUrl(s.digest)} target="_blank" rel="noreferrer" title={`${s.status} · ${s.digest}`}>
                 {s.digest.slice(0, 8)}…
               </a>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
       <p className="fd-caveat">
-        Honest scope: the frozen policy uses a deliberately tight freeze threshold <b>T = {freeze.demoTPct}%</b> so the
-        natural testnet Pyth↔DeepBook offset crosses it on cue. <b>Production T = {freeze.prodTPct}%</b> — the pool would
-        have to genuinely de-peg. The freeze code and the threshold check are identical; only this per-policy, DAO-set T
-        differs. This block proves the <i>mechanism</i>; the live observatory above shows real monitoring at prod thresholds.
+        Same freeze code, same on-chain re-derivation, same threshold check — the only thing dialed down is one DAO-set
+        parameter: this policy's <b>T = {freeze.demoTPct}%</b>, so the freeze fires on cue instead of waiting for a real
+        de-peg. The divergence was genuinely measured live (~0.35%); we moved the bar, not the reading.{" "}
+        <b>Production T = {freeze.prodTPct}%</b> — the pool would have to actually de-peg. This block proves the{" "}
+        <i>mechanism</i>; the live observatory above runs at production thresholds.
       </p>
 
-      <div className="fd-meta mono">
-        <span>recorded {recorded} · testnet · objects:</span>
-        <a href={objUrl(freeze.stressed.policyId)} target="_blank" rel="noreferrer">frozen policy</a>
-        <a href={objUrl(freeze.stressed.vaultId)} target="_blank" rel="noreferrer">vault</a>
-        <a href={objUrl(freeze.stressed.capId)} target="_blank" rel="noreferrer">GovernanceCap</a>
-        <a href={objUrl(freeze.healthy.policyId)} target="_blank" rel="noreferrer">healthy policy</a>
-      </div>
-      <div className="fd-meta mono fd-setup">
-        <span>deploy receipts — healthy:</span>
-        <a href={txUrl(freeze.setup.healthyCreate)} target="_blank" rel="noreferrer">create</a>
-        <a href={txUrl(freeze.setup.healthyVault)} target="_blank" rel="noreferrer">vault</a>
-        <a href={txUrl(freeze.setup.healthyDeposit)} target="_blank" rel="noreferrer">deposit</a>
-        <span>· stressed:</span>
-        <a href={txUrl(freeze.setup.stressedCreate)} target="_blank" rel="noreferrer">create</a>
-        <a href={txUrl(freeze.setup.stressedVault)} target="_blank" rel="noreferrer">vault</a>
-        <a href={txUrl(freeze.setup.stressedDeposit)} target="_blank" rel="noreferrer">deposit</a>
-      </div>
+      {/* dense receipts, demoted one click deep — every digest stays explorer-verifiable */}
+      <details className="fd-receipts">
+        <summary>
+          <span className="fd-receipts-sum">On-chain receipts — 4 objects · 6 deploy transactions, every digest explorer-verifiable</span>
+        </summary>
+        <div className="fd-receipts-body">
+          <div className="fd-meta mono">
+            <span>objects:</span>
+            <a href={objUrl(freeze.stressed.policyId)} target="_blank" rel="noreferrer">frozen policy</a>
+            <a href={objUrl(freeze.stressed.vaultId)} target="_blank" rel="noreferrer">vault</a>
+            <a href={objUrl(freeze.stressed.capId)} target="_blank" rel="noreferrer">GovernanceCap</a>
+            <a href={objUrl(freeze.healthy.policyId)} target="_blank" rel="noreferrer">healthy policy</a>
+          </div>
+          <div className="fd-meta mono">
+            <span>deploy — healthy:</span>
+            <a href={txUrl(freeze.setup.healthyCreate)} target="_blank" rel="noreferrer">create</a>
+            <a href={txUrl(freeze.setup.healthyVault)} target="_blank" rel="noreferrer">vault</a>
+            <a href={txUrl(freeze.setup.healthyDeposit)} target="_blank" rel="noreferrer">deposit</a>
+            <span>· stressed:</span>
+            <a href={txUrl(freeze.setup.stressedCreate)} target="_blank" rel="noreferrer">create</a>
+            <a href={txUrl(freeze.setup.stressedVault)} target="_blank" rel="noreferrer">vault</a>
+            <a href={txUrl(freeze.setup.stressedDeposit)} target="_blank" rel="noreferrer">deposit</a>
+          </div>
+        </div>
+      </details>
+      <p className="fd-stamp mono">recorded {recorded} · testnet</p>
     </section>
   );
 }

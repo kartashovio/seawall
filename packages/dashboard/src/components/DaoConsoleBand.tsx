@@ -76,7 +76,7 @@ export function DaoConsoleBand({ paused }: { paused: boolean }) {
       </div>
 
       <div className="hero-claim">
-        <h2 className="hero-claim-line">A human can override the guardian.</h2>
+        <h2 className="hero-claim-line seas-claim-line">A human can override the guardian.</h2>
         <p className="hero-claim-body">
           The freeze is <span className="c-contract">contract-only</span>, and the <span className="c-agent">agent</span>{" "}
           can only tighten. The one road back — unfreeze, wider bounds, a new agent — runs through a single{" "}

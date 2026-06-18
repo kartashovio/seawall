@@ -63,6 +63,10 @@ export function FooterLedger() {
             Coral — breach / contract freeze
           </div>
           <div className="li">
+            <span className="sw sw-emerald" />
+            Emerald — live / enforced / healthy
+          </div>
+          <div className="li">
             <span className="sw sw-dao" />
             Blue — DAO governance
           </div>

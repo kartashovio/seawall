@@ -104,7 +104,7 @@ describe("TheReading — applied = tighter_of(agent, contract); agent only safer
 
   it("keeps the explicit 3-value decomposition (agent / contract / applied)", () => {
     expect(html).toContain("agent asks");
-    expect(html).toContain("contract floor (divergence)");
+    expect(html).toContain("contract target (divergence)");
     expect(html).toContain("applied");
   });
 

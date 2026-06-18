@@ -40,14 +40,17 @@ export function ActionLog({ events }: { events: GuardianEventRow[] }) {
   return (
     <section className="card">
       <h2>
-        On-chain action log <span className="tag tag-contract">queryEvents · must-have #3</span>
+        On-chain action log <span className="tag tag-contract">queryEvents · every action, explorer-verifiable</span>
       </h2>
       <div className="log-pin">
         Watch for <span className="c-agent">CLAMP (amber)</span> and <span className="c-breach">REJECT (coral)</span>:
         the contract refusing the agent. That's distrust, on-chain.
       </div>
       {events.length === 0 ? (
-        <div className="muted">no guardian events yet — start the agent + keeper.</div>
+        <div className="muted">
+          No guardian events in this window yet. Actions appear here the moment the agent submits or the keeper pokes
+          on-chain.
+        </div>
       ) : (
         <div className="log">
           {events.map((e, i) => {

@@ -1,6 +1,9 @@
-// One stress-test block: header (what + the headline REACTION stat), the dual-panel
-// chart, the numbered real-news legend (maps to the chart flags), an honest one-line
-// detection note (the lead, framed for what it is), then market/guardian/read prose.
+// One stress-test case, now COLLAPSIBLE: a <details> whose <summary> is the scan row
+// (title + class/driver tags + the headline guardian-reaction chip + asset drawdown),
+// and whose body holds the dual-panel chart, the inline legend, the numbered news, the
+// detection lead, and the market/guardian/read prose. One case (oct10) opens by default
+// so the expanded shape is visible; the rest collapse so the page scrolls easily.
+// DISPLAY-ONLY — every number is an existing computed/stored value.
 import { BacktestChart, type BtCase, type BtNews } from "./BacktestChart";
 import { COPY } from "./backtest-copy";
 
@@ -24,7 +27,11 @@ const CLS_LABEL: Record<string, string> = {
   idiosyncratic: "idiosyncratic",
   depeg: "stablecoin depeg",
 };
-const NEWS_KIND: Record<string, string> = { trigger: "trigger", escalation: "escalation", reversal: "reversal" };
+
+// feb2025 floors BOTH knobs, but its takeaway is the solvency-LED onset (max LTV
+// floors first while borrow cap holds at baseline) — so the collapsed chip names
+// the onset instead of "both", to match the case prose. Display-only, keyed by case.
+const CHIP_OVERRIDE: Record<string, string> = { feb2025: "solvency-led · max LTV → 55%" };
 
 const pad2 = (x: number) => String(x).padStart(2, "0");
 const utc = (ts: number) => {
@@ -36,90 +43,109 @@ const utc = (ts: number) => {
 // trading pair and confused viewers; the asset + proxy are stated explicitly below.
 const cleanTitle = (label: string) => label.replace(/\s*\([^)]*market\)\s*$/i, "").trim();
 
-export function BacktestCase({ data }: { data: BacktestData }) {
+// The 7-swatch chart legend — only meaningful beside an open chart, so it lives INSIDE
+// each case body (it used to sit once at the top of the gallery, far from the charts).
+function BtLegend() {
+  return (
+    <div className="bt-legend bt-legend--inline">
+      <span className="bt-leg"><span className="bt-leg-line bt-leg-score" /> AI risk score</span>
+      <span className="bt-leg"><span className="bt-leg-line bt-leg-ltv" /> max LTV</span>
+      <span className="bt-leg"><span className="bt-leg-line bt-leg-cap" /> borrow cap</span>
+      <span className="bt-leg"><span className="bt-leg-line bt-leg-div" /> divergence</span>
+      <span className="bt-leg"><span className="bt-leg-line bt-leg-price" /> price</span>
+      <span className="bt-leg"><span className="bt-leg-mark bt-leg-agent" /> agent → CAUTION</span>
+      <span className="bt-leg"><span className="bt-leg-sw bt-leg-freeze" /> contract FROZEN (red until DAO)</span>
+    </div>
+  );
+}
+
+export function BacktestCase({ data, defaultOpen = false }: { data: BacktestData; defaultOpen?: boolean }) {
   const copy = COPY[data.key];
   const dd =
     data.priceMin != null && data.priceMax != null && data.priceMax > 0 ? (100 * (data.priceMax - data.priceMin)) / data.priceMax : null;
   const driverTag = data.driver === "both" ? "both knobs" : data.driver ? `${data.driver}-driven` : null;
 
-  // Headline stat = the REAL reaction (not the faint detection lead): a freeze, or
-  // which knob the ratchet drove, derived from the displayed data.
-  const reaction = data.everFroze
-    ? "contract FROZE"
-    : data.driver === "solvency"
-      ? `max LTV → ${data.minLtv.toFixed(0)}%`
-      : data.driver === "liquidity"
-        ? `borrow cap → ${data.minCap.toFixed(0)}%`
-        : "both knobs tightened";
+  // Headline stat = the REAL reaction: a freeze, or which knob the ratchet drove,
+  // derived from the displayed data (with the feb2025 solvency-onset override above).
+  const reaction =
+    CHIP_OVERRIDE[data.key] ??
+    (data.everFroze
+      ? "contract FROZE"
+      : data.driver === "solvency"
+        ? `max LTV → ${data.minLtv.toFixed(0)}%`
+        : data.driver === "liquidity"
+          ? `borrow cap → ${data.minCap.toFixed(0)}%`
+          : "both knobs tightened");
+
+  // ONE rationed accent per card, shared by the left border AND the reaction chip:
+  // coral = the contract FROZE · amber = an agent-originated CAUTION tighten. Both
+  // knobs are clamped agent requests, so every non-freeze case is amber (never cyan,
+  // which would imply the contract originated it); the chip TEXT + driver tag carry
+  // the solvency-vs-liquidity distinction.
+  const tone = data.everFroze ? "freeze" : "caution";
 
   return (
-    <article className="bt-case">
-      <header className="bt-case-head">
-        <div className="bt-case-title">
-          <h3>{cleanTitle(data.label)}</h3>
-          <div className="bt-tags">
+    <details className={`bt-case bt-case--${tone}`} open={defaultOpen}>
+      <summary className="bt-case-sum">
+        <span className="bt-sum-marker" aria-hidden="true">+</span>
+        <span className="bt-sum-main">
+          <span className="bt-sum-title">{cleanTitle(data.label)}</span>
+          <span className="bt-sum-tags">
             <span className={`tag bt-cls bt-cls--${data.cls}`}>{CLS_LABEL[data.cls] ?? data.cls}</span>
             {driverTag && <span className="tag bt-drv">{driverTag}</span>}
-            {data.everFroze && <span className="tag bt-froze">contract FROZE</span>}
-          </div>
-        </div>
-        <div className="bt-stats">
-          <div className={`bt-stat ${data.everFroze ? "is-freeze" : ""}`}>
-            <span className="bt-stat-v">{reaction}</span>
-            <span className="bt-stat-k">guardian reaction</span>
-          </div>
-          <div className="bt-stat">
-            <span className="bt-stat-v">{dd != null ? `−${dd.toFixed(0)}%` : "—"}</span>
-            <span className="bt-stat-k">{data.asset} drawdown</span>
-          </div>
-          <div className="bt-stat">
-            <span className="bt-stat-v">{data.peakScore.toFixed(0)}</span>
-            <span className="bt-stat-k">peak score</span>
-          </div>
-        </div>
-      </header>
+          </span>
+        </span>
+        <span className="bt-sum-stats">
+          <span className={`bt-sum-react bt-sum-react--${tone}`}>{reaction}</span>
+          <span className="bt-sum-dd">
+            {dd != null ? `−${dd.toFixed(0)}%` : "—"} <i>{data.asset}</i>
+          </span>
+        </span>
+      </summary>
 
-      <BacktestChart c={data} />
+      <div className="bt-case-body">
+        <BacktestChart c={data} />
+        <BtLegend />
 
-      {!!data.newsEvents?.length && (
-        <div className="bt-news">
-          {data.newsEvents.map((nv, i) => (
-            <span key={i} className={`bt-news-item bt-news--${nv.kind}`}>
-              <span className="bt-news-num">{i + 1}</span>
-              <span className="bt-news-lbl">{nv.label}</span>
-              <span className="bt-news-ts">{utc(nv.ts)}{nv.confidence !== "high" ? ` · ~${nv.confidence}` : ""}</span>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {copy?.detection && <p className="bt-detect">{copy.detection}</p>}
-
-      <div className="bt-read">
-        <div className="bt-read-row">
-          <span className="bt-read-k">The market</span>
-          <p>{copy?.market}</p>
-        </div>
-        <div className="bt-read-row">
-          <span className="bt-read-k">The guardian</span>
-          <p>{copy?.guardian}</p>
-        </div>
-        <div className="bt-read-row bt-read-row--accent">
-          <span className="bt-read-k">How to read it</span>
-          <p>{copy?.read}</p>
-        </div>
-        {copy?.caveat && (
-          <div className="bt-read-row bt-read-row--caveat">
-            <span className="bt-read-k">Honest limit</span>
-            <p>{copy.caveat}</p>
+        {!!data.newsEvents?.length && (
+          <div className="bt-news">
+            {data.newsEvents.map((nv, i) => (
+              <span key={i} className={`bt-news-item bt-news--${nv.kind}`}>
+                <span className="bt-news-num">{i + 1}</span>
+                <span className="bt-news-lbl">{nv.label}</span>
+                <span className="bt-news-ts">{utc(nv.ts)}{nv.confidence !== "high" ? ` · ~${nv.confidence}` : ""}</span>
+              </span>
+            ))}
           </div>
         )}
-      </div>
 
-      <p className="bt-foot">
-        Price = <b>{data.asset}/USD</b> (dark line). BTC is a market-context input, not a pair — its volatility tells a systemic crash
-        (asset falls with BTC → borrow cap) from an idiosyncratic one (asset alone → max LTV). All times UTC.
-      </p>
-    </article>
+        {copy?.detection && <p className="bt-detect">{copy.detection}</p>}
+
+        <div className="bt-read">
+          <div className="bt-read-pair">
+            <div className="bt-read-cell">
+              <span className="bt-read-k">The market</span>
+              <p>{copy?.market}</p>
+            </div>
+            <div className="bt-read-cell bt-read-cell--guard">
+              <span className="bt-read-k">The guardian</span>
+              <p>{copy?.guardian}</p>
+            </div>
+          </div>
+          <div className="bt-read-take">
+            <span className="bt-read-k">How to read it</span>
+            <p>{copy?.read}</p>
+          </div>
+          {copy?.caveat && (
+            <details className="bt-read-limit">
+              <summary>
+                <span className="bt-read-k">Honest limit</span>
+              </summary>
+              <p>{copy.caveat}</p>
+            </details>
+          )}
+        </div>
+      </div>
+    </details>
   );
 }

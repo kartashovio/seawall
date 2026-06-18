@@ -23,7 +23,7 @@ const short = (id?: string) => (id && id.length > 12 ? `${id.slice(0, 6)}…${id
 // that consumes `d`, so the "four lines" claim matches the rail count with no dangling
 // binding. is_paused carries the lone coral hairline (frozen → abort).
 const DIFF: { t: string; add?: boolean; freeze?: boolean; comment?: boolean }[] = [
-  { t: "// in borrow() and withdraw() — same PTB as a fresh Pyth update", comment: true },
+  { t: "// in borrow() and withdraw_collateral() — same PTB as a fresh Pyth update", comment: true },
   { t: "let d = guardian::poke(&mut policy, &pio, &pool, &clock);", add: true },
   { t: "assert!(!guardian::is_paused(&policy), EFrozen);", add: true, freeze: true },
   { t: "let coll = coll_value(divergence::pyth_px_1e9(&d));" },
@@ -55,7 +55,7 @@ function DiffCard() {
 
 const STEPS: { n: string; mod: "dao" | "contract" | "agent"; label: string; sub: string; untrusted?: boolean }[] = [
   { n: "1", mod: "dao", label: "Deploy once", sub: "create_policy → shared GuardianPolicy, owned GovernanceCap to your DAO" },
-  { n: "2", mod: "contract", label: "Add the gate", sub: "four lines in borrow() and withdraw() — every path that raises risk" },
+  { n: "2", mod: "contract", label: "Add the gate", sub: "four lines in borrow() and withdraw_collateral() — every path that raises risk" },
   { n: "3", mod: "agent", label: "Run the agent", sub: "posts a fresh Pyth update and a tighter-only request — the contract clamps it", untrusted: true },
 ];
 
@@ -147,7 +147,7 @@ export function ConnectBand() {
 
       <h2 className="connect-claim">
         Add four lines to every <code className="connect-claim-code">borrow()</code> and{" "}
-        <code className="connect-claim-code">withdraw()</code>. Seawall watches and enforces.
+        <code className="connect-claim-code">withdraw_collateral()</code>. Seawall watches and enforces.
       </h2>
 
       <DiffCard />

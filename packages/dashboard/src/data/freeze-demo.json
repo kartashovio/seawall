@@ -66,8 +66,8 @@
     {
       "n": 2,
       "key": "freeze",
-      "title": "Ping → contract-only freeze",
-      "desc": "A keeper-style ping makes the contract re-derive its OWN divergence and, finding it over the (deliberately tight) demo threshold, HALT. The off-chain agent has no part in the freeze.",
+      "title": "Poke → contract-only freeze",
+      "desc": "A keeper poke makes the contract re-derive its OWN divergence and, finding it over the (deliberately tight) demo threshold, HALT. The off-chain agent has no part in the freeze.",
       "digest": "fRdB2pPMoaCHa3oE3LdURaci2DDv2164AjJJgMiD2wx",
       "status": "success",
       "paused": true,

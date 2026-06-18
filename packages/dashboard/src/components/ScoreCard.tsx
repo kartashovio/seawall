@@ -25,9 +25,9 @@ interface ScoreCardProps {
 
 const NOTE = {
   enforced:
-    "Drives on-chain CAUTION param-requests to the testnet GuardianPolicy — the score the breaker acts on. Sandbox: jumpy by design (thin pool), intentionally NOT recalibrated.",
+    "Drives on-chain CAUTION param-requests to the testnet GuardianPolicy — clamped to the safe direction; the contract acts on its own re-derived divergence, never the 0–100 score. Sandbox: jumpy by design (thin pool), intentionally NOT recalibrated.",
   readonly:
-    "Live mainnet market · read-only · not enforced. The same unchanged model reads calm here, proving the testnet jumpiness is a thin-pool artifact. Never on any enforcement path.",
+    "Live mainnet SUI/USDC · read-only · never on any enforcement path. Reads calm here.",
 };
 
 // A compact 0→freeze divergence scale with caution + freeze marks and the live
@@ -54,8 +54,8 @@ function DivMeter({ divBps, ok, enforced }: { divBps?: number; ok: boolean; enfo
       </div>
       <div className="divmeter-note">
         {enforced
-          ? "The contract halts the market on its own measured divergence — the AI risk score itself never freezes."
-          : "Reference only — the read-only mainnet observatory enforces nothing; no freeze here."}
+          ? "The contract halts on its own measured divergence."
+          : "Reference only — the read-only observatory enforces nothing."}
       </div>
     </div>
   );

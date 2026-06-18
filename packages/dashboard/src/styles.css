@@ -1,8 +1,9 @@
 /* ============================================================================
    SEAWALL — "Clear water" design system (light · Sui-blue · minimal).
    A bright near-white instrument panel: deep Sui-navy ink, hairline structure,
-   generous air, and exactly three rationed meaning-colors —
-   SUI-BLUE = contract & calm · AMBER = the (untrusted) agent · RED = breach/freeze.
+   generous air, and a small set of rationed meaning-colors —
+   SUI-BLUE = contract & calm · AMBER = the (untrusted) agent · RED = breach/freeze ·
+   EMERALD = live/enforced/healthy · DAO-BLUE = governance.
    Depth is soft blue-tinted shadow, never glow. No background atmosphere.
 
    MIGRATION ALIASES (bottom of :root): legacy var(--teal/red/green/blue/bg/panel)
@@ -296,10 +297,17 @@ a:hover {
   color: var(--cyan-dim);
   border-color: var(--cyan-line);
 }
+.tag-enforced {
+  /* the enforced/live testnet sea — EMERALD (live/enforced), never the agent's amber */
+  background: var(--emerald-wash);
+  color: var(--emerald-dim);
+  border-color: var(--emerald-line);
+}
 .tag-readonly {
-  background: var(--cyan-wash);
-  color: var(--cyan-dim);
-  border-color: var(--cyan-line);
+  /* read-only mainnet observatory — neutral chrome, never contract-cyan */
+  background: var(--inset);
+  color: var(--muted);
+  border-color: var(--line);
 }
 
 /* ── buttons ─────────────────────────────────────────────────────────── */
@@ -675,6 +683,31 @@ body.frozen .posture {
   margin-top: 16px;
 }
 
+/* C — two-seas intro: reuse the .hero-claim idiom so this 50%-weight evidentiary
+   band reads as weighty as the architecture block — but one notch under the single
+   page hero ("You never have to trust it.") so the hierarchy holds. Two NEW
+   meaning-cue spans: emerald = enforced/live (same token as the .is-enforced
+   scorecard spine + ribbon), neutral = observing/read-only. Cyan/amber/coral
+   untouched. */
+.seas-intro {
+  max-width: 66ch;
+  margin-bottom: 28px;
+}
+.seas-claim-line {
+  font-size: clamp(22px, 3vw, 30px);
+}
+.c-enforced {
+  color: var(--emerald-dim);
+  font-weight: 600;
+}
+.c-observing {
+  color: var(--muted);
+  font-weight: 600;
+}
+.seas-scope {
+  margin-top: 14px;
+}
+
 /* b2 — flow strip (the sequential spine, verb phrases). Connectors stay NEUTRAL
    so no arrow can read as the agent reaching the freeze. */
 .flow-strip {
@@ -729,62 +762,124 @@ body.frozen .posture {
   flex-direction: column;
   gap: 14px;
 }
-.why-sui-chips {
+/* P3 — Why Sui: a real section, three described legs (was 3 bare pills) */
+.why-sui {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(18px, 2.4vw, 24px);
+  background: var(--ground-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-0);
 }
-.wsui-label {
+.why-sui-kicker {
   font: 600 var(--fs-kicker) / 1 var(--font-ui);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--cyan-dim);
 }
-.wsui-chip {
+.why-sui-legs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(16px, 2vw, 24px);
+}
+.wsui-leg {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 11px;
+}
+.wsui-leg-num {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
-  background: var(--inset);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 7px;
+  background: var(--cyan-wash);
+  border: 1px solid var(--cyan-line);
+  color: var(--cyan-dim);
+  font: 600 var(--fs-sm) / 1 var(--font-mono);
+}
+.wsui-leg-title {
+  margin: 0 0 5px;
+  font: 600 var(--fs-base) / 1.25 var(--font-ui);
+  color: var(--ink);
+}
+.wsui-leg-body {
+  margin: 0;
   font-size: var(--fs-sm);
+  line-height: 1.45;
   color: var(--ink-dim);
 }
-.wsui-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--cyan-glow);
-  flex: none;
-}
+/* P2 — the architecture disclosure, given a real affordance (was a faint gray bar) */
 .wiring-reveal {
-  border: 1px solid var(--line);
+  border: 1px solid var(--cyan-line);
   border-radius: var(--r-ctl);
-  background: var(--ground-2);
+  background: var(--cyan-wash);
+  box-shadow: var(--shadow-0);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.wiring-reveal:hover {
+  border-color: var(--cyan);
+  box-shadow: var(--shadow-1);
 }
 .wiring-reveal > summary {
   cursor: pointer;
   list-style: none;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 13px 16px;
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  color: var(--muted);
+  gap: 13px;
+  padding: 15px 18px;
 }
 .wiring-reveal > summary::-webkit-details-marker {
   display: none;
 }
-.wiring-reveal > summary::before {
-  content: "▸";
-  color: var(--muted-deep);
+.wiring-summary-icon {
+  display: inline-flex;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-bar);
+  background: var(--ground-2);
+  border: 1px solid var(--cyan-line);
+  color: var(--cyan-dim);
+}
+.wiring-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.wiring-summary-title {
+  font: 600 var(--fs-base) / 1.2 var(--font-ui);
+  color: var(--cyan-dim);
+}
+.wiring-summary-sub {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--muted);
+}
+.wiring-summary-chev {
+  margin-left: auto;
+  flex: none;
+  color: var(--cyan-dim);
   transition: transform 0.2s ease;
 }
-.wiring-reveal[open] > summary::before {
+.wiring-reveal[open] .wiring-summary-chev {
   transform: rotate(90deg);
+}
+.wiring-reveal[open] {
+  background: var(--ground-2);
+  border-color: var(--line);
 }
 .wiring-reveal[open] > summary {
   border-bottom: 1px solid var(--line);
@@ -2702,12 +2797,6 @@ a.gov-status-val {
   line-height: 1.35;
   color: var(--ink-dim);
 }
-.scene--freeze:hover:not(:disabled) {
-  border-color: var(--coral);
-}
-.scene--freeze:hover:not(:disabled) .scene-num {
-  color: var(--coral);
-}
 .scene--caution:hover:not(:disabled) {
   border-color: var(--amber);
 }
@@ -2798,6 +2887,9 @@ a.gov-status-val {
 }
 .legend .sw-dao {
   background: var(--dao);
+}
+.legend .sw-emerald {
+  background: var(--emerald);
 }
 
 /* team credit — the page's closing line, spanning under the 3 ledger columns. A
@@ -2957,6 +3049,12 @@ a.gov-status-val {
   }
   .arch-frame svg {
     min-width: 720px;
+  }
+  .why-sui-legs {
+    grid-template-columns: 1fr;
+  }
+  .wiring-reveal > summary {
+    padding: 14px;
   }
   .header {
     flex-wrap: wrap;
@@ -3151,9 +3249,10 @@ a.gov-status-val {
 .bt-case {
   background: var(--ground-2);
   border: 1px solid var(--line);
+  border-left-width: 3px; /* tone accent (coral/cyan/amber) rides this left edge */
   border-radius: var(--r-card);
-  padding: 18px 20px 16px;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-card); /* padding moved to .bt-case-sum + .bt-case-body so it collapses cleanly */
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .bt-case-head {
   display: flex;
@@ -3181,20 +3280,14 @@ a.gov-status-val {
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
-.bt-cls--systemic {
-  background: var(--dao-wash);
-  color: var(--dao);
-  border-color: var(--dao-line);
-}
-.bt-cls--idiosyncratic {
-  background: var(--amber-wash);
-  color: var(--amber-dim);
-  border-color: var(--amber-line);
-}
+/* crash-taxonomy tags = neutral chrome — "systemic"/"idiosyncratic"/"depeg" are
+   data classes, not actors, so they must NOT wear a rationed meaning-colour */
+.bt-cls--systemic,
+.bt-cls--idiosyncratic,
 .bt-cls--depeg {
-  background: var(--coral-wash);
-  color: var(--coral-dim);
-  border-color: var(--coral-line);
+  background: var(--inset);
+  color: var(--muted);
+  border-color: var(--line-lit);
 }
 .bt-drv {
   background: var(--inset);
@@ -3412,6 +3505,251 @@ a.gov-status-val {
   }
 }
 
+/* ── backtest spoilers: <details> per case (mirrors .wiring-reveal) ───────── */
+.bt-case--freeze { border-left-color: var(--coral-line); }
+.bt-case--caution { border-left-color: var(--amber-line); }
+
+.bt-case-sum {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+.bt-case-sum::-webkit-details-marker {
+  display: none;
+}
+.bt-case:not([open]):hover {
+  border-color: var(--line-lit);
+  box-shadow: var(--shadow-1);
+}
+.bt-case[open] > .bt-case-sum {
+  border-bottom: 1px solid var(--line);
+}
+.bt-sum-marker {
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font: 600 var(--fs-lg) / 1 var(--font-mono);
+  color: var(--muted-deep);
+  transition: transform 0.2s ease;
+}
+.bt-case[open] .bt-sum-marker {
+  transform: rotate(45deg); /* "+" → "×" */
+}
+.bt-sum-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.bt-sum-title {
+  font: 600 var(--fs-lg) / 1.2 var(--font-display);
+  color: var(--ink);
+}
+.bt-sum-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bt-sum-stats {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+.bt-sum-react {
+  font: 600 var(--fs-sm) / 1 var(--font-mono);
+  padding: 4px 9px;
+  border-radius: var(--r-bar);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.bt-sum-react--freeze {
+  background: var(--coral-wash);
+  border-color: var(--coral-line);
+  color: var(--coral-dim);
+}
+.bt-sum-react--caution {
+  /* every non-freeze reaction is an agent-originated CAUTION tighten → amber.
+     Solvency-vs-liquidity is differentiated by the chip TEXT + driver tag, never
+     by colour (cyan would imply the contract originated it). */
+  background: var(--amber-wash);
+  border-color: var(--amber-line);
+  color: var(--amber-dim);
+}
+.bt-sum-dd {
+  font: 600 var(--fs-sm) / 1 var(--font-mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bt-sum-dd i {
+  color: var(--muted);
+  font-style: normal;
+}
+.bt-case-body {
+  padding: 16px 20px 18px;
+}
+
+/* compact per-case legend (relocated from the intro, only meaningful by a chart) */
+.bt-legend--inline {
+  gap: 10px 12px;
+  margin: 6px 0 10px;
+}
+.bt-legend--inline .bt-leg {
+  font-size: 10px;
+}
+
+/* intro proof chips — the verdict at a glance, even with every case collapsed */
+.bt-proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.bt-proof-chip {
+  font: 600 var(--fs-xs) / 1.4 var(--font-mono);
+  padding: 5px 10px;
+  border-radius: var(--r-bar);
+  border: 1px solid transparent;
+}
+.bt-proof-chip.is-freeze {
+  background: var(--coral-wash);
+  border-color: var(--coral-line);
+  color: var(--coral-dim);
+}
+.bt-proof-chip.is-caution {
+  background: var(--amber-wash);
+  border-color: var(--amber-line);
+  color: var(--amber-dim);
+}
+.bt-proof-chip.is-calm {
+  background: var(--cyan-wash);
+  border-color: var(--cyan-line);
+  color: var(--cyan-dim);
+}
+
+/* demoted intro scope + how-to-read disclosure */
+.bt-scope {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-lit);
+}
+.bt-scope > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.bt-scope > summary::-webkit-details-marker {
+  display: none;
+}
+.bt-scope-sum {
+  font: 600 var(--fs-xs) / 1.5 var(--font-mono);
+  color: var(--muted-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bt-scope > summary::before {
+  content: "+ ";
+  color: var(--muted-deep);
+}
+.bt-scope[open] > summary::before {
+  content: "× ";
+}
+.bt-scope .bt-intro-caveat {
+  margin-top: 12px;
+  border-top: none;
+  padding-top: 0;
+}
+.bt-scope .bt-foot {
+  margin-top: 10px;
+}
+
+/* read grid: market↔guardian pair + accented take + demoted honest-limit */
+.bt-read {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.bt-read-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.bt-read-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.bt-read-cell--guard {
+  border-left: 2px solid var(--amber-line);
+  padding-left: 12px;
+}
+.bt-read-cell p,
+.bt-read-take p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+.bt-read-take {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.bt-read-take p {
+  color: var(--ink);
+}
+.bt-read-limit {
+  padding-top: 8px;
+  border-top: 1px dashed var(--line-lit);
+}
+.bt-read-limit > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.bt-read-limit > summary::-webkit-details-marker {
+  display: none;
+}
+.bt-read-limit > summary::after {
+  content: " +";
+  color: var(--muted-deep);
+}
+.bt-read-limit[open] > summary::after {
+  content: " ×";
+}
+.bt-read-limit p {
+  margin: 8px 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--muted);
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .bt-read-pair {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .bt-read-cell--guard {
+    border-left: none;
+    padding-left: 0;
+    border-top: 2px solid var(--amber-line);
+    padding-top: 8px;
+  }
+  .bt-case-sum {
+    flex-wrap: wrap;
+  }
+  .bt-sum-stats {
+    margin-left: 0;
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
 /* ── recorded freeze witness (FreezeDemo) ─────────────────────────────────── */
 .freeze-demo .fd-intro {
   margin: 0 0 14px;
@@ -3468,5 +3806,134 @@ a.gov-status-val {
 .k-ok {
   background: var(--emerald-wash);
   color: var(--emerald-dim);
+}
+
+/* P6 — new colour-keyword tokens for the freeze chain (mirror .c-contract / .c-dao) */
+.c-emerald {
+  color: var(--emerald-dim);
+  font-weight: 600;
+}
+.c-coral {
+  color: var(--coral-dim);
+  font-weight: 600;
+}
+
+/* the four steps as ONE numbered, state-coloured sequence (replaces the flat .fd-steps) */
+.fd-seq {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.fd-seq-row {
+  display: grid;
+  grid-template-columns: 26px 72px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0 11px 12px;
+  border-left: 2px solid var(--line);
+}
+.fd-seq-row + .fd-seq-row {
+  border-top: 1px solid var(--line-soft);
+}
+.fd-seq-row[data-state="live"] {
+  border-left-color: var(--emerald);
+}
+.fd-seq-row[data-state="freeze"],
+.fd-seq-row[data-state="abort"] {
+  border-left-color: var(--coral);
+}
+.fd-seq-row[data-state="dao"] {
+  border-left-color: var(--dao);
+}
+.fd-seq-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  color: #fff;
+  font: 700 11px / 1 var(--font-ui);
+}
+.fd-seq-row[data-state="live"] .fd-seq-n {
+  background: var(--emerald);
+}
+.fd-seq-row[data-state="freeze"] .fd-seq-n,
+.fd-seq-row[data-state="abort"] .fd-seq-n {
+  background: var(--coral);
+}
+.fd-seq-row[data-state="dao"] .fd-seq-n {
+  background: var(--dao);
+}
+.fd-seq-row .k {
+  align-self: center;
+}
+.fd-seq-body {
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+/* folded receipts — a quiet disclosure (mirrors .bt-scope), one click deep */
+.fd-receipts {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-lit);
+}
+.fd-receipts > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.fd-receipts > summary::-webkit-details-marker {
+  display: none;
+}
+.fd-receipts-sum {
+  font: 600 var(--fs-xs) / 1.5 var(--font-mono);
+  color: var(--muted-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.fd-receipts > summary::before {
+  content: "+ ";
+  color: var(--muted-deep);
+}
+.fd-receipts[open] > summary::before {
+  content: "× ";
+}
+.fd-receipts-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.fd-receipts-body .fd-meta {
+  margin-top: 0;
+}
+.fd-stamp {
+  margin-top: 10px;
+  font-size: var(--fs-xs);
+  color: var(--muted-deep);
+}
+@media (max-width: 640px) {
+  /* number + badge + digest ride one line; the body text gets the full width */
+  .fd-seq-row {
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas: "num badge digest" "body body body";
+    gap: 6px 10px;
+  }
+  .fd-seq-n {
+    grid-area: num;
+  }
+  .fd-seq-row .k {
+    grid-area: badge;
+  }
+  .fd-seq-body {
+    grid-area: body;
+  }
+  .fd-seq-row .digest {
+    grid-area: digest;
+    justify-self: end;
+  }
 }
 
