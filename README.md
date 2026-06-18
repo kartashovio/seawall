@@ -18,7 +18,7 @@ The off-chain ML agent is an **untrusted early-warning radar**, not an authority
 
 - **The contract re-derives every breach on-chain.** In the *same* PTB as the agent's fresh Pyth post, the Move policy reads `get_price_no_older_than` *and* the DeepBook level-2 book itself, computes the Pyth↔CLOB divergence, and acts on *that* — never on the agent's word. The price-feed and pool ids are asserted (`EWrongFeed` / `EWrongPool`), so the agent can't slip in a stale or wrong source.
 - **The agent can only push safer.** Its request is a one-way ratchet, bounded to a corridor `[floor, baseline]` the DAO sets on-chain. A looser ask is rejected; an over-tight or malicious ask is clamped to the floor and logged. The raw 0–100 score never touches the logic path — it rides along as an advisory event field for the dashboard, nothing more.
-- **A hard freeze is contract-only.** The market pause fires purely on the contract's *own* measured divergence crossing a threshold `T` (or an unusable book). The agent has no say in it whatsoever.
+- **A hard freeze is contract-only.** The market pause fires purely on the contract's *own* measured divergence crossing a threshold `T` (or an unusable book). The agent has no say in it.
 - **Only the DAO unfreezes.** Unfreezing and loosening go through a `&GovernanceCap` that lives as a separate *owned* object. The agent physically can't hold it, and a call into the shared policy can't bypass it.
 
 So a compromised agent feeding garbage scores, trying to push *unsafe*, or trying to unfreeze, gets refused every time. Its number is never trusted; its effect is clamped to the safe direction; the breach it would act on is re-derived from raw Pyth + DeepBook on-chain.
@@ -35,9 +35,9 @@ The invariant across all three: the agent can only ever move the system *safer*,
 
 ## The model
 
-The agent runs an unsupervised anomaly detector. Each tick it reads a handful of market features and asks one question: how strange is the whole current picture versus what's been normal lately — not each number alone, but all of them together, including how they usually move in step. That "how strange" becomes the 0–100 score.
+The agent runs an unsupervised anomaly detector. Each tick it reads a handful of market features and asks one question: how strange is the whole current picture versus what's been normal lately — not each number alone, but all of them together, including how they usually move in step. That answer becomes the 0–100 score.
 
-It watches the *combination*. It reacts when things that normally agree start to disagree, even when no single number looks scary on its own. The score splits across two knobs that answer two different questions:
+It reacts when things that normally agree start to disagree, even when no single number looks scary on its own. The score splits across two knobs that answer two different questions:
 
 - **`max_ltv` — "can we trust the price?"** Moves on oracle-vs-market divergence. A stablecoin de-peg is mispriced, not crashing, so only this knob should move.
 - **`borrow_cap` — "how violent and fragmented is this?"** Moves on the asset's own volatility plus the broader market's. A violent crash tightens both.
@@ -50,7 +50,7 @@ Full derivation in [`docs/ml-methodology.md`](docs/ml-methodology.md).
 
 We replayed five real crashes minute by minute — the Oct 2025 SUI cascade, the Aug 2024 yen-carry unwind, the Feb 2025 tariff selloff, the Mar 2023 USDC de-peg, and the May 2025 Cetus exploit — on free, keyless data.
 
-**It caught all five, and routed each to the right knob.** The two slow-drift events tripped the confirmed alarm *hours* ahead — about 5.3 and 6.3 hours. The three fast crashes were caught coincident; a near-vertical move gives no head start, and we don't pretend otherwise. The USDC de-peg is the cleanest proof of the two-knob split: only `max_ltv` moved while `borrow_cap` stayed wide open, because the asset was mispriced, not violent. Calm windows stayed quiet at the ~1% false-alarm rate the model was built for.
+**It caught all five, and routed each to the right knob.** The two slow-drift events tripped the confirmed alarm *hours* ahead — about 5.3 and 6.3 hours. The three fast crashes were caught coincident — a near-vertical move gives no head start, and we don't pretend otherwise. The USDC de-peg is the cleanest proof of the two-knob split: only `max_ltv` moved while `borrow_cap` stayed wide open, because the asset was mispriced, not violent. Calm windows stayed quiet at the ~1% false-alarm rate the model was built for.
 
 The honest limits are stated up front in the doc — the early-warning headline rests on n = 2 slow events, the graded floor is a bounded nudge and not a foresight metric, and depth features are live-only. Full results, every caveat, and the reproduce command in [`docs/ml-backtest.md`](docs/ml-backtest.md).
 
@@ -64,7 +64,7 @@ The honest limits are stated up front in the doc — the early-warning headline 
 | `@seawall/keeper` | permissionless params-less `poke` every 5 min (freeze / relax / liveness, fully ML-independent) |
 | `@seawall/dashboard` | Vite + React: live gauge, model internals, on-chain action log, DAO override, attack panel |
 
-The vault is just the *demo consumer*. The product is guardian-as-a-service: any lending or perp protocol deploys its own `GuardianPolicy`, sets its own corridor, and grants its own scoped cap.
+The vault is the *demo consumer*, not the product. The product is guardian-as-a-service: any lending or perp protocol deploys its own `GuardianPolicy`, sets its own corridor, and grants its own scoped cap.
 
 ## Why Sui
 
@@ -83,6 +83,7 @@ Gauntlet and Chaos Labs Edge share the metric taxonomy and the goal (capital-eff
 
 | | id |
 |---|---|
+| **live dashboard** | <https://seawall.dev> |
 | **package** | [`0x2635919faff8a149b59389bec81fb059a2461b6b94c27fab3ac66581bde653ad`](https://suiscan.xyz/testnet/object/0x2635919faff8a149b59389bec81fb059a2461b6b94c27fab3ac66581bde653ad) |
 | `GuardianPolicy` | `0xd6497edc5a130bb32c57d92b447f7a83588ca83df51ce8fde0ecf549640a44b6` |
 | `GovernanceCap` | `0x9a72b115e1c10ae48af10395fca7007eae1369f9a1c5e6527841bf7add388e41` |
@@ -99,13 +100,13 @@ All ids live in [`config/testnet.json`](config/testnet.json). Demo video: _(YouT
 
 ## Honest scope
 
-Seawall covers the **oracle / price-anomaly class** only. It does not catch key or governance compromise, contract logic bugs, or credit quality. We'd rather say that plainly than imply a guardian that catches everything.
+Seawall covers the **oracle / price-anomaly class** only. It does not catch key or governance compromise, contract logic bugs, or credit quality — and we say so rather than imply a guardian that catches everything.
 
 ## Run it
 
 ```bash
 pnpm install
-pnpm test                         # 152 TS tests
+pnpm test                         # 181 TS tests
 pnpm move:test                    # 75 Move tests
 pnpm move:build
 
