@@ -107,7 +107,7 @@ export function FooterLedger() {
                 </a>
                 <span className="who-loc">VIP Kazakh</span>
               </span>
-              <span className="role">architecture · mentorship · tests · ML-engineer</span>
+              <span className="role">architecture · tests · ML-engineer</span>
               <span className="who-links">
                 <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98" target="_blank" rel="noreferrer">
                   DeepSurge

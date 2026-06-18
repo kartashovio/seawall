@@ -141,7 +141,7 @@ Toolchain and the two deploy-day dependency gotchas (Pyth's two testnet deployme
       <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98"><img src="assets/team/birzhan.jpg" width="72" height="72" alt="Birzhan Iglik"></a><br />
       <strong>Birzhan Iglik</strong><br />
       <sub>VIP Kazakh</sub><br />
-      <sub>architecture · mentorship · tests · ML-engineer</sub><br />
+      <sub>architecture · tests · ML-engineer</sub><br />
       <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98">DeepSurge</a>
     </td>
   </tr>
