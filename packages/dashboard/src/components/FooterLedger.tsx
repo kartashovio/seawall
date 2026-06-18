@@ -68,6 +68,55 @@ export function FooterLedger() {
           </div>
         </div>
       </div>
+
+      {/* credit strip — the page's closing line, a quiet full-width rule below the
+          three ledger columns (grid-column: 1 / -1). All type sits at the --fs-xs
+          floor, neutral chrome (no meaning-color) — a credit, not a feature. */}
+      <div className="credit">
+        <span className="credit-lead">Team</span>
+        <ul className="credit-people">
+          <li className="who">
+            <img className="face" src="/team/timur.jpg" width={30} height={30} alt="Timur Kartashov" loading="lazy" decoding="async" />
+            <div className="who-body">
+              <span className="who-top">
+                <a className="who-name" href="https://github.com/kartashovio" target="_blank" rel="noreferrer">
+                  Timur Kartashov
+                </a>
+                <span className="who-loc">Kazakhstan</span>
+              </span>
+              <span className="role">architecture · implementation · tests</span>
+              <span className="who-links">
+                <a href="https://github.com/kartashovio" target="_blank" rel="noreferrer">GitHub</a>
+                {" · "}
+                <a href="https://x.com/kartashovio" target="_blank" rel="noreferrer">X</a>
+                {" · "}
+                <a href="mailto:tkartashov.io@gmail.com">email</a>
+                {" · "}
+                <a href="https://www.deepsurge.xyz/profiles/bfef510f-dac2-44d2-96fb-5458ea718e99" target="_blank" rel="noreferrer">
+                  DeepSurge
+                </a>
+              </span>
+            </div>
+          </li>
+          <li className="who">
+            <img className="face" src="/team/birzhan.jpg" width={30} height={30} alt="Birzhan Iglik" loading="lazy" decoding="async" />
+            <div className="who-body">
+              <span className="who-top">
+                <a className="who-name" href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98" target="_blank" rel="noreferrer">
+                  Birzhan Iglik
+                </a>
+                <span className="who-loc">Kazakhstan</span>
+              </span>
+              <span className="role">architecture · mentorship · tests · ML-model consulting</span>
+              <span className="who-links">
+                <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98" target="_blank" rel="noreferrer">
+                  DeepSurge
+                </a>
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
     </footer>
   );
 }

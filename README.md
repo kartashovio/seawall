@@ -122,3 +122,27 @@ pnpm --filter @seawall/dashboard dev    # dashboard (:5173)
 ```
 
 Toolchain and the two deploy-day dependency gotchas (Pyth's two testnet deployments; DeepBook version-gating) are in [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md); the frozen ABI in [`docs/ABI.md`](docs/ABI.md); the demo walkthrough in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
+
+## Team
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <a href="https://github.com/kartashovio"><img src="assets/team/timur.jpg" width="72" height="72" alt="Timur Kartashov"></a><br />
+      <strong>Timur Kartashov</strong><br />
+      <sub>Kazakhstan</sub><br />
+      <sub>architecture · implementation · tests</sub><br />
+      <a href="https://github.com/kartashovio">GitHub</a> ·
+      <a href="https://x.com/kartashovio">X</a> ·
+      <a href="mailto:tkartashov.io@gmail.com">email</a> ·
+      <a href="https://www.deepsurge.xyz/profiles/bfef510f-dac2-44d2-96fb-5458ea718e99">DeepSurge</a>
+    </td>
+    <td align="center" valign="top" width="50%">
+      <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98"><img src="assets/team/birzhan.jpg" width="72" height="72" alt="Birzhan Iglik"></a><br />
+      <strong>Birzhan Iglik</strong><br />
+      <sub>Kazakhstan</sub><br />
+      <sub>architecture · mentorship · tests · ML-model consulting</sub><br />
+      <a href="https://www.deepsurge.xyz/profiles/cca743e4-2322-4632-bfd9-ff0e67563a98">DeepSurge</a>
+    </td>
+  </tr>
+</table>

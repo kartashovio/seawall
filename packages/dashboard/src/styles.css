@@ -2550,6 +2550,89 @@ a.gov-status-val {
   background: var(--dao);
 }
 
+/* team credit — the page's closing line, spanning under the 3 ledger columns. A
+   credit, not a feature: every token at the --fs-xs floor, neutral chrome only. */
+.credit {
+  grid-column: 1 / -1;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.credit-lead {
+  font: 600 var(--fs-xs) / 1 var(--font-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-deep);
+}
+.credit-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 26px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 26px;
+}
+.who:first-child {
+  padding-left: 0;
+}
+.who + .who {
+  border-left: 1px solid var(--line-lit);
+}
+.face {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+.who-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.who-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.who-name {
+  font: 600 var(--fs-xs) / 1.3 var(--font-ui);
+  color: var(--ink-dim);
+}
+.who-loc {
+  font-size: var(--fs-xs);
+  color: var(--muted-deep);
+}
+.who-loc::before {
+  content: "·";
+  margin: 0 5px;
+  color: var(--muted-deep);
+}
+.role {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--muted);
+}
+.who-links {
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--muted-deep);
+}
+.who-links a {
+  color: var(--dao);
+}
+
 /* ============================================================================
    RESPONSIVE — single breakpoint
    ========================================================================== */
@@ -2559,6 +2642,17 @@ a.gov-status-val {
   .model-blocks,
   .ledger {
     grid-template-columns: 1fr;
+  }
+  /* team credit stacks one member per line; drop the inter-member vertical hairline
+     (.who + .who is specificity 0,2,0 — the override must match it, not plain .who) */
+  .credit-people {
+    flex-direction: column;
+  }
+  .who {
+    padding-left: 0;
+  }
+  .who + .who {
+    border-left: none;
   }
   :root {
     --band-gap: 48px;
