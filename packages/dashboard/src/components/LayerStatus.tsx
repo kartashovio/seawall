@@ -80,7 +80,7 @@ export function LayerStatus({
               <span className="advisory-pill">score · advisory only</span>
               <span className="tag tag-agent rung-chip">the agent</span>
             </div>
-            <div className="rung-trigger">the agent originates a tighten as risk rises</div>
+            <div className="rung-trigger">the agent originates the tightening as risk rises</div>
             <div className="why-safe">
               contract clamps it to DAO bounds — a one-way ratchet, only safer
               {headroom && <span className="rung-headroom">{headroom}</span>}

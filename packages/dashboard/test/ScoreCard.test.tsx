@@ -36,6 +36,11 @@ describe("ScoreCard — ENFORCED (testnet) role", () => {
     expect(html).toContain("Drives on-chain CAUTION param-requests");
     expect(html).toContain("intentionally NOT recalibrated");
   });
+
+  it("keeps the on-chain block LIVE (not dimmed) — testnet IS deployed", () => {
+    expect(html).not.toContain("sc-onchain-na");
+    expect(html).not.toContain("not deployed");
+  });
 });
 
 describe("ScoreCard — READ-ONLY (mainnet) role", () => {
@@ -57,6 +62,16 @@ describe("ScoreCard — READ-ONLY (mainnet) role", () => {
     expect(html).toContain("read-only");
     expect(html).toContain("not enforced");
     expect(html).toContain("Never on any enforcement path");
+  });
+
+  it("relabels the on-chain group 'not deployed' (no mainnet contract)", () => {
+    expect(html).toContain("not deployed");
+    expect(html).not.toContain("contract-measured · not enforced");
+  });
+
+  it("dims + aria-hides the now-meaningless measurement block", () => {
+    expect(html).toContain("sc-onchain-na");
+    expect(html).toContain('aria-hidden="true"');
   });
 });
 

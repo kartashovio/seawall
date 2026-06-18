@@ -9,6 +9,7 @@ import { WarmupStatus } from "./components/WarmupStatus";
 import { PostureBanner } from "./components/PostureBanner";
 import { FlowStrip } from "./components/FlowStrip";
 import { WiringReveal } from "./components/WiringReveal";
+import { ConnectBand } from "./components/ConnectBand";
 import { ModelInternals } from "./components/ModelInternals";
 import { ActionLog } from "./components/ActionLog";
 import { FreezeDemo } from "./components/FreezeDemo";
@@ -130,6 +131,12 @@ export function App() {
 
         <WiringReveal />
       </section>
+
+      {/* B2 — connect your protocol: guardian-as-a-service adoption. WHAT a consumer
+          protocol edits (the drop-in gate) + the deploy→gate→agent flow + the exact
+          calls, grounded in the live testnet ids. Sits between the mechanism (How it
+          works) and the live proof (The two seas). */}
+      <ConnectBand />
 
       {/* C — the two seas */}
       <section className="band">

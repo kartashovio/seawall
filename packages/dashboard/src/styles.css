@@ -813,6 +813,268 @@ body.frozen .posture {
 }
 
 /* ============================================================================
+   B2 — CONNECT YOUR PROTOCOL (guardian-as-a-service adoption)
+   Same sequential IA as "How it works": claim → the drop-in diff (hero artifact)
+   → seam → deploy/gate/agent flow → mode line → live receipt → payoff → ABI
+   behind a collapsed disclosure. Reuses .band/.card/.tag/.wiring-reveal. Fixed
+   actor colors: dao = deploy/govern · cyan = the contract/gate · amber = the
+   untrusted agent · coral = the freeze gate (appears exactly once).
+   ========================================================================== */
+.connect {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* hero claim — ground-level, no card; the borrow() token cued cyan (code you edit) */
+.connect-claim {
+  margin: 0;
+  max-width: 54ch;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(20px, 2.6vw, 28px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.connect-claim-code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  color: var(--cyan-dim);
+}
+
+/* the drop-in diff card — the hero artifact. Four +-railed lines (cyan = added,
+   on-chain); the freeze assert carries the lone coral right-rail. */
+.diff-card {
+  padding: 13px 0 11px;
+  overflow-x: auto;
+}
+.diff-body {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.7;
+}
+.diff-line {
+  display: flex;
+  gap: 9px;
+  white-space: pre;
+  padding: 1px 16px;
+  border-left: 2px solid transparent;
+}
+.diff-gutter {
+  width: 1ch;
+  flex: none;
+  color: var(--muted-deep);
+  user-select: none;
+}
+.diff-code {
+  color: var(--ink-dim);
+}
+.diff-comment .diff-code {
+  color: var(--muted);
+}
+.diff-add {
+  background: var(--cyan-wash);
+  border-left-color: var(--cyan);
+}
+.diff-add .diff-gutter {
+  color: var(--cyan-dim);
+}
+.diff-add .diff-code {
+  color: var(--ink);
+}
+/* the freeze gate — the only coral on the open scan (frozen → abort) */
+.diff-freeze {
+  box-shadow: inset -2.5px 0 0 0 var(--coral);
+}
+.diff-cap {
+  margin-top: 10px;
+  padding: 0 16px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* seam — quiet mono bridge (code → where it runs) */
+.connect-seam {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* the 3-step adoption flow: deploy(dao) → gate(contract) → agent(amber, last) */
+.connect-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cstep-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex: 1 1 220px;
+}
+.cstep {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--inset);
+}
+.cstep--dao {
+  border-color: var(--dao-line);
+  background: var(--dao-wash);
+}
+.cstep--contract {
+  border-color: var(--cyan-line);
+  background: var(--cyan-wash);
+}
+.cstep--agent {
+  border-color: var(--amber-line);
+  background: var(--amber-wash);
+}
+.cstep-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cstep-chip {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font: 600 var(--fs-xs) / 1 var(--font-mono);
+  color: #fff;
+}
+.cstep--dao .cstep-chip {
+  background: var(--dao);
+}
+.cstep--contract .cstep-chip {
+  background: var(--cyan);
+}
+.cstep--agent .cstep-chip {
+  background: var(--amber);
+}
+.cstep-label {
+  font: 600 var(--fs-sm) / 1.2 var(--font-ui);
+}
+.cstep--dao .cstep-label {
+  color: var(--dao);
+}
+.cstep--contract .cstep-label {
+  color: var(--cyan-dim);
+}
+.cstep--agent .cstep-label {
+  color: var(--amber-dim);
+}
+.cstep-untrusted {
+  margin-left: auto;
+}
+.cstep-sub {
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+.cstep-arrow {
+  flex: none;
+}
+
+/* mode line — PUSH headline (cyan), PULL the honest fallback (muted, lesser weight) */
+.connect-mode {
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+.connect-mode .cm-push {
+  color: var(--cyan-dim);
+}
+.connect-mode .cm-pull {
+  color: var(--ink);
+}
+
+/* live receipt — clickable on-chain object grounds the abstract steps */
+.live-receipt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.lr-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--cyan-glow);
+  box-shadow: 0 0 0 3px var(--cyan-wash);
+}
+.lr-id {
+  color: var(--cyan-dim);
+  text-decoration: none;
+  border-bottom: 1px solid var(--cyan-line);
+}
+.lr-id:hover {
+  border-bottom-color: var(--cyan-dim);
+}
+
+/* payoff — closes the scan on the trust strength */
+.connect-payoff {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  max-width: 60ch;
+  font-size: var(--fs-base);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* ABI disclosure — reuses .wiring-reveal; dense calls one click away */
+.connect-abi .abi-body {
+  display: flex;
+  flex-direction: column;
+}
+.abi-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.abi-block:last-child {
+  border-bottom: none;
+}
+.abi-tag {
+  align-self: flex-start;
+}
+.abi-code {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1.65;
+  color: var(--ink-dim);
+  white-space: pre;
+  overflow-x: auto;
+}
+.abi-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.abi-note {
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ============================================================================
    C — THE TWO SEAS (scorecards + split sparkline + caveat)
    ========================================================================== */
 .seas {
@@ -991,6 +1253,16 @@ body.frozen .posture {
 }
 .sc-group--b .sc-group-lbl {
   color: var(--cyan-dim);
+}
+
+/* mainnet has no deployed contract → the "on-chain" block is inactive: dimmed +
+   blurred + desaturated so it reads as "nothing here", under the crisp
+   "not deployed" label. Non-interactive (it's a ghost of what a deploy would show). */
+.sc-onchain-na {
+  filter: grayscale(1) blur(1.4px);
+  opacity: 0.38;
+  user-select: none;
+  pointer-events: none;
 }
 
 /* divergence → contract-only-freeze meter */
@@ -2168,6 +2440,15 @@ body.frozen .posture {
   .flow-arrow {
     justify-content: center;
     transform: rotate(90deg);
+  }
+  /* connect steps → vertical stack, node above its ↓ connector */
+  .connect-steps {
+    flex-direction: column;
+  }
+  .cstep-wrap {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: stretch;
   }
   .arch-frame {
     padding: 16px;

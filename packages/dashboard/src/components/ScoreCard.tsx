@@ -93,16 +93,21 @@ export function ScoreCard({ env, enforced, score, divBps, book, available = true
             <span className="sc-group-sw" />
             <span className="sc-group-lbl">on-chain</span>
             <span className="sc-group-rule" />
-            <span className="sc-group-sub">{enforced ? "contract-measured · the freeze trigger" : "contract-measured · not enforced"}</span>
+            <span className="sc-group-sub">{enforced ? "contract-measured · the freeze trigger" : "not deployed"}</span>
           </div>
-          <div className="info-row" style={{ marginTop: 0 }}>
-            <DivMeter divBps={divBps} ok={ok} enforced={enforced} />
-            <div className="muted" style={{ fontSize: 12.5, marginTop: 7 }}>
-              book mid: {mid} · spread: {spread}
+          {/* On mainnet nothing is deployed, so the contract-measured block below is
+              inactive: dimmed + blurred + aria-hidden (no real on-chain measurement to
+              report). Only the "not deployed" label above stays crisp. */}
+          <div className={enforced ? undefined : "sc-onchain-na"} aria-hidden={enforced ? undefined : true}>
+            <div className="info-row" style={{ marginTop: 0 }}>
+              <DivMeter divBps={divBps} ok={ok} enforced={enforced} />
+              <div className="muted" style={{ fontSize: 12.5, marginTop: 7 }}>
+                book mid: {mid} · spread: {spread}
+              </div>
             </div>
-          </div>
-          <div className="gauge-cap role-note" style={{ marginTop: 14 }}>
-            {enforced ? NOTE.enforced : NOTE.readonly}
+            <div className="gauge-cap role-note" style={{ marginTop: 14 }}>
+              {enforced ? NOTE.enforced : NOTE.readonly}
+            </div>
           </div>
         </>
       ) : (
