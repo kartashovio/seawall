@@ -63,26 +63,33 @@ export function App() {
 
   return (
     <div className="app">
-      {/* A — masthead */}
+      {/* A — masthead: left brand lockup (mark mass == wordmark) · right labeled CHAIN-READS rail */}
       <header className="header">
         <div className="brand">
-          <img src="/logo.png" alt="Seawall" />
-          <div>
-            <h1>Seawall</h1>
-            <div className="sub">
-              Autonomous Risk Guardian
+          <span className="brand-mark-tile">
+            <img className="brand-mark" src="/logo.png" alt="Seawall" />
+          </span>
+          <div className="brand-text">
+            <div className="brand-line">
+              <h1>Seawall</h1>
               <span className={`env-pill env-${enforcedEnv}`}>ENFORCING ▸ {enforcedEnv.toUpperCase()}</span>
             </div>
+            <p className="sub">Autonomous Risk Guardian</p>
           </div>
         </div>
+
         <div className="spacer" />
-        <div className="statusbar" role="status" aria-label="system liveness">
-          <span className="muted stat-item">
-            <span className={`dot ${connected ? "dot-ok" : "dot-bad"}`} />
-            {connected ? "radar live" : "radar offline"}
-          </span>
-          <KeeperStatus keeperPokeMs={keeperPokeMs} />
-          <GuardianHealth lastCheckMs={lastCheckMs} />
+
+        <div className="rail">
+          <span className="rail-label">Chain reads</span>
+          <div className="statusbar" role="status" aria-label="system liveness">
+            <span className="muted stat-item">
+              <span className={`dot ${connected ? "dot-ok" : "dot-bad"}`} />
+              {connected ? "radar live" : "radar offline"}
+            </span>
+            <KeeperStatus keeperPokeMs={keeperPokeMs} />
+            <GuardianHealth lastCheckMs={lastCheckMs} />
+          </div>
         </div>
       </header>
 

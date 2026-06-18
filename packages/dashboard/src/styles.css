@@ -329,65 +329,132 @@ a:hover {
 /* ============================================================================
    A — MASTHEAD + POSTURE
    ========================================================================== */
+/* "Tidemark, hardened": balance by optical MASS, not pixel size. Left = a locked
+   brand lockup (white-tile inline-SVG mark whose mass equals an opsz-30 wordmark).
+   Right = a labeled "CHAIN READS" instrument rail, anchored — not floated on a bare
+   spacer. Restyles ONLY the .statusbar container; .dot-* (emerald LIVE) stay as-is. */
 .header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 28px 2px 18px;
+  gap: var(--sp-5); /* 26 */
+  padding: 24px 2px 18px;
   border-bottom: 1px solid var(--line);
 }
+
+/* ── left: mark + wordmark, balanced as ONE lockup ───────────────────────── */
 .brand {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 14px;
+  min-width: 0;
 }
-.brand img {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  border: 1px solid var(--line);
+.brand-mark-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-ctl); /* 12 — matches the page's controls */
+  background: var(--ground-2);
+  border: 1px solid var(--line-lit);
+  box-shadow: var(--shadow-card); /* soft blue-tinted lift = mass, no dark fill */
+  overflow: hidden;
 }
-.brand h1 {
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-variation-settings: var(--display-opsz-wordmark);
-  font-size: var(--fs-wordmark);
-  font-weight: 700;
-  line-height: 1;
-  margin: 0;
-  letter-spacing: -0.02em;
-  color: var(--ink);
+.brand-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
-.brand .sub {
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.brand-line {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  min-width: 0;
   gap: 10px;
-  margin-top: 6px;
+  min-width: 0;
+}
+.brand h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  /* opsz 30 (was 84): a denser UI grotesque that reads as a PEER to the 46px
+     mark, not a poster cut shouting over it. */
+  font-variation-settings: "opsz" 30;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* tagline: one tight ui descriptor — NOT the old uppercase letter-spaced line
+   that competed with the wordmark. */
+.brand .sub {
+  display: block;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--muted);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.header .spacer {
-  flex: 1;
-}
+
+/* ── env pill: a quiet mono annotation beside the wordmark ────────────────
+   default = neutral environment label; mainnet = contract-blue tint. */
 .env-pill {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 600;
-  padding: 3px 10px;
+  line-height: 1;
+  padding: 4px 10px;
   border-radius: 999px;
   letter-spacing: 0.04em;
   border: 1px solid var(--line-lit);
   background: var(--inset);
   color: var(--ink-dim);
+  white-space: nowrap;
 }
 .env-mainnet {
   border-color: var(--cyan-line);
   background: var(--cyan-wash);
   color: var(--cyan-dim);
+}
+
+.header .spacer {
+  flex: 1 1 auto;
+  min-width: var(--sp-3);
+}
+
+/* ── right: a labeled "CHAIN READS" instrument rail ──────────────────────── */
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.rail-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-deep);
+  padding-right: 13px;
 }
 .dot {
   display: inline-block;
@@ -411,15 +478,24 @@ a:hover {
 .dot-idle {
   background: var(--muted-deep);
 }
-/* grouped system-liveness bar (radar · keeper · guardian) — one tidy pill-bar */
+/* grouped system-liveness bar (radar · keeper · guardian) — one tidy pill-bar.
+   nowrap + horizontal-scroll on overflow so the border-left dividers can never
+   orphan on a wrapped row at narrow widths. */
 .statusbar {
   display: flex;
   align-items: stretch;
+  flex-wrap: nowrap;
+  max-width: 100%;
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--ground-2);
   box-shadow: var(--shadow-card);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.statusbar::-webkit-scrollbar {
+  display: none;
 }
 .stat-item {
   display: inline-flex;
@@ -1936,15 +2012,42 @@ body.frozen .posture {
   }
   .header {
     flex-wrap: wrap;
+    gap: 16px;
   }
   .header .spacer {
     display: none;
   }
+  .brand-mark-tile {
+    width: 40px;
+    height: 40px;
+  }
   .brand h1 {
     font-size: 26px;
+    font-variation-settings: "opsz" 26;
+  }
+  /* the rail drops below the brand, left-aligned; bar stays nowrap + scrolls */
+  .rail {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .rail-label {
+    padding-right: 0;
+    padding-left: 13px;
   }
   .app {
     padding: 0 18px 96px;
+  }
+}
+
+/* ── ~360px: keep the lockup intact; tighten only the pill + stat padding so
+   the brand-line can't overflow the wordmark ─────────────────────────────── */
+@media (max-width: 380px) {
+  .env-pill {
+    padding: 4px 8px;
+    letter-spacing: 0.02em;
+  }
+  .statusbar .stat-item {
+    padding: 3px 10px;
   }
 }
 
