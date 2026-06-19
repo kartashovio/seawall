@@ -238,7 +238,6 @@ Adoption is per-protocol and needs nothing from us. You deploy your own policy a
 | [`docs/ml-methodology.md`](docs/ml-methodology.md) | the model: features, estimator, calibration, glass-box scoring |
 | [`docs/ml-backtest.md`](docs/ml-backtest.md) | the five replayed crashes, results, every caveat, reproduce command |
 | [`docs/ABI.md`](docs/ABI.md) | the frozen on-chain ABI |
-| [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) | the demo-video walkthrough, top to bottom |
 | [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) | toolchain + the two deploy-day dependency gotchas |
 | [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) | the full build log and decisions |
 
