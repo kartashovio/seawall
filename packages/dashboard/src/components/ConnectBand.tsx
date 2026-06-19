@@ -30,8 +30,8 @@ const DIFF: { t: string; add?: boolean; freeze?: boolean; comment?: boolean }[] 
   { t: "let d = guardian::poke(&mut policy, &pio, &pool, &clock);", add: true },
   { t: "assert!(!guardian::is_paused(&policy), EFrozen);", add: true, freeze: true },
   { t: "let coll = coll_value(divergence::pyth_px_1e9(&d));" },
-  { t: "assert!(debt * BPS <= guardian::max_ltv_current_bps(&policy) * coll, ELtv);", add: true },
-  { t: "assert!(debt * BPS <= guardian::borrow_cap_current_bps(&policy) * coll, ECap);", add: true },
+  { t: "assert!(debt * BPS <= guardian::max_ltv_current_bps(&policy) * coll, ELtvExceeded);", add: true },
+  { t: "assert!(debt * BPS <= guardian::borrow_cap_current_bps(&policy) * coll, EBorrowCapExceeded);", add: true },
 ];
 
 function DiffCard() {
