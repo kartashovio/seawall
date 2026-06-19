@@ -90,7 +90,7 @@ export function RiskGauge({ score }: { score: number }) {
           / 100
         </text>
       </svg>
-      <div className="gauge-cap">calibrated anomaly score · 99 = measurement marker, not the gate</div>
+      <div className="gauge-cap">AI risk score · advisory, not the gate — see what drives it below</div>
     </>
   );
 }

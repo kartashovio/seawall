@@ -41,6 +41,34 @@ const BOUND_LABEL: Record<BoundBy, string> = {
   ratchet: "ratchet holds it below both — only the contract eases it back",
 };
 
+// Per-feature glass-box copy for the contribution bars. The label shows the
+// short-key; the popover adds what the label can't carry — full name, how the
+// feature is formed, why it matters. `div` is the SAME breach the contract
+// re-derives on-chain (never the score). Two sides: solvency = the oracle↔book
+// gap; liquidity = cross-venue / volatility stress. No key → no popover.
+const FEATURE_META: Record<string, { title: string; desc: string }> = {
+  div: {
+    title: "Oracle↔market divergence",
+    desc: "Gap in bps between the Pyth oracle price and the DeepBook order-book mid. This is the breach the contract re-derives on-chain from raw Pyth + DeepBook. Solvency-side.",
+  },
+  divvel: {
+    title: "Divergence velocity",
+    desc: "How fast that gap is widening, in bps per window. Counts widening only, so it rises before the gap is large — an early read. Solvency-side.",
+  },
+  disp: {
+    title: "Cross-venue dispersion",
+    desc: "Spread in bps across Coinbase, OKX and Bybit SUI prices. Widens when venues disagree on price. Liquidity-side.",
+  },
+  volvel: {
+    title: "Volatility velocity",
+    desc: "Rate of change of SUI realized volatility. Rises when SUI starts moving faster. Liquidity-side.",
+  },
+  mktvol: {
+    title: "Market volatility velocity",
+    desc: "BTC realized-volatility velocity, a market-wide proxy. Separates a SUI-specific move from a whole-market one. Liquidity-side.",
+  },
+};
+
 export function TheReading({
   tick,
   applied,
@@ -126,7 +154,20 @@ export function TheReading({
               const share = (Math.abs(val) / total) * 100;
               return (
                 <div className="barrow" key={name}>
-                  <span className="barlabel">{name}</span>
+                  {(() => {
+                    const meta = FEATURE_META[name];
+                    return meta ? (
+                      <span className="barlabel feat" tabIndex={0} title={`${meta.title} — ${meta.desc}`}>
+                        {name}
+                        <span className="feat-pop" role="tooltip">
+                          <b>{meta.title}</b>
+                          {meta.desc}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="barlabel">{name}</span>
+                    );
+                  })()}
                   <div className="bar-track">
                     <div className="bar-fill" style={{ width: `${share}%`, background: PAL[i % PAL.length] }} />
                   </div>
@@ -142,8 +183,9 @@ export function TheReading({
             <div className="cns-liq">
               <b>Low liquidity score here is expected.</b> The liquidity features — cross-venue dispersion,
               volatility velocity, BTC vol — are calm: no fragmentation, no violent move. The only signal is an
-              oracle↔order-book divergence, which is a solvency signal. So the divergence sets <i>max&nbsp;LTV</i>;
-              the agent isn't driving <i>borrow&nbsp;cap</i> right now.
+              oracle↔order-book divergence, which is a solvency signal. So divergence sets <i>max&nbsp;LTV</i> now.
+              <i>Borrow&nbsp;cap</i> — the agent's other knob, the one the liquidity score drives — sits at baseline
+              because liquidity is calm right now, not because the agent can't move it.
             </div>
           )}
         </div>

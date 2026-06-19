@@ -74,8 +74,9 @@ export function DaoConsoleBand({ paused }: { paused: boolean }) {
         <h2 className="hero-claim-line seas-claim-line">A human can override the guardian.</h2>
         <p className="hero-claim-body">
           The freeze is <span className="c-contract">contract-only</span>, and the <span className="c-agent">agent</span>{" "}
-          can only tighten. The one road back — unfreeze, wider bounds, a new agent — runs through a single{" "}
-          <span className="c-dao">owned cap in your wallet</span>. The agent can’t reach it.
+          can only tighten. The only way back toward looser — unfreeze, or widen the bounds — runs through a single{" "}
+          <span className="c-dao">owned cap in your wallet</span>. The same cap rotates which agent may submit; every
+          agent stays clamped regardless. The <span className="c-agent">agent</span> can’t reach it.
         </p>
         <div className="hero-legend">
           <span className="tag tag-agent">untrusted agent</span>

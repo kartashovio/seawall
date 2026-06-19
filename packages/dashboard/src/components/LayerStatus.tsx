@@ -162,6 +162,7 @@ export function LayerStatus({
               <span className="poke-who poke-agent">the agent</span>
             </div>
             <div className="why-safe">the contract clamps it inside DAO bounds — one-way, only safer</div>
+            <div className="why-safe">tunes only limits on NEW borrows — never the buffer on open positions</div>
           </div>
         </div>
 

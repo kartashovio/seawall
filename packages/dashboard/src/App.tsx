@@ -157,14 +157,14 @@ export function App() {
       <section className="band">
         <div className="seas-intro">
           <h2 className="hero-claim-line seas-claim-line">
-            Testnet is where it <span className="c-enforced">enforces</span>. The real mainnet market is where we{" "}
-            <span className="c-observing">check it stays calm</span>.
+            Watch it react — <span className="c-enforced">live on testnet</span>,{" "}
+            <span className="c-observing">read-only on the real market</span>.
           </h2>
           <p className="hero-claim-body">
-            The same EWMA-Mahalanobis model runs in both, unchanged. We've deployed only to testnet — that's the side
-            with <span className="c-enforced">live on-chain enforcement</span>. Pointed{" "}
-            <span className="c-observing">read-only</span> at the real SUI/USDC market, it stays calm, while the thin
-            testnet pool runs jumpy by design. The jumpiness is the pool, not the model.
+            The thin testnet pool stays turbulent, so you see the guardian tighten and the contract freeze in real time —
+            and testnet is the side with <span className="c-enforced">live on-chain enforcement</span>. The same
+            EWMA-Mahalanobis model also runs <span className="c-observing">read-only</span> on the real SUI/USDC mainnet
+            market, so you can watch how it reads genuine conditions. Enforcement is deployed to testnet only so far.
           </p>
           <p className="band-note seas-scope">
             Fit to SUI today — other assets need the model re-fit.
@@ -202,7 +202,7 @@ export function App() {
       <section className="band">
         <div className="seas-intro">
           <h2 className="hero-claim-line seas-claim-line">
-            A feature can sit safe — the joint distance still trips.
+            Every signal looks calm — the joint distance still trips.
           </h2>
           <p className="hero-claim-body">
             The <span className="c-agent">Mahalanobis distance</span> fires on the combined anomaly no single feature

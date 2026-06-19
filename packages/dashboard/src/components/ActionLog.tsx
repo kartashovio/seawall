@@ -54,7 +54,7 @@ export function ActionLog({ events }: { events: GuardianEventRow[] }) {
       {/* sub-header — replaces the lost band's "every action is a real on-chain
           event" h2 at card altitude (caption + tally + the queryEvents proof tag) */}
       <div className="rc-substrip-head">
-        <span className="rc-substrip-lbl">↳ on-chain action log</span>
+        <span className="rc-substrip-lbl">↳ testnet · on-chain action log</span>
         <span className="al-count">
           {events.length} events
           {clampCount > 0 ? ` · ${clampCount} clamped` : ""}

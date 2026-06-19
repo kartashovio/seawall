@@ -475,8 +475,8 @@ export function Sparkline({ history, events }: { history: AgentTickDTO[]; events
       </p>
       <HistoryChart history={h} kind="testnet" />
       <DivStrip history={h} />
-      <HistoryChart history={h} kind="mainnet" />
       <ActionLog events={events} />
+      <HistoryChart history={h} kind="mainnet" />
     </section>
   );
 }

@@ -2196,6 +2196,48 @@ body.frozen .posture {
   color: var(--muted);
   font-size: var(--fs-xs);
 }
+/* Glass-box feature labels: a dotted underline cues the hover/focus popover. */
+.barlabel.feat {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--line);
+  outline: none;
+}
+.feat-pop {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 8px;
+  width: 220px;
+  padding: 10px 12px;
+  background: var(--bg-0, #0c1116);
+  color: var(--ink, #e6edf3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-bar, 6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: normal;
+  z-index: 40;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.feat-pop b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--cyan, #7fd1e0);
+  font-weight: 600;
+}
+.barlabel.feat:hover .feat-pop,
+.barlabel.feat:focus-within .feat-pop,
+.barlabel.feat:focus .feat-pop {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
 .barval {
   text-align: right;
   font-family: var(--font-mono);
