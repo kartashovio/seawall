@@ -61,10 +61,11 @@ describe("TheReading — the merged honesty footer (score off the logic path)", 
     expect(html.split("real on-chain number").length - 1).toBe(1);
   });
 
-  it("the card heading is a distinct, prominent claim (no band kicker)", () => {
-    // the band-head kicker was removed; the card <h2> is now the promoted claim
-    expect(html).toContain("the joint distance still trips");
-    expect(html).not.toContain(">The reading<");
+  it("renders the glass box with no in-card heading (the claim is now the band header)", () => {
+    // the claim moved up to the band-level seas-intro header in App.tsx; the card
+    // opens straight on its instruments, carrying no duplicate heading
+    expect(html).toContain("Distance vs trip line");
+    expect(html).not.toContain("the joint distance still trips");
   });
 });
 

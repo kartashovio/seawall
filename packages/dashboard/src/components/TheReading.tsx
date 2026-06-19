@@ -89,11 +89,6 @@ export function TheReading({
 
   return (
     <section className="card reading">
-      <h2 className="card-claim">
-        A feature can sit safe — the joint distance still trips{" "}
-        <span className="tag tag-agent">EWMA · Mahalanobis · score off the logic path</span>
-      </h2>
-
       {/* STAGE 1 — the measurement: one calm cyan instrument, no amber here. */}
       <div className="model-blocks model-blocks--2">
         {/* (1) Mahalanobis distance vs the χ²(k) trip line. */}

@@ -120,7 +120,21 @@ export function App() {
         <div className="story-seam">That sequence, live on {enforcedEnv} right now:</div>
 
         <LayerStatus tick={latest} paused={paused} events={events} />
+      </section>
 
+      {/* What Sui makes possible — the Sui primitives that enforce each rule, plus the
+          full architecture schematic (collapsed). Its own band now (was nested in the
+          how-it-works foot). */}
+      <section className="band">
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            What <span className="c-contract">Sui</span> makes possible
+          </h2>
+          <p className="hero-claim-body">
+            Each rule is enforced by a Sui primitive — PTB atomicity, Move capabilities, the native DeepBook order book —
+            not bolted on off-chain.
+          </p>
+        </div>
         <WiringReveal />
       </section>
 
@@ -175,6 +189,16 @@ export function App() {
           clamped it to. (The old "instruments" + "why these limits" bands fold into
           this one; the corridor geometry lives here ONCE — LayerStatus L2 is the teaser.) */}
       <section className="band">
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            A feature can sit safe — the joint distance still trips.
+          </h2>
+          <p className="hero-claim-body">
+            The <span className="c-agent">Mahalanobis distance</span> fires on the combined anomaly no single feature
+            shows — and the contract clamps the result to the safe direction, never trusting the{" "}
+            <span className="c-agent">0–100 score</span> (it stays off the logic path).
+          </p>
+        </div>
         <TheReading tick={latest} applied={applied} floor={floor} baseline={baseline} />
       </section>
 
@@ -194,6 +218,15 @@ export function App() {
 
       {/* F — on-chain proof */}
       <section className="band">
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            Every guardian action is a real on-chain event.
+          </h2>
+          <p className="hero-claim-body">
+            Each one a <span className="c-contract">queryEvents</span> row, every digest explorer-linked — the contract's
+            distrust of the agent, on the record.
+          </p>
+        </div>
         <ActionLog events={events} />
       </section>
 
@@ -204,14 +237,31 @@ export function App() {
 
       {/* F2 — the freeze, recorded on-chain (a verifiable witness, not interactive) */}
       <section className="band">
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            The contract froze itself — every step is a real transaction.
+          </h2>
+          <p className="hero-claim-body">
+            One recorded testnet cycle: a <span className="c-emerald">healthy borrow</span>, a keeper poke that makes the
+            contract <span className="c-coral">freeze on its own divergence</span>, the same borrow now{" "}
+            <span className="c-coral">aborting at the inline floor</span>, then the{" "}
+            <span className="c-dao">DAO lifting the halt</span> — verify every hash on-chain.
+          </p>
+        </div>
         <FreezeDemo />
       </section>
 
       {/* G — the drill */}
       <section className="band">
-        <div className="band-head">
-          <span className="kicker">The drill</span>
-          <span className="lede">run the 4-scene demo — then try to break it</span>
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            Run the demo — then try to break the guardian.
+          </h2>
+          <p className="hero-claim-body">
+            Four scenes — a fast <span className="c-coral">de-peg</span>, a slow drift, a{" "}
+            <span className="c-agent">malicious agent</span>, a <span className="c-dao">DAO override</span>. The contract
+            refuses every unsafe move.
+          </p>
         </div>
         <AttackPanel agentUrl={CFG.agentUrl} />
       </section>

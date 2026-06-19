@@ -140,15 +140,14 @@ tx.moveCall({ target: 'guardian::submit', typeArguments: [SUI, DBUSDC],
 export function ConnectBand() {
   return (
     <section className="band connect">
-      <div className="band-head">
-        <span className="kicker">Connect your protocol</span>
-        <span className="lede">deploy once → add the gate → run the agent — you keep the corridor and the cap</span>
+      <div className="seas-intro">
+        <h2 className="hero-claim-line seas-claim-line">Add the guardian to any Sui lending protocol.</h2>
+        <p className="hero-claim-body">
+          Deploy once, add the gate to every <code className="connect-claim-code">borrow()</code> and{" "}
+          <code className="connect-claim-code">withdraw_collateral()</code>, run the agent — your{" "}
+          <span className="c-dao">DAO keeps the corridor and the unfreeze cap</span>.
+        </p>
       </div>
-
-      <h2 className="connect-claim">
-        Add four lines to every <code className="connect-claim-code">borrow()</code> and{" "}
-        <code className="connect-claim-code">withdraw_collateral()</code>. Seawall watches and enforces.
-      </h2>
 
       <DiffCard />
 

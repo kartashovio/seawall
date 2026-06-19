@@ -64,16 +64,6 @@ const recorded = new Date(freeze.recordedAt).toLocaleString("en-US", {
 export function FreezeDemo() {
   return (
     <section className="card freeze-demo">
-      <h2 className="card-claim">
-        The contract froze itself — every step is a real transaction{" "}
-        <span className="tag tag-contract">recorded on-chain · verify every hash</span>
-      </h2>
-      <p className="fd-intro">
-        One recorded testnet cycle: a <span className="c-emerald">healthy borrow</span>, a keeper poke that makes the contract{" "}
-        <span className="c-coral">freeze on its own divergence</span>, the same borrow now{" "}
-        <span className="c-coral">aborting at the inline floor</span>, then the{" "}
-        <span className="c-dao">DAO lifting the halt</span>.
-      </p>
 
       {/* timeline chart */}
       <div className="rc-frame fd-frame">

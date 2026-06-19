@@ -39,10 +39,6 @@ function rowClass(kind: GuardianEventKind): string {
 export function ActionLog({ events }: { events: GuardianEventRow[] }) {
   return (
     <section className="card">
-      <h2 className="card-claim">
-        Every guardian action is a real on-chain event{" "}
-        <span className="tag tag-contract">queryEvents · explorer-verifiable</span>
-      </h2>
       <div className="log-pin">
         Watch for <span className="c-agent">CLAMP (amber)</span> and <span className="c-breach">REJECT (coral)</span>:
         the contract refusing the agent. That's distrust, on-chain.

@@ -1,14 +1,14 @@
-// b6 — the band foot. Two parts, both folding the trust story one level deeper:
-//   1. The detailed architecture schematic — genuine evidence but too dense for the
-//      20-second product scan, so it's DEMOTED to a default-collapsed disclosure
-//      with a real "View ›" affordance (one click away for a technical judge, off
-//      the default page for everyone else).
-//   2. "Why this needs Sui" — a self-sufficient section-claim with three described
-//      legs (each Sui primitive that enforces a rule). The "meaningful Sui" evidence
-//      the 20% Technical rubric rewards, stated as facts a judge can check.
+// The body of the "What Sui makes possible" band (the band claim header lives in
+// App.tsx). Two parts:
+//   1. The three described Sui-primitive legs (PTB atomicity, Move capabilities,
+//      native DeepBook CLOB) — the "meaningful Sui" evidence the 20% Technical
+//      rubric rewards, stated as facts a judge can check.
+//   2. The detailed architecture schematic — genuine evidence but too dense for the
+//      20-second scan, so it's DEMOTED to a default-collapsed disclosure at the
+//      bottom with a real "View ›" affordance.
 //
-// Colour: both parts are about the contract / the Sui platform, so they use cyan
-// only — never amber (agent) or coral (freeze). Pure presentational, no props.
+// Colour: both parts are about the contract / the Sui platform → cyan only. Pure
+// presentational, no props.
 import { ArchitectureDiagram } from "./ArchitectureDiagram";
 
 const WHY_SUI = [
@@ -32,6 +32,20 @@ const WHY_SUI = [
 export function WiringReveal() {
   return (
     <div className="wiring-foot">
+      <section className="why-sui" aria-label="Sui primitives">
+        <ol className="why-sui-legs">
+          {WHY_SUI.map((leg, i) => (
+            <li key={leg.id} className="wsui-leg">
+              <span className="wsui-leg-num">{i + 1}</span>
+              <div className="wsui-leg-text">
+                <h3 className="wsui-leg-title">{leg.title}</h3>
+                <p className="wsui-leg-body">{leg.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <details className="wiring-reveal">
         <summary className="wiring-summary">
           <span className="wiring-summary-icon" aria-hidden="true">
@@ -59,28 +73,6 @@ export function WiringReveal() {
           <ArchitectureDiagram />
         </div>
       </details>
-
-      <section className="why-sui" aria-labelledby="why-sui-heading">
-        <div className="seas-intro why-sui-intro">
-          <h2 id="why-sui-heading" className="hero-claim-line seas-claim-line">
-            Why this needs <span className="c-contract">Sui</span>
-          </h2>
-          <p className="hero-claim-body">
-            Each rule below is enforced by a Sui primitive, not bolted on off-chain.
-          </p>
-        </div>
-        <ol className="why-sui-legs">
-          {WHY_SUI.map((leg, i) => (
-            <li key={leg.id} className="wsui-leg">
-              <span className="wsui-leg-num">{i + 1}</span>
-              <div className="wsui-leg-text">
-                <h3 className="wsui-leg-title">{leg.title}</h3>
-                <p className="wsui-leg-body">{leg.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
     </div>
   );
 }

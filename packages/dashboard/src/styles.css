@@ -213,29 +213,8 @@ a:hover {
 .band--hero {
   margin-top: var(--band-gap-tight);
 }
-.band-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 2px var(--head-gap);
-}
-.band-head .kicker {
-  font: 600 var(--fs-kicker) / 1 var(--font-ui);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--cyan-dim);
-}
-.band-head .lede {
-  font-size: var(--fs-sm);
-  color: var(--ink-dim);
-}
-.band-head .tag {
-  margin-left: auto;
-}
-/* a band-head that carries an extra caveat line below the lede (wraps full-width) */
-.band-head--notes {
-  flex-wrap: wrap;
-}
+/* .band-head* (kicker + lede) removed — every content band now opens with the
+   canonical seas-intro claim header. .band-note survives (two-seas scope note). */
 .band-note {
   flex-basis: 100%;
   margin-top: 2px;
@@ -271,20 +250,6 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-/* Q4/Q6/Q8 — promote a card h2 to a prominent, self-sufficient claim heading.
-   `.card h2.card-claim` beats the default `.card h2` (uppercase/muted/small);
-   inherits its flex+gap, overrides size/face/colour/transform. A notch under the
-   page hero, level with the section-claims. */
-.card h2.card-claim {
-  font: 600 clamp(21px, 2.8vw, 28px) / 1.18 var(--font-display);
-  font-optical-sizing: auto;
-  font-variation-settings: var(--display-opsz-heading);
-  letter-spacing: -0.01em;
-  text-transform: none;
-  color: var(--ink);
-  align-items: baseline;
-  flex-wrap: wrap;
 }
 .tag {
   font-family: var(--font-mono);
@@ -961,17 +926,10 @@ body.frozen .posture {
   gap: 22px;
 }
 
-/* hero claim — ground-level, no card; the borrow() token cued cyan (code you edit) */
-.connect-claim {
-  margin: 0;
-  max-width: 54ch;
-  font-family: var(--font-display);
-  font-optical-sizing: auto;
-  font-size: clamp(20px, 2.6vw, 28px);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.015em;
-  color: var(--ink);
+/* .connect-claim removed — Connect now uses the canonical seas-intro header.
+   .connect is a flex column (gap), so zero the seas-intro's own bottom margin. */
+.connect > .seas-intro {
+  margin-bottom: 0;
 }
 .connect-claim-code {
   font-family: var(--font-mono);

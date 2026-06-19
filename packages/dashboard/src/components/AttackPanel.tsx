@@ -40,9 +40,6 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
 
   return (
     <section className="card attack">
-      <h2>
-        Attack panel <span className="tag">demo control → agent</span>
-      </h2>
       <div className="scene-strip">
         {[...SCENES].sort((a, b) => "①②③④↺".indexOf(a.num) - "①②③④↺".indexOf(b.num)).map((s) => (
           <button key={s.label} className={`btn btn-scene scene--${s.accent}`} onClick={() => sendScene(s.body)}>
