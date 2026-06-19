@@ -448,8 +448,16 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
   );
 }
 
+// Hard 12h display window: keep at most the last 760 ticks (perf) AND only the
+// ticks within 12h of the newest one, so a restart gap can't stretch the span past
+// the "(up to 12h)" claim (it used to read e.g. "12.7h"). Both the chart and the
+// label now honor the cap.
+const WINDOW_H = 12;
+
 export function Sparkline({ history, events }: { history: AgentTickDTO[]; events: GuardianEventRow[] }) {
-  const h = history.slice(-760);
+  const recent = history.slice(-760);
+  const newest = recent.length ? recent[recent.length - 1].ts : 0;
+  const h = recent.filter((t) => newest - t.ts <= WINDOW_H * 3_600_000);
   const hours = h.length >= 2 ? Math.max(0, (h[h.length - 1].ts - h[0].ts) / 3_600_000) : 0;
   const span = hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(hours * 60)} min`;
 

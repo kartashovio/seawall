@@ -23,7 +23,7 @@ export const COPY: Record<string, CaseCopy> = {
     market:
       "Trump signed tariff executive orders on Canada, Mexico and China late Saturday Feb 1 (①); 24/7 crypto sold off through the weekend and the macro shock detonated a leverage cascade — ~$2.27B liquidated in 24h (~743k traders, ~$1.7B of it longs), the largest single-day wipeout since the COVID/FTX shocks, with one exchange CEO flagging the true figure as several times higher. SUI bled ~38% as the leg deepened into Feb 3, partly retracing after Mexico's (then Canada's) tariffs were paused (②).",
     guardian:
-      "The clearest case of the ML earning its place. Contract-measured divergence only grazes its own 1% caution line (one spike to ~123 bps) and never nears the 5% freeze — so the inline check barely acts. The catch onsets solvency-led: at the ≥99 alert only max LTV has floored (→55%) while borrow cap still sits at baseline (100%, the trust-the-price knob moving first); only as the magnitude deepens does the ratchet pull both knobs to the floor (55% / 40%), then relax as the selloff stabilizes. The flooring is the score's doing, not the divergence reading. No freeze.",
+      "The clearest case of the ML earning its place. Contract-measured divergence only grazes its own 1% caution line (one spike to ~123 bps) and never nears the 5% freeze — so the inline check barely acts. The catch onsets solvency-led: at onset max LTV ratchets down first while borrow cap holds at baseline (the trust-the-price knob moving first); only as the magnitude deepens does the ratchet pull both knobs to the floor (55% / 40%), then relax as the selloff stabilizes. The flooring is the score's doing, not the divergence reading. No freeze.",
     read:
       "The guardian reacts to a sustained selloff, not predicts it — and it's the strongest evidence the ML adds something: the contract's own divergence barely grazes caution, so without the score the knobs would never floor. The trade-off is timing: enforcement lands at the crisis, not 5 h early. For a clean predictive lead see USDC; for the in-block freeze see Oct-10.",
   },
@@ -55,9 +55,9 @@ export const COPY: Record<string, CaseCopy> = {
     market:
       "The yen carry-trade unwound — the BoJ hiked on Jul 31 and a weak US jobs report on Aug 2 tripped the Sahm recession rule — and on Aug 5 the Nikkei closed −12.4% (①) amid a global cascade. In crypto it was a smaller Oct-10: ~$1B+ liquidated in 24h (~254k traders, ~90% longs) as carry-funded leverage unwound into thin books. SUI fell ~19% with BTC — a systemic, leverage-amplified move, but with NO oracle break (stablecoins held their pegs; DeFi liquidations ran orderly).",
     guardian:
-      "The liquidity signature: BTC volatility-velocity and cross-venue dispersion lead, so borrow cap drives down to its ~42% floor while max LTV barely moves (~72%) — a systemic deleveraging caps new leverage rather than repricing collateral. Divergence stayed well under 5% (peak ~64 bps): a hard cap tightening, not a freeze. (24/7 crypto cascaded hours before the Nikkei cash close ①.)",
+      "The liquidity signature: BTC volatility-velocity and cross-venue dispersion lead, so borrow cap drives down to ~42% (near its 40% floor) while max LTV barely moves (~72%) — a systemic deleveraging caps new leverage rather than repricing collateral. Divergence stayed well under 5% (peak ~64 bps): a hard cap tightening, not a freeze. (24/7 crypto cascaded hours before the Nikkei cash close ①.)",
     read:
-      "Proof the two knobs listen to two different things. Here the model reads a market-wide liquidity event — borrow cap leads to its floor, max LTV barely moves. Same model, the other knob, a hard cap tightening rather than a halt.",
+      "Proof the two knobs listen to two different things. Here the model reads a market-wide liquidity event — borrow cap leads toward its floor, max LTV barely moves. Same model, the other knob, a hard cap tightening rather than a halt.",
   },
   cetus: {
     detection:

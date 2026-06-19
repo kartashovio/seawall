@@ -342,73 +342,11 @@ export function ArchitectureDiagram() {
       <Node x={320} y={96} w={260} h={60} label="ML model" sub="EWMA-Mahalanobis · 5-feat live" stroke={C.ink} />
       <Node x={320} y={196} w={260} h={64} label="Agent" sub="ratchet + send-gate · score→ParamRequest" stroke={C.suiBlue} />
       <Node x={320} y={320} w={260} h={60} label="Keeper" sub="model-free heartbeat · own key" stroke={C.inkSoft} />
-      {/* GuardianPolicy — the shared per-protocol object that HOLDS the live state:
-          the commit target AND the source of truth the vault enforces against each
-          op. Custom-rendered (not <Node/>) so the STATE line lives INSIDE the node,
-          not in the crowded gap below (which the E6 re-derive label owns). */}
-      <g>
-        <rect x={700} y={150} width={300} height={84} rx={10} fill={C.paper} stroke={C.suiBlue} strokeWidth={1.5} />
-        <text x={850} y={172} textAnchor="middle" dominantBaseline="middle" fontFamily={FONT} fontSize={14} fontWeight={600} fill={C.ink}>
-          GuardianPolicy
-        </text>
-        <text x={850} y={189} textAnchor="middle" dominantBaseline="middle" fontFamily={FONT} fontSize={11} fontWeight={400} fill={C.inkSoft}>
-          shared · corridor + caps
-        </text>
-        <line x1={712} y1={204} x2={988} y2={204} stroke={C.hair} strokeWidth={1} />
-        <text x={850} y={219} textAnchor="middle" dominantBaseline="middle" fontFamily={FONT} fontSize={8.5} fontWeight={700} fill={C.suiBlueText}>
-          LIVE STATE · max_ltv · borrow_cap · paused · last_check
-        </text>
-      </g>
+      <Node x={700} y={150} w={300} h={76} label="GuardianPolicy" sub="shared · corridor + caps + state" stroke={C.suiBlue} />
       <Node x={700} y={262} w={300} h={56} label="divergence::read" sub="re-derives div from raw Pyth+book" stroke={C.suiBlue} />
       <Node x={700} y={356} w={300} h={60} label="Vault (consumer)" sub="borrow / withdraw — gated" stroke={C.ink} />
       <Node x={1072} y={230} w={104} h={110} label="GovernanceCap" sub="owned · separate object" stroke={C.daoInk} />
       <Node x={320} y={432} w={260} h={56} label="Dashboard" sub="gauge · action log" stroke={C.inkSoft} />
-
-      {/* 2a · LIVE FEATURE-VECTOR inset (Z2 free band, y266-314). 5 live features
-          grouped by the two risk axes (model GROUP_FEATURES / PARAM_GROUP). */}
-      <g>
-        <rect x={312} y={266} width={276} height={48} rx={8} fill={C.paper} stroke={C.hair} strokeWidth={1.5} />
-        <text x={320} y={278} fontFamily={FONT} fontSize={9} fontWeight={700} fill={C.inkSoft}>
-          LIVE FEATURE VECTOR · 5
-        </text>
-        <text x={566} y={278} textAnchor="end" fontFamily={FONT} fontSize={7.5} fontWeight={400} fontStyle="italic" fill={C.inkSoft}>
-          backtest: first 4 (free history)
-        </text>
-        {(() => {
-          const chip = (key: string, cx: number, cy: number) => {
-            const w = key.length * 5.4 + 10;
-            return (
-              <g key={key}>
-                <rect x={cx} y={cy - 7} width={w} height={11} rx={3} fill={C.suiBlueWash} stroke={C.suiBlue} strokeWidth={0.75} />
-                <text x={cx + w / 2} y={cy - 1} textAnchor="middle" dominantBaseline="middle" fontFamily={FONT} fontSize={8} fontWeight={600} fill={C.ink}>
-                  {key}
-                </text>
-              </g>
-            );
-          };
-          const row = (axis: string, feats: string[], ry: number) => {
-            let cx = 422;
-            return (
-              <g key={axis}>
-                <text x={320} y={ry - 1} fontFamily={FONT} fontSize={8} fontWeight={700} fill={C.suiBlueText}>
-                  {axis}
-                </text>
-                {feats.map((f) => {
-                  const node = chip(f, cx, ry);
-                  cx += f.length * 5.4 + 10 + 5;
-                  return node;
-                })}
-              </g>
-            );
-          };
-          return (
-            <>
-              {row("solvency → max_ltv", ["div", "divvel"], 292)}
-              {row("liquidity → borrow_cap", ["disp", "volvel", "mktvol"], 305)}
-            </>
-          );
-        })()}
-      </g>
 
       {/* ── (c) PRIMARY EDGES ─────────────────────────────────────────────── */}
       <g fill="none">
@@ -454,27 +392,17 @@ export function ArchitectureDiagram() {
         />
         {/* E6 policy → divmod — trust-critical (3px blue, short down) */}
         <path
-          d="M 850 234 L 850 260"
+          d="M 850 226 L 850 260"
           stroke={C.suiBlue}
           strokeWidth={3}
           markerEnd="url(#arch-arrow-blue)"
         />
-        {/* E9 vault → policy (2px ink): the inline poke that drives apply_ →
-            re-derive → commit, then enforces against the committed state. */}
+        {/* E9 vault → policy (solid 2px ink, up-left within Z3) */}
         <path
-          d="M 760 356 C 740 320, 720 250, 730 236"
+          d="M 760 356 C 740 320, 720 250, 730 228"
           stroke={C.ink}
           strokeWidth={2}
           markerEnd="url(#arch-arrow)"
-        />
-        {/* 2b · COMMIT write-back (2px blue, UP): divergence::read → GuardianPolicy
-            state, in the right gutter clear of the E6 label. Paired with E6 (3px,
-            DOWN at x850) it draws the closed loop: read down → re-derive → commit up. */}
-        <path
-          d="M 990 261 L 990 236"
-          stroke={C.suiBlue}
-          strokeWidth={2}
-          markerEnd="url(#arch-arrow-blue)"
         />
         {/* E10 gov → policy (solid 2px dao-ink, left) */}
         <path
@@ -497,18 +425,15 @@ export function ArchitectureDiagram() {
       {/* E1/E2 read labels — in the feeds↔model gutter, attached to the arrows
           that now terminate on the ML model. */}
       <EdgeLabel x={286} y={104} text="signed price feed" fill={C.amberText} />
-      <EdgeLabel x={286} y={200} text="L2 order-book mid" fill={C.amberText} />
+      <EdgeLabel x={286} y={200} text="L2 book mid" fill={C.amberText} />
       <EdgeLabel x={450} y={176} text="0–100 score (advisory)" fill={C.ink} />
       {/* E4 hero label, two-line lowered onto the off-chain↔on-chain seam */}
       <EdgeLabel x={640} y={178} text="same-PTB: post Pyth update" fill={C.suiBlueText} bold />
-      <EdgeLabel x={640} y={192} text="submit ParamRequest · sender-gated" fill={C.suiBlueText} bold />
+      <EdgeLabel x={640} y={192} text="submit ParamRequest" fill={C.suiBlueText} bold />
       <EdgeLabel x={655} y={330} text="permissionless poke · 5 min" fill={C.suiBlueText} />
       <EdgeLabel x={905} y={244} text="reads price + L2 book ITSELF," fill={C.suiBlueText} bold />
       <EdgeLabel x={905} y={257} text="re-derives divergence" fill={C.suiBlueText} bold />
-      <EdgeLabel x={665} y={346} text="inline poke → re-derive + write" fill={C.ink} />
-      {/* 2b commit label — beside the "commit up" arrow, in Z3's right gutter */}
-      <EdgeLabel x={1020} y={245} text="commit" fill={C.suiBlueText} bold />
-      <EdgeLabel x={1020} y={257} text="to state" fill={C.suiBlueText} bold />
+      <EdgeLabel x={665} y={346} text="inline poke on borrow / withdraw" fill={C.ink} />
       {/* E10 dao label, two-line */}
       <EdgeLabel x={1024} y={150} text="&GovernanceCap:" fill={C.daoInk} bold />
       <EdgeLabel x={1024} y={164} text="unfreeze / set bounds / rotate agent" fill={C.daoInk} bold />
@@ -516,30 +441,6 @@ export function ArchitectureDiagram() {
       {/* E7 / E8 bottom-arc labels */}
       <EdgeLabel x={400} y={535} text="PriceInfoObject (same PTB)" fill={C.amberText} />
       <EdgeLabel x={430} y={512} text="Pool L2 ticks (on-chain)" fill={C.amberText} />
-
-      {/* 2a · CEX + BTC inputs note (Z1 free lower third, y256-326). Feeds the
-          agent's disp + mktvol; one faint dashed-amber arrow into the ML model. */}
-      <g>
-        <rect x={44} y={256} width={210} height={70} rx={10} fill={C.feedWash} stroke={C.amber} strokeWidth={1.25} strokeDasharray="4 4" />
-        <text x={149} y={276} textAnchor="middle" fontFamily={FONT} fontSize={10} fontWeight={700} fill={C.amberText}>
-          CEX spot + BTC proxy
-        </text>
-        <text x={149} y={294} textAnchor="middle" fontFamily={FONT} fontSize={9} fontWeight={400} fill={C.amberText}>
-          Coinbase · OKX · Bybit → disp
-        </text>
-        <text x={149} y={310} textAnchor="middle" fontFamily={FONT} fontSize={9} fontWeight={400} fill={C.amberText}>
-          BTC → mktvol
-        </text>
-      </g>
-      <path
-        d="M 254 282 C 290 280, 304 180, 318 150"
-        fill="none"
-        stroke={C.amber}
-        strokeWidth={1.5}
-        strokeDasharray="5 4"
-        opacity={0.7}
-        markerEnd="url(#arch-arrow-amber)"
-      />
 
       {/* ── (e) TRUST-BOUNDARY banner — top header, counter-shifted up so it clears
               the zone titles (the content group below pushes everything down 40). ─ */}

@@ -117,6 +117,20 @@ export function TheReading({
 
   return (
     <section className="card reading">
+      {/* Task 5 — scope marker: everything in this card is the live reading from the
+          agent DEPLOYED ON TESTNET (the enforced leg), not the mainnet observatory.
+          Emerald = enforced/testnet, matching the scorecard rail + ribbon. */}
+      <div className="reading-scope">
+        <span className="reading-scope-tag">
+          <span className="reading-scope-dot" aria-hidden="true" />
+          Testnet · enforced
+        </span>
+        <span className="reading-scope-desc">
+          Everything below is the live reading from the guardian deployed on testnet — what the model measured, then the
+          on-chain limits the contract clamped it to.
+        </span>
+      </div>
+
       {/* STAGE 1 — the measurement: one calm cyan instrument, no amber here. */}
       <div className="model-blocks model-blocks--2">
         {/* (1) Mahalanobis distance vs the χ²(k) trip line. */}

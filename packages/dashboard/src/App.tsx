@@ -161,10 +161,12 @@ export function App() {
             <span className="c-observing">read-only on the real market</span>.
           </h2>
           <p className="hero-claim-body">
-            The thin testnet pool stays turbulent, so you see the guardian tighten and the contract freeze in real time —
-            and testnet is the side with <span className="c-enforced">live on-chain enforcement</span>. The same
-            EWMA-Mahalanobis model also runs <span className="c-observing">read-only</span> on the real SUI/USDC mainnet
-            market, so you can watch how it reads genuine conditions. Enforcement is deployed to testnet only so far.
+            The guardian is <span className="c-enforced">fully deployed on testnet</span>, and because that pool is
+            volatile you can watch the limits move with the AI risk score in real time. The same{" "}
+            <b>EWMA-Mahalanobis</b> model, fit to SUI/USDC, runs on both networks and streams a live score.{" "}
+            <span className="c-enforced">On-chain enforcement</span> is deployed on{" "}
+            <span className="c-enforced">testnet only</span> for now — the mainnet market stays{" "}
+            <span className="c-observing">read-only</span>.
           </p>
           <p className="band-note seas-scope">
             Fit to SUI today — other assets need the model re-fit.

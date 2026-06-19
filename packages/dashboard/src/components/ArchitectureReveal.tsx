@@ -3,6 +3,7 @@
 // makes possible" — the deep-dive of the how-it-works overview, one click away.
 // The <summary> carries the only copy it needs (title + sub-line); no band header.
 import { ArchitectureDiagram } from "./ArchitectureDiagram";
+import { ModelDiagram } from "./ModelDiagram";
 
 export function ArchitectureReveal() {
   return (
@@ -19,7 +20,8 @@ export function ArchitectureReveal() {
         <span className="wiring-summary-text">
           <span className="wiring-summary-title">Show the full architecture</span>
           <span className="wiring-summary-sub">
-            The off-chain agent, the on-chain contract, and the raw Pyth + DeepBook paths the contract re-reads itself.
+            Two diagrams: the trust topology (off-chain agent, on-chain contract, the raw Pyth + DeepBook paths it
+            re-reads), then how the ML model turns those feeds into the risk score.
           </span>
         </span>
         <span className="wiring-summary-cta" aria-hidden="true">
@@ -29,8 +31,25 @@ export function ArchitectureReveal() {
           </svg>
         </span>
       </summary>
+
+      <div className="arch-diagram-label">
+        <span className="arch-diagram-num">1</span>
+        <span className="arch-diagram-text">
+          <b>Trust topology</b> — who computes what, and what the contract re-derives itself.
+        </span>
+      </div>
       <div className="arch-frame">
         <ArchitectureDiagram />
+      </div>
+
+      <div className="arch-diagram-label arch-diagram-label--2">
+        <span className="arch-diagram-num">2</span>
+        <span className="arch-diagram-text">
+          <b>Inside the ML model</b> — four feeds become five features, fused into one risk score and two clamped limits.
+        </span>
+      </div>
+      <div className="arch-frame">
+        <ModelDiagram />
       </div>
     </details>
   );

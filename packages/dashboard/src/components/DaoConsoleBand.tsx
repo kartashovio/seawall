@@ -10,6 +10,9 @@
 // shared-object call can't bypass it, FREEZE is contract-only / UNFREEZE is DAO-only,
 // and the single-key demo concession is stated in the always-visible scan.
 import { GovernancePanel } from "./GovernancePanel";
+import { CFG } from "../config";
+
+const short = (id?: string): string => (id ? `${id.slice(0, 8)}…${id.slice(-4)}` : "—");
 
 // The SAFER-side actors (all can only push toward safer). inline floor + keeper are
 // the contract trust-root (cyan); the agent is untrusted (amber).
@@ -73,10 +76,12 @@ export function DaoConsoleBand({ paused }: { paused: boolean }) {
       <div className="hero-claim">
         <h2 className="hero-claim-line seas-claim-line">A human can override the guardian.</h2>
         <p className="hero-claim-body">
-          The freeze is <span className="c-contract">contract-only</span>, and the <span className="c-agent">agent</span>{" "}
-          can only tighten. The only way back toward looser — unfreeze, or widen the bounds — runs through a single{" "}
-          <span className="c-dao">owned cap in your wallet</span>. The same cap rotates which agent may submit; every
-          agent stays clamped regardless. The <span className="c-agent">agent</span> can’t reach it.
+          Inside the corridor the system loosens itself: the <span className="c-agent">agent</span> only ever tightens,
+          and the <span className="c-contract">contract eases the limits back</span> toward baseline on its own after the
+          market stays calm. Two moves it will never make for you — <span className="c-dao">lifting a freeze</span> or{" "}
+          <span className="c-dao">widening the corridor</span> — run through a single{" "}
+          <span className="c-dao">owned cap in your wallet</span>, the same cap that rotates which agent may submit. The{" "}
+          <span className="c-agent">agent</span> can’t reach it.
         </p>
         <div className="hero-legend">
           <span className="tag tag-agent">untrusted agent</span>
@@ -93,8 +98,20 @@ export function DaoConsoleBand({ paused }: { paused: boolean }) {
 
       <div className="connect-payoff">
         The cap is one owned object. The agent can’t reach it, and a shared-object call can’t bypass it. Only this key
-        can widen the corridor or unfreeze the market — everything else only pushes safer. A single key in this demo;
-        production runs a DAO multisig.
+        widens the corridor or unfreezes the market — the agent only ever pushes safer, and the contract only eases back
+        within your bounds. A single key in this demo; production runs a DAO multisig.
+      </div>
+
+      <div className="live-receipt dao-cap-receipt">
+        <span className="lr-dot" aria-hidden="true" />
+        Live on testnet · the cap{" "}
+        <a className="lr-id" href={`${CFG.explorerObj}/${CFG.governanceCapId}`} target="_blank" rel="noreferrer">
+          {short(CFG.governanceCapId)}
+        </a>{" "}
+        · the policy it governs{" "}
+        <a className="lr-id" href={`${CFG.explorerObj}/${CFG.policyId}`} target="_blank" rel="noreferrer">
+          {short(CFG.policyId)}
+        </a>
       </div>
 
       <AbiReveal />

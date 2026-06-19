@@ -120,7 +120,7 @@ function AbiReveal() {
         <div className="abi-block">
           <span className="tag tag-agent abi-tag">2 · Agent submit · one PTB, only when risk warrants</span>
           <code className="abi-code">{`const data = await conn.getPriceFeedsUpdateData([feedId]);
-const pio  = await pythClient.updatePriceFeeds(tx, data, [feedId]);
+const [pio] = await pythClient.updatePriceFeeds(tx, data, [feedId]);
 const req  = tx.moveCall({ target: 'guardian::new_param_request', arguments: [maxLtvTarget, borrowCapTarget] });
 tx.moveCall({ target: 'guardian::submit', typeArguments: [SUI, DBUSDC],
   arguments: [policy, pio, pool, clock, req, advisoryScore] });`}</code>

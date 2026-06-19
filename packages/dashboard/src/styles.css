@@ -906,10 +906,44 @@ body.frozen .posture {
   height: auto;
   max-width: 1040px;
 }
+/* Two labeled diagrams inside the disclosure → each frame is a distinct inset
+   panel (the old single-frame "seamless continuation" rounding no longer fits). */
 .wiring-reveal .arch-frame {
-  border: none;
-  border-radius: 0 0 var(--r-ctl) var(--r-ctl);
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
   box-shadow: none;
+}
+.arch-diagram-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 2px 10px;
+}
+.arch-diagram-label--2 {
+  margin-top: 30px;
+}
+.arch-diagram-num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--cyan-wash);
+  color: var(--cyan-dim);
+  border: 1px solid var(--cyan-line);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.arch-diagram-text {
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  color: var(--muted);
+}
+.arch-diagram-text b {
+  color: var(--ink);
 }
 
 /* ============================================================================
@@ -1117,6 +1151,10 @@ body.frozen .posture {
 }
 .lr-id:hover {
   border-bottom-color: var(--cyan-dim);
+}
+/* Task 8 — testnet contract links under the DAO trust payoff (reuses .live-receipt). */
+.dao-cap-receipt {
+  margin-top: 12px;
 }
 
 /* payoff — closes the scan on the trust strength */
@@ -2347,6 +2385,51 @@ body.frozen .posture {
 
 /* ── THE READING — measurement → clamp (merged "instruments" + "why these limits").
    These rules come AFTER .cns-* and .corr so the per-row overrides win the cascade. */
+
+/* Task 5 — testnet scope banner atop The Reading. Self-contained inset banner (not
+   full-bleed, so it can't fight the card's rounded corners). Emerald left rail =
+   the enforced/testnet env, matching .scorecard.is-enforced + .ribbon. */
+.reading-scope {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 9px 13px;
+  border-radius: 10px;
+  background: var(--emerald-wash);
+  border: 1px solid var(--emerald-line);
+  border-left: 3px solid var(--emerald);
+}
+.reading-scope-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--emerald-dim);
+  white-space: nowrap;
+}
+.reading-scope-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--emerald);
+  box-shadow: 0 0 0 3px var(--emerald-wash);
+  flex: none;
+}
+.reading-scope-desc {
+  flex: 1 1 320px;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
 .model-blocks--2 {
   grid-template-columns: 1fr 1.2fr; /* the corridor moved into the rows below */
 }

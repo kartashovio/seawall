@@ -24,7 +24,7 @@ export function FooterLedger() {
         </div>
         {CFG.vaultId && (
           <div className="row">
-            <span className="lbl">DemoVault</span>
+            <span className="lbl">demo vault (consumer)</span>
             <a className="mono" href={objUrl(CFG.vaultId)} target="_blank" rel="noreferrer">
               {short(CFG.vaultId)}
             </a>
