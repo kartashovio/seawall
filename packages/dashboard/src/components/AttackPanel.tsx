@@ -19,7 +19,7 @@ const SCENES: { num: string; label: string; accent: string; body: Scene }[] = [
   { num: "↺", label: "Calm (reset)", accent: "calm", body: { mode: "calm" } },
 ];
 
-export function AttackPanel({ agentUrl }: { agentUrl: string }) {
+export function AttackPanel({ agentUrl, operatorToken }: { agentUrl: string; operatorToken?: string }) {
   const [status, setStatus] = useState<string>("idle");
   const [error, setError] = useState<string>("");
 
@@ -28,7 +28,12 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
     setStatus(`scene → ${scene.mode} …`);
     fetch(`${agentUrl}/control/scene`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // /control/scene fails CLOSED (401) without the operator Bearer — passed in
+        // via the ?demo=<token> gate so only the operator can drive a scene.
+        ...(operatorToken ? { Authorization: `Bearer ${operatorToken}` } : {}),
+      },
       body: JSON.stringify(scene),
     })
       .then((res) => setStatus(`scene → ${scene.mode} (${res.status})`))
@@ -55,9 +60,9 @@ export function AttackPanel({ agentUrl }: { agentUrl: string }) {
         </div>
       )}
       <div className="muted-sm">
-        This panel drives the OFF-CHAIN agent only — it never fakes an on-chain breach. The contract-only FREEZE is
-        triggered separately by a real DeepBook divergence (scripts/demo-freeze.ts) and recorded in “The freeze, recorded”
-        above.
+        Scene 3 turns the agent malicious; the contract clamps it to the safe direction. This panel drives the
+        OFF-CHAIN agent only — it never fakes an on-chain breach. The contract-only FREEZE is a separate, real DeepBook
+        divergence, recorded in “The contract froze itself” above.
       </div>
     </section>
   );

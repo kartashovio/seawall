@@ -15,7 +15,9 @@
 // the clean empty state with history:[].
 import { useState } from "react";
 import type { AgentTickDTO } from "@seawall/shared";
+import type { GuardianEventRow } from "../abi";
 import { BANDS, CORRIDOR, DIV, pct } from "../config";
+import { ActionLog } from "./ActionLog";
 
 // ── geometry (viewBox units; the frame is responsive at a fixed aspect ratio so
 // an HTML tooltip can be positioned by percentage and line up exactly) ──────────
@@ -446,7 +448,7 @@ function DivStrip({ history }: { history: AgentTickDTO[] }) {
   );
 }
 
-export function Sparkline({ history }: { history: AgentTickDTO[] }) {
+export function Sparkline({ history, events }: { history: AgentTickDTO[]; events: GuardianEventRow[] }) {
   const h = history.slice(-760);
   const hours = h.length >= 2 ? Math.max(0, (h[h.length - 1].ts - h[0].ts) / 3_600_000) : 0;
   const span = hours >= 1 ? `${hours.toFixed(1)}h` : `${Math.round(hours * 60)} min`;
@@ -469,11 +471,12 @@ export function Sparkline({ history }: { history: AgentTickDTO[] }) {
       </div>
       <p className="rc-sub">
         Showing the last <b>{span}</b> (up to 12h). Limits tighten as the score climbs <b>{BANDS.lo} → {BANDS.hi}</b> — and the two
-        params react differently.
+        params react differently. Every change is logged on-chain below.
       </p>
       <HistoryChart history={h} kind="testnet" />
       <DivStrip history={h} />
       <HistoryChart history={h} kind="mainnet" />
+      <ActionLog events={events} />
     </section>
   );
 }

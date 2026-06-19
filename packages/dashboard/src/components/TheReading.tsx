@@ -209,6 +209,14 @@ export function TheReading({
         corridor, floor → baseline.
       </div>
 
+      {/* Why only these two knobs — the do-no-harm scope. Reuses the cns-liq inset. */}
+      <div className="cns-liq">
+        <b>Why only two knobs.</b> The <span className="c-agent">agent</span> can tighten <i>max&nbsp;LTV</i> and{" "}
+        <i>borrow&nbsp;cap</i> only. Both gate <i>new</i> borrows, so tightening them can't touch anyone with a position
+        already open. We leave the liquidation buffer <span className="c-contract">contract- and DAO-only</span>: it acts
+        retroactively, so tightening it would push open positions toward liquidation.
+      </div>
+
       {/* Relax gate — every move attributed to the contract, never an agent loosening. */}
       <div className={`cns-relax ${relaxBlocked ? "is-blocked" : "is-open"}`}>
         {relaxBlocked ? (

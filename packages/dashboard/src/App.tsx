@@ -9,8 +9,8 @@ import { WarmupStatus } from "./components/WarmupStatus";
 import { PostureBanner } from "./components/PostureBanner";
 import { FlowStrip } from "./components/FlowStrip";
 import { WiringReveal } from "./components/WiringReveal";
+import { ArchitectureReveal } from "./components/ArchitectureReveal";
 import { ConnectBand } from "./components/ConnectBand";
-import { ActionLog } from "./components/ActionLog";
 import { FreezeDemo } from "./components/FreezeDemo";
 import { DaoConsoleBand } from "./components/DaoConsoleBand";
 import { AttackPanel } from "./components/AttackPanel";
@@ -52,6 +52,12 @@ export function App() {
 
   // Model warming up → the early score isn't trusted yet (shown above both cards).
   const calibrating = latest?.warmup ? !latest.warmup.ready : false;
+
+  // Operator-only demo drill. The public site never renders the attack panel — its
+  // /control/scene POSTs are token-gated and 401 for any visitor anyway. The operator
+  // opens ?demo=<token> to render it AND authorize the POST for a video take. Guarded
+  // for the DOM-free static-markup tests (no window → hidden, the public default).
+  const demoToken = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("demo") : null;
 
   // PRESENTATIONAL only: tint the frame on a freeze (no atmosphere layers). Runs in
   // an effect (never during render) so the static-markup tests stay DOM-free, and it
@@ -122,9 +128,15 @@ export function App() {
         <LayerStatus tick={latest} paused={paused} events={events} />
       </section>
 
-      {/* What Sui makes possible — the Sui primitives that enforce each rule, plus the
-          full architecture schematic (collapsed). Its own band now (was nested in the
-          how-it-works foot). */}
+      {/* Full architecture — the deep-dive of the how-it-works overview above, one
+          click away. A bare disclosure band: the progressive-disclosure control IS
+          the band, no claim header (the <summary> carries its own title + sub). */}
+      <section className="band">
+        <ArchitectureReveal />
+      </section>
+
+      {/* What Sui makes possible — the three Sui primitives that enforce each rule
+          (the architecture deep-dive is its own band above). */}
       <section className="band">
         <div className="seas-intro">
           <h2 className="hero-claim-line seas-claim-line">
@@ -138,22 +150,21 @@ export function App() {
         <WiringReveal />
       </section>
 
-      {/* C — the two seas: one model, two seas — one enforced, one observed.
-          STATUS, NOT CONTROL: the env is a data field echoed from the agent; no
-          toggle, no implication mainnet can be switched to enforcing. The contrast
-          (calm on the real market, jumpy on the sandbox by design) IS the proof. */}
+      {/* C — testnet (enforced) vs mainnet (read-only sanity check): one model, two
+          venues by PURPOSE, not coverage. STATUS, NOT CONTROL: the env is a data field
+          echoed from the agent; no toggle, no implication mainnet can be switched to
+          enforcing. The calm-vs-jumpy contrast IS the proof. */}
       <section className="band">
         <div className="seas-intro">
           <h2 className="hero-claim-line seas-claim-line">
-            One model, two seas — <span className="c-enforced">enforced</span> on testnet,{" "}
-            <span className="c-observing">observing</span> mainnet.
+            Testnet is where it <span className="c-enforced">enforces</span>. The real mainnet market is where we{" "}
+            <span className="c-observing">check it stays calm</span>.
           </h2>
           <p className="hero-claim-body">
-            The same unchanged EWMA-Mahalanobis model runs in both. On testnet it drives{" "}
-            <span className="c-enforced">live on-chain enforcement</span>; on the real mainnet
-            SUI/USDC market it <span className="c-observing">reads only</span>. It stays calm on
-            the real market while the thin testnet pool runs jumpy by design — proof the model
-            isn't trigger-happy, only the sandbox is.
+            The same EWMA-Mahalanobis model runs in both, unchanged. We've deployed only to testnet — that's the side
+            with <span className="c-enforced">live on-chain enforcement</span>. Pointed{" "}
+            <span className="c-observing">read-only</span> at the real SUI/USDC market, it stays calm, while the thin
+            testnet pool runs jumpy by design. The jumpiness is the pool, not the model.
           </p>
           <p className="band-note seas-scope">
             Fit to SUI today — other assets need the model re-fit.
@@ -181,7 +192,7 @@ export function App() {
             calibrating={calibrating}
           />
         </div>
-        <Sparkline history={history} />
+        <Sparkline history={history} events={events} />
       </section>
 
       {/* The reading: the live deep-dive glass box — the payoff of the two-seas gauges
@@ -216,20 +227,6 @@ export function App() {
         <BacktestGallery />
       </section>
 
-      {/* F — on-chain proof */}
-      <section className="band">
-        <div className="seas-intro">
-          <h2 className="hero-claim-line seas-claim-line">
-            Every guardian action is a real on-chain event.
-          </h2>
-          <p className="hero-claim-body">
-            Each one a <span className="c-contract">queryEvents</span> row, every digest explorer-linked — the contract's
-            distrust of the agent, on the record.
-          </p>
-        </div>
-        <ActionLog events={events} />
-      </section>
-
       {/* F1.5 — human override: the standalone LIVE DAO console (must-have #4).
           Pulled out of "On-chain proof"; sits right before the recorded freeze
           cycle so a judge presses the real Unfreeze button, then sees it recorded. */}
@@ -251,20 +248,24 @@ export function App() {
         <FreezeDemo />
       </section>
 
-      {/* G — the drill */}
-      <section className="band">
-        <div className="seas-intro">
-          <h2 className="hero-claim-line seas-claim-line">
-            Run the demo — then try to break the guardian.
-          </h2>
-          <p className="hero-claim-body">
-            Four scenes — a fast <span className="c-coral">de-peg</span>, a slow drift, a{" "}
-            <span className="c-agent">malicious agent</span>, a <span className="c-dao">DAO override</span>. The contract
-            refuses every unsafe move.
-          </p>
-        </div>
-        <AttackPanel agentUrl={CFG.agentUrl} />
-      </section>
+      {/* G — the drill (operator-gated: renders only with ?demo=<token>, which also
+          authorizes the scene POST). Hidden from the public site — visitors can't
+          drive the live agent, and the endpoint 401s them anyway. */}
+      {demoToken !== null && (
+        <section className="band">
+          <div className="seas-intro">
+            <h2 className="hero-claim-line seas-claim-line">
+              Run the demo — then try to break the guardian.
+            </h2>
+            <p className="hero-claim-body">
+              Four scenes — a fast <span className="c-coral">de-peg</span>, a slow drift, a{" "}
+              <span className="c-agent">malicious agent</span>, a <span className="c-dao">DAO override</span>. The contract
+              refuses every unsafe move.
+            </p>
+          </div>
+          <AttackPanel agentUrl={CFG.agentUrl} operatorToken={demoToken || undefined} />
+        </section>
+      )}
 
       {/* G2 — connect your protocol: the adoption capstone. Integration guidance,
           not primary product presentation, so it lands near the end — after the

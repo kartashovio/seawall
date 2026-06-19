@@ -2411,21 +2411,19 @@ body.frozen .posture {
 .log {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 420px;
-  overflow-y: auto;
+  gap: 5px;
 }
 .logrow {
   display: grid;
-  grid-template-columns: 74px 1fr auto;
+  grid-template-columns: 66px 1fr auto;
   gap: 12px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 7px 10px;
   border: 1px solid var(--line-soft);
   border-radius: var(--r-ctl);
   background: var(--inset);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--ink-dim);
   animation: tape-in 0.35s ease-out;
   transition: border-color 0.18s ease;
@@ -3118,6 +3116,44 @@ a.gov-status-val {
    ========================================================================== */
 .rc-divstrip {
   margin-top: 6px;
+}
+/* on-chain action log — the final SUB-panel of the riskchart card (the chart plots
+   when score+params moved; this is the on-chain receipt for each move). A hairline
+   seam separates it from the MAINNET chart above, mirroring how DivStrip is spaced. */
+.rc-actionlog {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.al-count {
+  font: 500 var(--fs-xs) / 1 var(--font-mono);
+  color: var(--muted);
+  margin-left: auto;
+}
+.al-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.al-ago {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--muted-deep);
+  white-space: nowrap;
+}
+.al-sum {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.al-more {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  padding: 4px 2px 0;
+}
+.al-empty {
+  padding: 8px 2px;
 }
 /* the divergence panel is a SUB-panel of the testnet chart above it (same time
    axis), NOT a third sibling next to TESTNET/MAINNET — so its header is a small
@@ -3940,6 +3976,24 @@ a.gov-status-val {
   .fd-seq-row .digest {
     grid-area: digest;
     justify-self: end;
+  }
+  /* action log: badge + summary on top, the time+digest meta on its own line below
+     (keeps the digest link — the proof — always visible, never clipped off-screen) */
+  .logrow {
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "badge sum" "meta meta";
+    gap: 5px 10px;
+  }
+  .logrow .k {
+    grid-area: badge;
+  }
+  .logrow .al-sum {
+    grid-area: sum;
+    white-space: normal;
+  }
+  .logrow .al-meta {
+    grid-area: meta;
+    justify-content: flex-start;
   }
 }
 
