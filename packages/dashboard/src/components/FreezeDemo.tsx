@@ -64,7 +64,7 @@ const recorded = new Date(freeze.recordedAt).toLocaleString("en-US", {
 export function FreezeDemo() {
   return (
     <section className="card freeze-demo">
-      <h2>
+      <h2 className="card-claim">
         The contract froze itself — every step is a real transaction{" "}
         <span className="tag tag-contract">recorded on-chain · verify every hash</span>
       </h2>
@@ -156,11 +156,9 @@ export function FreezeDemo() {
         <i>mechanism</i>; the live observatory above runs at production thresholds.
       </p>
 
-      {/* dense receipts, demoted one click deep — every digest stays explorer-verifiable */}
-      <details className="fd-receipts">
-        <summary>
-          <span className="fd-receipts-sum">On-chain receipts — 4 objects · 6 deploy transactions, every digest explorer-verifiable</span>
-        </summary>
+      {/* on-chain receipts — shown openly (every digest explorer-verifiable) */}
+      <div className="fd-receipts">
+        <div className="fd-receipts-sum">On-chain receipts — 4 objects · 6 deploy transactions, every digest explorer-verifiable</div>
         <div className="fd-receipts-body">
           <div className="fd-meta mono">
             <span>objects:</span>
@@ -180,7 +178,7 @@ export function FreezeDemo() {
             <a href={txUrl(freeze.setup.stressedDeposit)} target="_blank" rel="noreferrer">deposit</a>
           </div>
         </div>
-      </details>
+      </div>
       <p className="fd-stamp mono">recorded {recorded} · testnet</p>
     </section>
   );

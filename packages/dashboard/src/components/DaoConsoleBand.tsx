@@ -70,11 +70,6 @@ governance_rotate_agent(policy, &GovernanceCap, new_agent, clock)`}</code>
 export function DaoConsoleBand({ paused }: { paused: boolean }) {
   return (
     <section className="band dao-console">
-      <div className="band-head">
-        <span className="kicker">Human override</span>
-        <span className="lede">one owned cap · three governance calls · live on testnet</span>
-      </div>
-
       <div className="hero-claim">
         <h2 className="hero-claim-line seas-claim-line">A human can override the guardian.</h2>
         <p className="hero-claim-body">

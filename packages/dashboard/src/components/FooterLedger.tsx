@@ -9,18 +9,6 @@ export function FooterLedger() {
   return (
     <footer className="ledger band">
       <div>
-        <h3>Honest scope</h3>
-        <p>
-          Covers the <b>oracle / price-anomaly class</b> only — not key/governance compromise, logic bugs, or credit
-          quality. The ML estimator is prior art, owned: Mahalanobis distance = Kritzman-Li Financial Turbulence; EWMA
-          covariance = RiskMetrics. The novelty is the application + the trust-minimized on-chain enforcement.
-        </p>
-        <p className="muted">
-          Demo concessions, stated out loud: the freeze scene uses a tight threshold (prod = 5%); the DAO is a single
-          key here (prod = multisig).
-        </p>
-      </div>
-      <div>
         <h3>Deployed · testnet</h3>
         <div className="row">
           <span className="lbl">package</span>
@@ -73,9 +61,18 @@ export function FooterLedger() {
         </div>
       </div>
 
+      {/* honest scope — slimmed to one quiet fine-print line: the scope class + the
+          named prior-art credit (the only two bits not stated in-context elsewhere on
+          the dashboard; the demo concessions live in the freeze + DAO bands). */}
+      <p className="ledger-scope">
+        Scope: the <b>oracle / price-anomaly class</b> only — not key, governance, logic-bug, or credit risk. The
+        estimator is named prior art (Mahalanobis = Kritzman-Li turbulence · EWMA covariance = RiskMetrics); the novelty
+        is the application and the trust-minimized on-chain enforcement.
+      </p>
+
       {/* credit strip — the page's closing line, a quiet full-width rule below the
-          three ledger columns (grid-column: 1 / -1). All type sits at the --fs-xs
-          floor, neutral chrome (no meaning-color) — a credit, not a feature. */}
+          ledger columns (grid-column: 1 / -1). All type sits at the --fs-xs floor,
+          neutral chrome (no meaning-color) — a credit, not a feature. */}
       <div className="credit">
         <span className="credit-lead">Team</span>
         <ul className="credit-people">

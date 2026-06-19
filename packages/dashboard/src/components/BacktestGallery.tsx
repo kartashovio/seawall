@@ -14,7 +14,6 @@ export function BacktestGallery() {
   return (
     <div className="bt-gallery">
       <div className="bt-intro">
-        <p className="bt-intro-lead">{GALLERY_INTRO.lead}</p>
         <p className="bt-intro-body">{GALLERY_INTRO.body}</p>
 
         {/* at-a-glance verdict — visible even with every case collapsed */}

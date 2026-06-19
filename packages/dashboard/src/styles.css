@@ -272,6 +272,20 @@ a:hover {
   align-items: center;
   gap: 8px;
 }
+/* Q4/Q6/Q8 — promote a card h2 to a prominent, self-sufficient claim heading.
+   `.card h2.card-claim` beats the default `.card h2` (uppercase/muted/small);
+   inherits its flex+gap, overrides size/face/colour/transform. A notch under the
+   page hero, level with the section-claims. */
+.card h2.card-claim {
+  font: 600 clamp(21px, 2.8vw, 28px) / 1.18 var(--font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: var(--display-opsz-heading);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
 .tag {
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
@@ -774,11 +788,12 @@ body.frozen .posture {
   border-radius: var(--r-card);
   box-shadow: var(--shadow-0);
 }
-.why-sui-kicker {
-  font: 600 var(--fs-kicker) / 1 var(--font-ui);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--cyan-dim);
+/* Q3 — Why Sui now opens with the section-claim idiom (.seas-intro), not the old
+   kicker. Kill .seas-intro's 28px bottom margin: the .why-sui flex column (gap:16px)
+   owns the gap to the legs. */
+.why-sui-intro {
+  max-width: 66ch;
+  margin-bottom: 0;
 }
 .why-sui-legs {
   list-style: none;
@@ -868,14 +883,39 @@ body.frozen .posture {
   line-height: 1.4;
   color: var(--muted);
 }
-.wiring-summary-chev {
+/* Q1 — the right-side "View ›" pill: a real, prominent click cue (was a 12px ▸).
+   Cyan token set; the chevron rotates 90° on open, the pill fills solid on hover. */
+.wiring-summary-cta {
   margin-left: auto;
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px 5px 12px;
+  border-radius: 999px;
+  background: var(--cyan-wash);
+  border: 1px solid var(--cyan-line);
   color: var(--cyan-dim);
-  transition: transform 0.2s ease;
+  font: 600 var(--fs-sm) / 1 var(--font-ui);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
-.wiring-reveal[open] .wiring-summary-chev {
+.wiring-reveal:hover .wiring-summary-cta {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #fff;
+}
+.wiring-summary-cta-chev {
+  display: block;
+  flex: none;
+  transition: transform 0.2s var(--ease-tide, ease);
+}
+.wiring-reveal[open] .wiring-summary-cta-chev {
   transform: rotate(90deg);
+}
+.wiring-reveal[open] .wiring-summary-cta {
+  background: var(--ground-2);
+  border-color: var(--cyan-line);
+  color: var(--cyan-dim);
 }
 .wiring-reveal[open] {
   background: var(--ground-2);
@@ -2824,7 +2864,7 @@ a.gov-status-val {
    ========================================================================== */
 .ledger {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 32px;
   margin-top: var(--band-gap);
   padding: 28px clamp(24px, 4vw, 36px);
@@ -2832,6 +2872,14 @@ a.gov-status-val {
   border-radius: var(--r-card);
   background: var(--ground-2);
   box-shadow: var(--shadow-card);
+}
+/* Q10 — honest scope slimmed from a column to one quiet full-width fine-print line */
+.ledger .ledger-scope {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  color: var(--muted-deep);
 }
 .ledger h3 {
   font: 600 var(--fs-xs) / 1 var(--font-ui);

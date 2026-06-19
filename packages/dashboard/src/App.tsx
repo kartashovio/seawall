@@ -175,28 +175,25 @@ export function App() {
           clamped it to. (The old "instruments" + "why these limits" bands fold into
           this one; the corridor geometry lives here ONCE — LayerStatus L2 is the teaser.) */}
       <section className="band">
-        <div className="band-head">
-          <span className="kicker">The reading</span>
-          <span className="lede">what the model measured, and the limits the contract clamped it to</span>
-        </div>
         <TheReading tick={latest} applied={applied} floor={floor} baseline={baseline} />
       </section>
 
       {/* stress-test gallery: historical proof the guardian matters when the market isn't calm */}
       <section className="band band--backtest">
-        <div className="band-head">
-          <span className="kicker">Proven on real crises</span>
-          <span className="lede">the same unchanged model replayed through five historical crashes — score, knobs, divergence vs price</span>
+        <div className="seas-intro">
+          <h2 className="hero-claim-line seas-claim-line">
+            The same model, replayed through five real crashes.
+          </h2>
+          <p className="hero-claim-body">
+            <span className="c-coral">Two contract freezes</span>, <span className="c-agent">three graded tightens</span> —
+            scores regression-verified against the validated reports.
+          </p>
         </div>
         <BacktestGallery />
       </section>
 
       {/* F — on-chain proof */}
       <section className="band">
-        <div className="band-head">
-          <span className="kicker">On-chain proof</span>
-          <span className="lede">every action re-derived + enforced on testnet — the receipts, explorer-linked</span>
-        </div>
         <ActionLog events={events} />
       </section>
 
@@ -207,10 +204,6 @@ export function App() {
 
       {/* F2 — the freeze, recorded on-chain (a verifiable witness, not interactive) */}
       <section className="band">
-        <div className="band-head">
-          <span className="kicker">The freeze, recorded</span>
-          <span className="lede">one full LIVE → freeze → blocked borrow → DAO unfreeze cycle, captured on testnet — every step a real transaction</span>
-        </div>
         <FreezeDemo />
       </section>
 

@@ -61,9 +61,9 @@ describe("TheReading — the merged honesty footer (score off the logic path)", 
     expect(html.split("real on-chain number").length - 1).toBe(1);
   });
 
-  it("the card heading does NOT repeat the band kicker 'The reading'", () => {
-    // band-head kicker lives in App.tsx; the card <h2> must carry a distinct phrase
-    expect(html).toContain("From measurement to limit");
+  it("the card heading is a distinct, prominent claim (no band kicker)", () => {
+    // the band-head kicker was removed; the card <h2> is now the promoted claim
+    expect(html).toContain("the joint distance still trips");
     expect(html).not.toContain(">The reading<");
   });
 });

@@ -89,8 +89,8 @@ export function TheReading({
 
   return (
     <section className="card reading">
-      <h2>
-        From measurement to limit{" "}
+      <h2 className="card-claim">
+        A feature can sit safe — the joint distance still trips{" "}
         <span className="tag tag-agent">EWMA · Mahalanobis · score off the logic path</span>
       </h2>
 

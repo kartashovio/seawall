@@ -1,13 +1,13 @@
 // b6 — the band foot. Two parts, both folding the trust story one level deeper:
-//   1. "Why Sui" — three described legs (was three bare chips), always visible.
-//      The "meaningful Sui" evidence the 20% Technical rubric rewards, stated as
-//      facts a judge can check, not slogans.
-//   2. The detailed architecture schematic — genuine evidence but too dense for the
-//      20-second product scan, so it is DEMOTED to a default-collapsed disclosure,
-//      now given a real, inviting affordance (one click away for a technical judge,
-//      off the default page for everyone else).
+//   1. The detailed architecture schematic — genuine evidence but too dense for the
+//      20-second product scan, so it's DEMOTED to a default-collapsed disclosure
+//      with a real "View ›" affordance (one click away for a technical judge, off
+//      the default page for everyone else).
+//   2. "Why this needs Sui" — a self-sufficient section-claim with three described
+//      legs (each Sui primitive that enforces a rule). The "meaningful Sui" evidence
+//      the 20% Technical rubric rewards, stated as facts a judge can check.
 //
-// Colour: both blocks are about the contract / the Sui platform, so they use cyan
+// Colour: both parts are about the contract / the Sui platform, so they use cyan
 // only — never amber (agent) or coral (freeze). Pure presentational, no props.
 import { ArchitectureDiagram } from "./ArchitectureDiagram";
 
@@ -32,8 +32,43 @@ const WHY_SUI = [
 export function WiringReveal() {
   return (
     <div className="wiring-foot">
-      <section className="why-sui" aria-label="Why Sui">
-        <span className="why-sui-kicker">Why Sui</span>
+      <details className="wiring-reveal">
+        <summary className="wiring-summary">
+          <span className="wiring-summary-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1.5" y="2" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.3" />
+              <rect x="9.5" y="2" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.3" />
+              <rect x="5.5" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.3" />
+              <path d="M4 6v1.5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V6M8 8.5V10" stroke="currentColor" strokeWidth="1.1" />
+            </svg>
+          </span>
+          <span className="wiring-summary-text">
+            <span className="wiring-summary-title">Show the full architecture</span>
+            <span className="wiring-summary-sub">
+              The off-chain agent, the on-chain contract, and the raw Pyth + DeepBook paths the contract re-reads itself.
+            </span>
+          </span>
+          <span className="wiring-summary-cta" aria-hidden="true">
+            <span className="wiring-summary-cta-label">View</span>
+            <svg className="wiring-summary-cta-chev" width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </summary>
+        <div className="arch-frame">
+          <ArchitectureDiagram />
+        </div>
+      </details>
+
+      <section className="why-sui" aria-labelledby="why-sui-heading">
+        <div className="seas-intro why-sui-intro">
+          <h2 id="why-sui-heading" className="hero-claim-line seas-claim-line">
+            Why this needs <span className="c-contract">Sui</span>
+          </h2>
+          <p className="hero-claim-body">
+            Each rule below is enforced by a Sui primitive, not bolted on off-chain.
+          </p>
+        </div>
         <ol className="why-sui-legs">
           {WHY_SUI.map((leg, i) => (
             <li key={leg.id} className="wsui-leg">
@@ -46,29 +81,6 @@ export function WiringReveal() {
           ))}
         </ol>
       </section>
-
-      <details className="wiring-reveal">
-        <summary className="wiring-summary">
-          <span className="wiring-summary-icon" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="1.5" y="2" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.3" />
-              <rect x="9.5" y="2" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.3" />
-              <rect x="5.5" y="10" width="5" height="4" rx="1" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M4 6v1.5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V6M8 8.5V10" stroke="currentColor" strokeWidth="1.1" />
-            </svg>
-          </span>
-          <span className="wiring-summary-text">
-            <span className="wiring-summary-title">Open the full architecture</span>
-            <span className="wiring-summary-sub">
-              The off-chain agent, the on-chain contract, and the raw Pyth + DeepBook paths the contract re-reads for itself.
-            </span>
-          </span>
-          <span className="wiring-summary-chev" aria-hidden="true">▸</span>
-        </summary>
-        <div className="arch-frame">
-          <ArchitectureDiagram />
-        </div>
-      </details>
     </div>
   );
 }
