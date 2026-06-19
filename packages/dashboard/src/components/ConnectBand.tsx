@@ -20,11 +20,13 @@ import { CFG } from "../config";
 const short = (id?: string) => (id && id.length > 12 ? `${id.slice(0, 6)}…${id.slice(-4)}` : id || "—");
 
 // The hero artifact: the literal change a vault makes to each risk-increasing path.
-// The SAME four `+` lines (poke + freeze-check + the two live-cap asserts) go in both
-// borrow() and withdraw_collateral(). The price read is a context line that consumes
-// `d`. is_paused carries the lone coral hairline (frozen → abort). This is Step 2.
+// The SAME five `+` lines (the policy-id binding, poke, the freeze-check, and the two
+// live-cap asserts) go in both borrow() and withdraw_collateral(). The price read is a
+// context line that consumes `d`. is_paused carries the lone coral hairline (frozen →
+// abort). This is Step 2.
 const DIFF: { t: string; add?: boolean; freeze?: boolean; comment?: boolean }[] = [
   { t: "// in borrow() and withdraw_collateral() — same PTB as a fresh Pyth update", comment: true },
+  { t: "assert!(object::id(policy) == vault.policy_id, EPolicyMismatch);", add: true },
   { t: "let d = guardian::poke(&mut policy, &pio, &pool, &clock);", add: true },
   { t: "assert!(!guardian::is_paused(&policy), EFrozen);", add: true, freeze: true },
   { t: "let coll = coll_value(divergence::pyth_px_1e9(&d));" },
@@ -105,7 +107,7 @@ tx.transferObjects([cap], tx.pure.address(DAO_ADDR)); // the cap leaves the depl
     mod: "contract",
     title: "Add the gate",
     mode: "both",
-    sub: "The four lines above, in every borrow() and withdraw_collateral() — every path that raises risk. poke re-derives the breach on-chain, the freeze check fails CLOSED, the two asserts read the live caps. It holds even if the agent is dead.",
+    sub: "The five lines above, in every borrow() and withdraw_collateral() — every path that raises risk. The policy-id binding ties the call to your vault, poke re-derives the breach on-chain, the freeze check fails CLOSED, the two asserts read the live caps. It holds even if the agent is dead.",
     reveal: "the full gate + the type-arg-order trap",
     code: `// in borrow() and withdraw_collateral() — same PTB as a fresh Pyth update
 assert!(object::id(policy) == vault.policy_id, EPolicyMismatch);
@@ -123,10 +125,11 @@ assert!(debt * BPS <= guardian::borrow_cap_current_bps(&policy) * coll, EBorrowC
     mode: "both",
     sub: "Install the CLI, clone the open-source repo, fund the address that deploys (and, in PUSH, runs). Calm markets cost ≈0 — the agent sends only when risk warrants.",
     reveal: "install · clone · faucet",
-    code: `suiup install sui@testnet                 # pin matches the Move framework rev
+    code: `# install the Sui CLI at the testnet pin (suiup / brew / prebuilt release tarball)
+sui --version                             # confirm the pin matches the Move framework rev
 sui client faucet                         # testnet gas (mainnet = real SUI, no faucet)
 git clone https://github.com/kartashovio/seawall.git
-cd seawall && pnpm install                # IDs read live from config/testnet.json`,
+cd seawall && pnpm install                # your deployed ids are written to config/testnet.json`,
     note: "Adoption reuses the single published package — no republish needed. For full upgrade-authority sovereignty you may fork, re-pin Move.toml to mainnet revs, publish your own copy, and point create_policy at it; the ABI is identical.",
   },
   {
@@ -145,10 +148,10 @@ pnpm --filter @seawall/agent exec tsx src/index.ts
 const data  = await conn.getPriceFeedsUpdateData([feedId]);      // hermes-beta
 const [pio] = await pythClient.updatePriceFeeds(tx, data, [feedId]);
 const req   = tx.moveCall({ target: \`\${PKG}::guardian::new_param_request\`,
-                            arguments: [maxLtvTarget, borrowCapTarget] });
+              arguments: [tx.pure.u16(maxLtvTarget), tx.pure.u16(borrowCapTarget)] });
 tx.moveCall({ target: \`\${PKG}::guardian::submit\`, typeArguments: [SUI, DBUSDC],
-              arguments: [policy, pio, pool, clock, req, advisoryScore] });`,
-    note: "Sends IFF the request would tighten max_ltv or borrow_cap below the on-chain current, OR a 5-min heartbeat elapsed (calm = 0 tx). The contract takes min(clamp(ask,[floor,baseline]), its own target); a looser ask is refused on-chain (RequestRejected, no tx failure) — the one-way ratchet.",
+  arguments: [tx.object(policy), tx.object(pio), tx.object(pool), tx.object(clock), req, tx.pure.u8(advisoryScore)] });`,
+    note: "Sends IFF (A) the request tightens max_ltv or borrow_cap below the on-chain current AND the 1-min resubmit cooldown has passed, OR (B) a 5-min heartbeat elapsed (calm = 0 tx). The contract takes min(clamp(ask,[floor,baseline]), its own target); a looser ask is refused on-chain (RequestRejected, no tx failure) — the one-way ratchet.",
     prod: "CLI-keystore key in this demo → a secret manager / KMS in production.",
   },
   {
@@ -164,7 +167,7 @@ tx.moveCall({ target: \`\${PKG}::guardian::submit\`, typeArguments: [SUI, DBUSDC
 
 const [pio] = await pythClient.updatePriceFeeds(tx, data, [feedId]);
 tx.moveCall({ target: \`\${PKG}::guardian::poke\`, typeArguments: [SUI, DBUSDC],
-              arguments: [policy, pio, pool, clock] });   // return value discarded`,
+  arguments: [tx.object(policy), tx.object(pio), tx.object(pool), tx.object(clock)] }); // return discarded`,
     note: "It refuses to start if its key equals registered_agent — the proof that poke is permissionless (it chooses only WHEN to poke a deterministic function, never the outcome). A broke or dead keeper is safe: the inline floor still protects; only the liveness heartbeat + gated RELAX pause.",
     prod: "testnet faucet in this demo → a pre-funded ops wallet on mainnet (no faucet).",
   },
@@ -243,7 +246,7 @@ export function ConnectBand() {
       <div className="seas-intro">
         <h2 className="hero-claim-line seas-claim-line">Add the guardian to any Sui lending protocol.</h2>
         <p className="hero-claim-body">
-          One package, already published and immutable. You deploy your own policy against it, add a four-line gate to
+          One package, already published and immutable. You deploy your own policy against it, add a five-line gate to
           every borrow path, then pick how far you go: read its signal and enforce it yourself, or grant a scoped cap
           and let the guardian enforce <span className="c-contract">in-block</span>. Your{" "}
           <span className="c-dao">DAO keeps the corridor and the only unfreeze cap</span>. The{" "}

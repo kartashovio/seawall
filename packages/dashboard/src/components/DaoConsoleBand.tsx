@@ -14,6 +14,22 @@ import { CFG } from "../config";
 
 const short = (id?: string): string => (id ? `${id.slice(0, 8)}…${id.slice(-4)}` : "—");
 
+// Recorded governance calls — real, verifiable testnet transactions proving the two
+// bounds/agent calls actually execute. Run against a SEPARATE test policy (same
+// package) so the live demo policy stays untouched; every call is &GovernanceCap-gated.
+const GOV_EXAMPLES = [
+  {
+    fn: "governance_set_corridor",
+    what: "re-anchored the corridor — max-LTV 75→70%, borrow-cap 100→90%",
+    digest: "CbWHFYUZYahUFmCgDHwC2av6sQ4EsV8wjcMEw6BNb911",
+  },
+  {
+    fn: "governance_rotate_agent",
+    what: "swapped the address allowed to submit requests",
+    digest: "5nGj3nFgd4E5wZjrVvDTa416FyF7tUnXqQ5cDhspBHiZ",
+  },
+] as const;
+
 // The SAFER-side actors (all can only push toward safer). inline floor + keeper are
 // the contract trust-root (cyan); the agent is untrusted (amber).
 const SAFER = [
@@ -112,6 +128,31 @@ export function DaoConsoleBand({ paused }: { paused: boolean }) {
         <a className="lr-id" href={`${CFG.explorerObj}/${CFG.policyId}`} target="_blank" rel="noreferrer">
           {short(CFG.policyId)}
         </a>
+      </div>
+
+      {/* Recorded proof that the two cap-gated bounds/agent calls actually run on
+          testnet — the live console above lets you press them; these are the same
+          calls already executed, each verifiable on the explorer. */}
+      <div className="dao-gov-proven">
+        <div className="dao-gov-proven-head">
+          <span className="dao-gov-proven-lbl">Both bounds &amp; agent calls, already run on-chain</span>
+          <span className="tag tag-dao">&amp;GovernanceCap-gated</span>
+        </div>
+        <ul className="dao-gov-list">
+          {GOV_EXAMPLES.map((e) => (
+            <li className="dao-gov-row" key={e.fn}>
+              <span className="mono gov-fn dao-gov-fn">{e.fn}</span>
+              <span className="dao-gov-what">{e.what}</span>
+              <a className="digest mono" href={`${CFG.explorerTx}/${e.digest}`} target="_blank" rel="noreferrer">
+                {e.digest.slice(0, 8)}…
+              </a>
+            </li>
+          ))}
+        </ul>
+        <span className="dao-gov-foot">
+          Executed on a separate test policy (same package) so the live demo stays put — unfreeze is the third call,
+          recorded in the freeze cycle above.
+        </span>
       </div>
 
       <AbiReveal />

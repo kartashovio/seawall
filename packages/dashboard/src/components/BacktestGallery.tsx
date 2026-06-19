@@ -23,14 +23,37 @@ export function BacktestGallery() {
           <span className="bt-proof-chip is-calm">scores regression-verified vs the validated reports</span>
         </div>
 
-        {/* proxy note — surfaced at the SAME altitude as the freeze claim (not
-            buried in the details below): the divergence axis here is a free-history
-            stand-in for the live Pyth↔DeepBook signal. */}
-        <p className="bt-proxy-note">
-          Upfront: the <b>divergence</b> axis here is a free-history proxy — perp last↔index, or spot↔the $1 peg — not
-          the live Pyth↔DeepBook signal. Same estimator, closest archived analog; the freeze line is that proxy crossing
-          5%. Full methodology below.
-        </p>
+        {/* EXPLICIT data-substitution panel — surfaced at the SAME altitude as the
+            freeze claim: which source the replays swap in for the live one, in plain
+            text, and why the swap is fair. (The full methodology is in the details.) */}
+        <div className="bt-swap">
+          <div className="bt-swap-head">What the replays swap in — and why it's fair</div>
+          <div className="bt-swap-rows">
+            <div className="bt-swap-row">
+              <span className="bt-swap-tag is-live">live</span>
+              <span className="bt-swap-src">
+                Pyth oracle price <span className="bt-swap-vs">vs</span> DeepBook order-book mid
+                <span className="bt-swap-where"> — on-chain; the breach the contract re-derives itself.</span>
+              </span>
+            </div>
+            <div className="bt-swap-row">
+              <span className="bt-swap-tag is-bt">backtest</span>
+              <span className="bt-swap-src">
+                Binance perp <b>last</b> <span className="bt-swap-vs">vs</span> <b>index</b> price
+                <span className="bt-swap-where"> (the crypto crashes)</span>, or Bybit spot{" "}
+                <span className="bt-swap-vs">vs</span> a fixed <b>$1.00 peg</b>
+                <span className="bt-swap-where"> (the USDC de-peg)</span>.
+              </span>
+            </div>
+          </div>
+          <p className="bt-swap-why">
+            Only the DeepBook leg is replaced — historical on-chain order-book data is archived nowhere. Everything
+            downstream is the live code: the detector is byte-identical (<code>div = 10⁴·|ln a − ln b|</code>, same
+            calibration, smoothing and one-way ratchet), and perp&#8209;last&#8209;vs&#8209;index measures the very thing
+            an oracle↔CLOB gap does — a venue's traded price coming unglued from the cross-venue fair value. The freeze
+            line you see is that proxy crossing 5%. <span className="bt-swap-more">Full methodology below.</span>
+          </p>
+        </div>
 
         {/* honest scope + how-to-read, demoted one click away */}
         <details className="bt-scope">

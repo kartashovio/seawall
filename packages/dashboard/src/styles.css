@@ -1267,6 +1267,59 @@ body.frozen .posture {
   margin-top: 12px;
 }
 
+/* Recorded governance examples — proof the two cap-gated calls run on-chain. */
+.dao-gov-proven {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--dao-line);
+  border-radius: var(--r-ctl);
+  background: var(--dao-wash);
+}
+.dao-gov-proven-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.dao-gov-proven-lbl {
+  font: 600 var(--fs-sm) / 1.3 var(--font-ui);
+  color: var(--ink);
+}
+.dao-gov-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.dao-gov-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+}
+.dao-gov-fn {
+  flex: none;
+  color: var(--dao);
+}
+.dao-gov-what {
+  flex: 1 1 auto;
+  color: var(--ink-dim);
+}
+.dao-gov-row .digest {
+  flex: none;
+}
+.dao-gov-foot {
+  display: block;
+  margin-top: 9px;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 /* payoff — closes the scan on the trust strength */
 .connect-payoff {
   padding-top: 14px;
@@ -3909,23 +3962,82 @@ a.gov-status-val {
   color: var(--cyan-dim);
 }
 
-/* Task 2 — always-visible proxy caveat (the divergence axis is a free-history
-   stand-in for the live Pyth↔DeepBook signal). Subtle amber left-rail = an honest
-   caveat surfaced at the same altitude as the freeze claim, not an alarm. */
-.bt-proxy-note {
+/* Task 2 — EXPLICIT data-substitution panel: live source vs backtest source, in
+   plain text, + why the swap is fair. Amber left-rail = honest caveat, at the same
+   altitude as the freeze claim. The "live" row reads cyan (on-chain/contract), the
+   "backtest" row amber (off-chain proxy). */
+.bt-swap {
   margin: 12px 0 0;
-  padding: 9px 13px;
-  border-radius: 8px;
+  padding: 13px 15px;
+  border-radius: 10px;
   background: var(--amber-wash);
   border: 1px solid var(--amber-line);
   border-left: 3px solid var(--amber-dim);
-  font-size: var(--fs-sm);
-  line-height: 1.5;
-  color: var(--ink-dim);
-  max-width: 80ch;
 }
-.bt-proxy-note b {
+.bt-swap-head {
+  font: 700 var(--fs-sm) / 1.3 var(--font-ui);
   color: var(--ink);
+  margin-bottom: 9px;
+}
+.bt-swap-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.bt-swap-row {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.bt-swap-tag {
+  flex: none;
+  min-width: 62px;
+  text-align: center;
+  font: 700 var(--fs-xs) / 1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: var(--r-bar);
+}
+.bt-swap-tag.is-live {
+  color: var(--cyan-dim);
+  background: var(--cyan-wash);
+  border: 1px solid var(--cyan-line);
+}
+.bt-swap-tag.is-bt {
+  color: var(--amber-dim);
+  background: var(--ground-2);
+  border: 1px solid var(--amber-line);
+}
+.bt-swap-src {
+  flex: 1 1 320px;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--ink);
+}
+.bt-swap-vs {
+  color: var(--muted);
+  font-style: italic;
+  padding: 0 1px;
+}
+.bt-swap-where {
+  color: var(--muted);
+}
+.bt-swap-why {
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+.bt-swap-why code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--ink);
+}
+.bt-swap-more {
+  color: var(--muted);
 }
 
 /* demoted intro scope + how-to-read disclosure */
