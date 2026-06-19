@@ -338,6 +338,14 @@ a:hover {
   border-bottom: 1px solid var(--line);
 }
 
+/* Masthead links group (Demo + repo), far right. */
+.header-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 /* Task 5 — open-source repo link, far right of the masthead (icon + label). */
 .header-gh {
   display: inline-flex;
