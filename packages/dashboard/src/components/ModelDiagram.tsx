@@ -3,7 +3,7 @@
 // NOT a trust map (that is ArchitectureDiagram, shown above it) — no DAO node, no
 // on/off-chain swimlanes. IA from the model-diagram-ia judge panel (hybrid):
 //
-//   4 SOURCES → ALIGN → 5 FEATURES (solvency lane / liquidity lane)
+//   6 FEEDS → ALIGN → 5 FEATURES (solvency lane / liquidity lane)
 //     → ONE shared MULTIVARIATE CORE (EWMA-Mahalanobis, couples both lanes)
 //     → per-axis d²→score (+ a QUIET overall/advisory score)
 //     → two CLAMPED knobs (max_ltv ← solvency, borrow_cap ← liquidity)
@@ -51,13 +51,17 @@ const hp = (a: Pt, b: Pt): string => {
 };
 
 const N: Record<string, Box> = {
-  // 1 · SOURCES (stacked)
-  pyth: { x: 22, y: 70, w: 158, h: 46 },
-  deepbook: { x: 22, y: 124, w: 158, h: 46 },
-  cex: { x: 22, y: 178, w: 158, h: 46 },
-  btc: { x: 22, y: 232, w: 158, h: 46 },
-  // ALIGN
-  align: { x: 202, y: 144, w: 86, h: 60 },
+  // 1 · SOURCES — the 6 keyless feeds the row is actually assembled from (live.ts
+  // fetchLiveRow + fetchCexBlock; observatory.ts mirrors it). Shown individually so
+  // the count is honest: Pyth + DeepBook + 3 CEX venues + BTC.
+  pyth: { x: 22, y: 58, w: 158, h: 40 },
+  deepbook: { x: 22, y: 104, w: 158, h: 40 },
+  coinbase: { x: 22, y: 150, w: 158, h: 40 },
+  okx: { x: 22, y: 196, w: 158, h: 40 },
+  bybit: { x: 22, y: 242, w: 158, h: 40 },
+  btc: { x: 22, y: 288, w: 158, h: 40 },
+  // ALIGN (centered on the 6-feed span)
+  align: { x: 202, y: 163, w: 86, h: 60 },
   // 2 · FEATURES — solvency lane (top), liquidity lane (bottom)
   div: { x: 310, y: 64, w: 184, h: 44 },
   divvel: { x: 310, y: 114, w: 184, h: 44 },
@@ -149,7 +153,7 @@ export function ModelDiagram() {
       viewBox="0 0 1200 700"
       width="100%"
       role="img"
-      aria-label="How the ML model computes the score: four data sources become five features in two risk lanes, fused by one EWMA-Mahalanobis covariance core into two per-axis scores that drive two clamped lending limits; the overall score stays advisory and the freeze is contract-only."
+      aria-label="How the ML model computes the score: six data feeds become five features in two risk lanes, fused by one EWMA-Mahalanobis covariance core into two per-axis scores that drive two clamped lending limits; the overall score stays advisory and the freeze is contract-only."
       style={{ height: "auto", display: "block" }}
     >
       <defs>
@@ -170,7 +174,7 @@ export function ModelDiagram() {
 
       {/* ── stage column captions ──────────────────────────────────────────── */}
       {([
-        ["1 · sources", 24, "4 feeds · every 60s tick"],
+        ["1 · sources", 24, "6 feeds · every 60s tick"],
         ["2 · features", 312, "5 signals the chain can't compute"],
         ["3 · model", 518, "one shared covariance"],
         ["4 · scores", 718, "d² → 0–100 per axis"],
@@ -196,7 +200,7 @@ export function ModelDiagram() {
 
       {/* ── EDGES (under nodes) ────────────────────────────────────────────── */}
       {/* sources → align (dashed reads, converging) */}
-      {(["pyth", "deepbook", "cex", "btc"] as const).map((k) => (
+      {(["pyth", "deepbook", "coinbase", "okx", "bybit", "btc"] as const).map((k) => (
         <Edge key={k} d={hp(rc(N[k]), lc(N.align))} stroke={C.inkSoft} w={1.3} dash="5 4" marker="md-arrow-soft" />
       ))}
       {/* align → 5 features (dashed reads, fanning) */}
@@ -245,9 +249,11 @@ export function ModelDiagram() {
       ))}
 
       {/* ── NODES ──────────────────────────────────────────────────────────── */}
-      <Source box={N.pyth} label="Pyth oracle" sub="price + conf · hermes-beta" accent={C.suiBlue} />
+      <Source box={N.pyth} label="Pyth oracle" sub="SUI/USD · hermes-beta" accent={C.suiBlue} />
       <Source box={N.deepbook} label="DeepBook CLOB" sub="on-chain mid · SUI_DBUSDC" accent={C.suiBlue} />
-      <Source box={N.cex} label="CEX spot ×3" sub="Coinbase · OKX · Bybit" accent={C.amber} />
+      <Source box={N.coinbase} label="Coinbase" sub="SUI-USD spot" accent={C.amber} />
+      <Source box={N.okx} label="OKX" sub="SUI-USDT spot" accent={C.amber} />
+      <Source box={N.bybit} label="Bybit" sub="SUI-USDT spot" accent={C.amber} />
       <Source box={N.btc} label="BTC" sub="Bybit · market proxy" accent={C.amber} />
 
       {/* ALIGN */}
