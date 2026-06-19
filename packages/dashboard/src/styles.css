@@ -1156,6 +1156,86 @@ body.frozen .posture {
   color: var(--ink);
 }
 
+/* ── self-deploy guide (task 6): PUSH/PULL picker + vertical 6-step ladder ─── */
+.connect-mode-pick {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--inset);
+}
+.cmp-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-bar);
+  background: transparent;
+  color: var(--muted);
+  font: 600 var(--fs-sm) / 1 var(--font-ui);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cmp-tab:hover {
+  color: var(--ink);
+}
+.cmp-tab.is-on {
+  background: var(--ground-2);
+  border-color: var(--line-lit);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+.cmp-sub {
+  font: 700 var(--fs-xs) / 1 var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--cyan-dim);
+}
+.cmp-tab:not(.is-on) .cmp-sub {
+  color: var(--muted-deep);
+}
+.connect-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.connect-ladder .lstep {
+  width: 100%;
+}
+/* neutral "PUSH only" tag — works on both the amber (agent) and cyan (keeper) cards */
+.lstep-mode {
+  font: 700 9px / 1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--ground-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-bar);
+  padding: 3px 7px;
+}
+/* PULL mode dims the two PUSH-only steps (agent + keeper) */
+.connect.is-pull .lstep[aria-disabled="true"] {
+  opacity: 0.45;
+}
+.cstep-reveal {
+  margin-top: 4px;
+}
+.cstep-reveal > summary {
+  font-size: var(--fs-xs);
+}
+.cstep-reveal .abi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.cstep-prod {
+  color: var(--muted);
+}
+
 /* live receipt — clickable on-chain object grounds the abstract steps */
 .live-receipt {
   display: flex;
