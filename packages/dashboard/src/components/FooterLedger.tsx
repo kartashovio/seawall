@@ -34,6 +34,12 @@ export function FooterLedger() {
           <span className="lbl">network</span>
           <span className="mono">testnet</span>
         </div>
+        <div className="row">
+          <span className="lbl">source</span>
+          <a className="mono" href="https://github.com/kartashovio/seawall" target="_blank" rel="noreferrer">
+            kartashovio/seawall
+          </a>
+        </div>
       </div>
       <div>
         <h3>Legend</h3>

@@ -18,10 +18,19 @@ export function BacktestGallery() {
 
         {/* at-a-glance verdict — visible even with every case collapsed */}
         <div className="bt-proof">
-          <span className="bt-proof-chip is-freeze">2 contract FREEZES · re-derived divergence ≥ 5%</span>
+          <span className="bt-proof-chip is-freeze">2 contract FREEZES · divergence ≥ 5%</span>
           <span className="bt-proof-chip is-caution">3 graded CAUTION tightens · agent, clamped</span>
           <span className="bt-proof-chip is-calm">scores regression-verified vs the validated reports</span>
         </div>
+
+        {/* proxy note — surfaced at the SAME altitude as the freeze claim (not
+            buried in the details below): the divergence axis here is a free-history
+            stand-in for the live Pyth↔DeepBook signal. */}
+        <p className="bt-proxy-note">
+          Upfront: the <b>divergence</b> axis here is a free-history proxy — perp last↔index, or spot↔the $1 peg — not
+          the live Pyth↔DeepBook signal. Same estimator, closest archived analog; the freeze line is that proxy crossing
+          5%. Full methodology below.
+        </p>
 
         {/* honest scope + how-to-read, demoted one click away */}
         <details className="bt-scope">

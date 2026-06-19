@@ -338,6 +338,36 @@ a:hover {
   border-bottom: 1px solid var(--line);
 }
 
+/* Task 5 — open-source repo link, far right of the masthead (icon + label). */
+.header-gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.header-gh:hover {
+  color: var(--ink);
+  border-color: var(--line-lit);
+  background: var(--ground-2);
+}
+.header-gh svg {
+  display: block;
+}
+@media (max-width: 640px) {
+  .header-gh-label {
+    display: none;
+  }
+}
+
 /* ── left: mark + wordmark, balanced as ONE lockup ───────────────────────── */
 .brand {
   display: flex;
@@ -3797,6 +3827,25 @@ a.gov-status-val {
   background: var(--cyan-wash);
   border-color: var(--cyan-line);
   color: var(--cyan-dim);
+}
+
+/* Task 2 — always-visible proxy caveat (the divergence axis is a free-history
+   stand-in for the live Pyth↔DeepBook signal). Subtle amber left-rail = an honest
+   caveat surfaced at the same altitude as the freeze claim, not an alarm. */
+.bt-proxy-note {
+  margin: 12px 0 0;
+  padding: 9px 13px;
+  border-radius: 8px;
+  background: var(--amber-wash);
+  border: 1px solid var(--amber-line);
+  border-left: 3px solid var(--amber-dim);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink-dim);
+  max-width: 80ch;
+}
+.bt-proxy-note b {
+  color: var(--ink);
 }
 
 /* demoted intro scope + how-to-read disclosure */
