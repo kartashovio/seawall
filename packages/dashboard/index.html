@@ -27,6 +27,11 @@
       name="description"
       content="Seawall — a trust-minimized autonomous circuit breaker for Sui lending. An untrusted off-chain ML radar; an on-chain contract that re-derives every breach itself and can only push safer."
     />
+    <!-- Full submission description (Sui Overflow 2026) — copy from here -->
+    <meta
+      name="seawall:submission-description"
+      content="Seawall is an autonomous, trust-minimized risk guardian for Sui lending protocols. An off-chain AI agent fuses six market sources and runs an EWMA-Mahalanobis anomaly model to score risk and propose tighter borrow limits. The on-chain Move contract never trusts that number — it re-derives the breach from raw Pyth and DeepBook data itself, clamps the agent to the safe direction only, freezes on its own divergence check, and leaves unfreezing to the DAO. Any protocol adopts it as guardian-as-a-service."
+    />
   </head>
   <body>
     <div id="root"></div>
