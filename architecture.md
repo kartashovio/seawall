@@ -69,7 +69,9 @@ No one but the DAO/owner can unfreeze the protocol.
 1. Per the onchain section → "With parameters", we only ever change GuardianPolicy settings toward the safer side
 2. Tightening is instant and by tighter_of. Relaxing happens drop by drop.
 
-Every 10 minutes we lower the safety of the settings, if there is no reason to keep them stricter.
+Every 10 minutes we lower the safety of the settings by one notch — about 10% of each corridor's span — but only while the contract's own fresh reading stays clear (a missing agent never causes relaxing; that would fail-open). A fully-tightened limit takes about ten steps (~100 minutes) to walk back to baseline.
+
+**That slow walk-back is also a window for the DAO.** Because relaxing is gradual and every step is emitted as an event, a DAO watching the chain has time to intervene before the corridor is fully open again — instantly re-clamp the bounds with `governance_set_corridor`, rotate the agent, or (after a freeze) gate the unfreeze entirely. Automatic where it is safe to be automatic; human where it matters.
 
 ### Manual intervention
 
