@@ -125,6 +125,19 @@ export function App() {
             </svg>
             <span className="header-gh-label">GitHub</span>
           </a>
+          <a
+            className="header-gh"
+            href="https://x.com/kartashovio/status/2069339181919175050"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Read the write-up on X"
+            title="Read the write-up on X"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
+              <path d="M18.9 1.5h3.68l-8.04 9.19L24 22.5h-7.41l-5.8-7.58-6.64 7.58H.46l8.6-9.83L0 1.5h7.6l5.24 6.93L18.9 1.5zm-1.29 18.8h2.04L6.48 3.6H4.3l13.31 16.7z" />
+            </svg>
+            <span className="header-gh-label">Article</span>
+          </a>
         </div>
       </header>
 

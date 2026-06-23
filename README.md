@@ -10,6 +10,8 @@
 
 <p align="center">
   <a href="https://seawall.dev"><b>▶ Live dashboard — seawall.dev</b></a> ·
+  <a href="https://www.youtube.com/watch?v=HZuOTUocs3Y">Demo video</a> ·
+  <a href="https://x.com/kartashovio/status/2069339181919175050">Write-up on X</a> ·
   <a href="docs/connect-your-protocol.md">Connect your protocol</a> ·
   <a href="architecture.md">Architecture (plain English)</a>
 </p>
